@@ -88,6 +88,14 @@ export const generalSchema = z
     property_type: propertyType,
     city: z.string().trim().min(2, "Informe a cidade.").max(80),
     neighborhood: text(80),
+    region: z
+      .enum(
+        ["", "riviera-de-sao-lourenco", "sao-sebastiao", "ilhabela", "caraguatatuba", "ubatuba"],
+        {
+          error: "Escolha uma região da lista.",
+        },
+      )
+      .transform((value) => (value === "" ? null : value)),
     offers_seasonal: checkbox,
     offers_monthly: checkbox,
     offers_sale: checkbox,

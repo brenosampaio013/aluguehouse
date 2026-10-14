@@ -13,7 +13,7 @@ export function TextareaField({ label, hint, error, className, ...props }: Texta
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   return (
-    <div className={cn("grid gap-1.5", className)}>
+    <div className={cn("grid content-start gap-1.5", className)}>
       <label htmlFor={id} className="text-small font-semibold">
         {label}
       </label>

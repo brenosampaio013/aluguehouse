@@ -1,6 +1,6 @@
 # Alugue Houses — Página inicial (Etapa 7)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## Estrutura
 

@@ -4,6 +4,8 @@ import { formatPrice } from "@/lib/format";
 import { mediaSrcSet, publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import type { PropertyCardData } from "@/server/queries/public-properties";
 
+export type CardStay = { nights: number; total: number };
+
 const priceSuffix = { night: "por noite", month: "por mês", sale: "à venda" } as const;
 
 function facts(property: PropertyCardData) {
@@ -22,10 +24,15 @@ export function PropertyCard({
   property,
   supabaseUrl,
   priority = false,
+  href = `/imoveis/${property.slug}`,
+  stay = null,
 }: {
   property: PropertyCardData;
   supabaseUrl: string;
   priority?: boolean;
+  href?: string;
+  /** Com datas escolhidas: total estimado da estadia. */
+  stay?: CardStay | null;
 }) {
   const { cover } = property;
   const place = [property.neighborhood, property.city].filter(Boolean).join(", ");
@@ -57,16 +64,18 @@ export function PropertyCard({
       </div>
       <div className="grid gap-0.5">
         <h3 className="leading-snug font-semibold">
-          <Link
-            href={`/imoveis/${property.slug}`}
-            className="after:absolute after:inset-0 after:rounded-photo"
-          >
+          <Link href={href} className="after:absolute after:inset-0 after:rounded-photo">
             {property.title}
           </Link>
         </h3>
         {place ? <p className="text-small text-rocha">{place}</p> : null}
         <p className="text-small text-rocha">{facts(property)}</p>
-        {property.price ? (
+        {stay ? (
+          <p className="mt-1 tabular-nums">
+            <strong className="font-semibold">{formatPrice(stay.total)}</strong> no total ·{" "}
+            {stay.nights} {stay.nights === 1 ? "noite" : "noites"}
+          </p>
+        ) : property.price ? (
           <p className="mt-1 tabular-nums">
             <strong className="font-semibold">{formatPrice(property.price.amount)}</strong>{" "}
             {priceSuffix[property.price.kind]}

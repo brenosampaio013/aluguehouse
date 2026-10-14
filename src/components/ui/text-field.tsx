@@ -17,7 +17,7 @@ export function TextField({ label, hint, error, className, ...props }: TextField
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <div className={cn("grid gap-1.5", className)}>
+    <div className={cn("grid content-start gap-1.5", className)}>
       <label htmlFor={id} className="text-small font-semibold">
         {label}
       </label>

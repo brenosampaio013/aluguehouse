@@ -7,6 +7,7 @@ import { TextField } from "@/components/ui/text-field";
 import { TextareaField } from "@/components/ui/textarea-field";
 import { toDecimalInput } from "@/lib/format";
 import { propertyTypeLabels } from "@/lib/properties/labels";
+import { regions } from "@/lib/regions";
 import { updateGeneral } from "@/server/actions/properties";
 import type { Database } from "@/types/database";
 
@@ -16,6 +17,10 @@ import { useFormAction } from "./use-form-action";
 type Property = Database["public"]["Tables"]["properties"]["Row"];
 
 const typeOptions = Object.entries(propertyTypeLabels).map(([value, label]) => ({ value, label }));
+const regionOptions = [
+  { value: "", label: "Não definida" },
+  ...regions.map((region) => ({ value: region.slug, label: region.name })),
+];
 
 function Fieldset({ legend, children }: { legend: string; children: React.ReactNode }) {
   return (
@@ -73,6 +78,14 @@ export function PropertyGeneralForm({ property }: { property: Property }) {
             name="neighborhood"
             defaultValue={property.neighborhood ?? ""}
             error={e.neighborhood}
+          />
+          <SelectField
+            label="Região (linha da costa)"
+            name="region"
+            options={regionOptions}
+            defaultValue={property.region ?? ""}
+            hint="Usada no filtro de região do site. Sem região, o imóvel só aparece em “Qualquer região”."
+            error={e.region}
           />
         </div>
       </Fieldset>

@@ -295,6 +295,7 @@ export type Database = {
           parking_spots: number;
           property_type: Database["public"]["Enums"]["property_type"];
           published_at: string | null;
+          region: string | null;
           sale_price: number | null;
           slug: string;
           status: Database["public"]["Enums"]["property_status"];
@@ -332,6 +333,7 @@ export type Database = {
           parking_spots?: number;
           property_type: Database["public"]["Enums"]["property_type"];
           published_at?: string | null;
+          region?: string | null;
           sale_price?: number | null;
           slug: string;
           status?: Database["public"]["Enums"]["property_status"];
@@ -368,6 +370,7 @@ export type Database = {
           parking_spots?: number;
           property_type?: Database["public"]["Enums"]["property_type"];
           published_at?: string | null;
+          region?: string | null;
           sale_price?: number | null;
           slug?: string;
           status?: Database["public"]["Enums"]["property_status"];
@@ -694,6 +697,36 @@ export type Database = {
           p_property_id: string;
         };
         Returns: string;
+      };
+      search_rentals: {
+        Args: {
+          p_amenities?: string[];
+          p_bedrooms?: number;
+          p_check_in?: string;
+          p_check_out?: string;
+          p_guests?: number;
+          p_limit?: number;
+          p_mode: Database["public"]["Enums"]["rental_mode"];
+          p_offset?: number;
+          p_price_max?: number;
+          p_region?: string;
+          p_sort?: string;
+        };
+        Returns: {
+          base_price: number;
+          bedrooms: number;
+          city: string;
+          id: string;
+          max_guests: number;
+          neighborhood: string;
+          nights: number;
+          quote_total: number;
+          region: string;
+          slug: string;
+          suites: number;
+          title: string;
+          total_count: number;
+        }[];
       };
     };
     Enums: {

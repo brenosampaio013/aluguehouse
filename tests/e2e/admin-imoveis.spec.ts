@@ -69,8 +69,11 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
   await expect(page.getByLabel("Capacidade (hóspedes)")).toHaveValue("5");
 
   await page.getByRole("checkbox", { name: "Venda" }).uncheck();
+  await page.getByLabel("Região (linha da costa)").selectOption("riviera-de-sao-lourenco");
   await page.getByRole("button", { name: "Salvar dados gerais" }).click();
   await expect(status(page, "Dados gerais salvos.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Região (linha da costa)")).toHaveValue("riviera-de-sao-lourenco");
 
   // Foto real do imóvel 01
   await page.getByLabel("Foto (JPG, PNG ou WebP)").setInputFiles(FOTO_REAL);
