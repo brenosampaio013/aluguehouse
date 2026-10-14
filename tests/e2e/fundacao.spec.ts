@@ -2,12 +2,12 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 test.describe("fundação", () => {
-  test("página provisória carrega em português com marca e contato", async ({ page }) => {
+  test("página inicial carrega em português com marca e contato", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle("Alugue Houses");
+    await expect(page).toHaveTitle(/^Alugue Houses/);
     await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Falar no WhatsApp/ })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /Fale no WhatsApp/ })).toHaveAttribute(
       "href",
       "https://wa.me/5513996195221",
     );

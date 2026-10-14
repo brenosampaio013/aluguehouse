@@ -1,32 +1,127 @@
-import { buttonClasses } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
-import { siteConfig } from "@/lib/site-config";
+import type { Metadata } from "next";
+import { connection } from "next/server";
 
-/**
- * Página provisória. A página inicial real é criada em etapa própria,
- * conforme docs/planejamento.md.
- */
-export default function Page() {
+import { CoastLine } from "@/components/home/coast-line";
+import { HeroSearch } from "@/components/home/hero-search";
+import { PropertyCard } from "@/components/property/property-card";
+import { Container } from "@/components/ui/container";
+import { getPublicEnv } from "@/lib/env";
+import { siteConfig } from "@/lib/site-config";
+import { getFeaturedProperties, type PropertyCardData } from "@/server/queries/public-properties";
+
+export const metadata: Metadata = {
+  title: { absolute: `${siteConfig.name} | Riviera de São Lourenço e Litoral Norte` },
+};
+
+const steps = [
+  {
+    title: "Escolha a casa e as datas",
+    text: "Veja fotos, comodidades e as datas livres de cada imóvel.",
+  },
+  {
+    title: "Envie a solicitação",
+    text: "Sem pagamento nesta etapa e sem precisar criar conta: só nome, e-mail e telefone.",
+  },
+  {
+    title: "Receba a confirmação",
+    text: "Conferimos a disponibilidade e respondemos por e-mail ou WhatsApp com os próximos passos.",
+  },
+];
+
+async function loadFeatured(): Promise<PropertyCardData[]> {
+  try {
+    return await getFeaturedProperties(6);
+  } catch (error) {
+    // A página continua útil sem os destaques se o banco estiver fora do ar.
+    console.error("Falha ao carregar destaques", error);
+    return [];
+  }
+}
+
+export default async function HomePage() {
+  // Gera a página a cada visita para os destaques refletirem o que está
+  // publicado agora. Cache com revalidação entra na etapa de otimização.
+  await connection();
+  const featured = await loadFeatured();
+  const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl } = getPublicEnv();
+
   return (
-    <main id="conteudo" className="flex flex-1 items-center py-16">
-      <Container>
-        <h1 className="max-w-[16ch] font-serif text-h1 font-normal tracking-[-0.01em] sm:text-display">
-          Site em construção
-        </h1>
-        <p className="mt-5 max-w-[60ch] text-rocha">
-          Em breve, casas para temporada, aluguel mensal e venda na Riviera de São Lourenço e no
-          Litoral Norte de São Paulo.
-        </p>
-        <a
-          className={buttonClasses("primary", "mt-8")}
-          href={`https://wa.me/${siteConfig.contact.whatsapp}`}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Falar no WhatsApp
-          <span className="sr-only">(abre em nova aba)</span>
-        </a>
+    <main id="conteudo" className="flex-1">
+      {/*
+        Topo gráfico: mar (abismo) e faixa de areia. Será substituído por uma
+        foto real da Riviera quando houver uma em alta resolução.
+      */}
+      <section aria-labelledby="titulo-inicio" className="relative bg-abismo text-branco">
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-areia sm:h-24" />
+        <Container className="relative grid gap-6 pt-14 pb-10 sm:pt-20 lg:pt-28">
+          <h1
+            id="titulo-inicio"
+            className="max-w-[15ch] font-serif text-h1 font-normal tracking-[-0.01em] sm:text-display"
+          >
+            Casas de alto padrão na Riviera e no Litoral Norte
+          </h1>
+          <p className="max-w-[52ch] text-areia">
+            Temporada, aluguel mensal e venda, com reserva por solicitação e atendimento direto.
+          </p>
+          <div className="mt-4 max-w-[60rem]">
+            <HeroSearch />
+          </div>
+        </Container>
+      </section>
+
+      <Container className="grid gap-20 py-16 sm:py-20">
+        <CoastLine />
+
+        {featured.length > 0 ? (
+          <section aria-labelledby="titulo-destaques" className="grid gap-8">
+            <h2 id="titulo-destaques" className="font-serif text-h2 font-normal">
+              Em destaque
+            </h2>
+            <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((property, index) => (
+                <li key={property.slug}>
+                  <PropertyCard
+                    property={property}
+                    supabaseUrl={supabaseUrl}
+                    priority={index < 2}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </Container>
+
+      <section aria-labelledby="titulo-como-funciona" className="bg-areia py-16 sm:py-20">
+        <Container className="grid gap-10">
+          <h2 id="titulo-como-funciona" className="font-serif text-h2 font-normal">
+            Como funciona a reserva
+          </h2>
+          <ol className="grid gap-8 md:grid-cols-3">
+            {steps.map((step, index) => (
+              <li key={step.title} className="grid content-start gap-2">
+                <span aria-hidden="true" className="font-serif text-h1 leading-none text-petroleo">
+                  {index + 1}
+                </span>
+                <h3 className="text-h3 font-semibold">{step.title}</h3>
+                <p className="max-w-[36ch] text-abismo">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+          <p>
+            Prefere conversar antes?{" "}
+            <a
+              href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-petroleo underline underline-offset-3"
+            >
+              Fale no WhatsApp {siteConfig.contact.whatsappDisplay}
+              <span className="sr-only"> (abre em nova aba)</span>
+            </a>
+          </p>
+        </Container>
+      </section>
     </main>
   );
 }

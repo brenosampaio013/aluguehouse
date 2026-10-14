@@ -1,6 +1,6 @@
 # Alugue Houses — Cadastro de imóveis no painel (Etapa 6)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## O que o painel faz
 

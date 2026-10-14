@@ -6,7 +6,7 @@ import { testEnv } from "./env";
 import { totp } from "./totp";
 
 /** Cliente com service_role, só para preparar dados de teste. */
-function adminApi() {
+export function adminApi() {
   return createClient(testEnv.supabaseUrl, testEnv.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

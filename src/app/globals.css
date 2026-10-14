@@ -73,3 +73,40 @@
     }
   }
 }
+
+/*
+ * Linha da costa: traço que liga as regiões. Desenha-se uma única vez ao
+ * entrar na tela (animação ligada à rolagem). Sem suporte ou com movimento
+ * reduzido, aparece pronta.
+ */
+@layer components {
+  .coast-line::before {
+    content: "";
+    position: absolute;
+    left: 11px;
+    right: 11px;
+    top: 10px;
+    height: 2px;
+    background: var(--color-petroleo);
+    transform-origin: left;
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .coast-line::before {
+        animation: coast-draw linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 35%;
+      }
+    }
+  }
+
+  @keyframes coast-draw {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}

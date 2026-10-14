@@ -8,14 +8,14 @@ import "./globals.css";
 
 const newsreader = Newsreader({
   variable: "--font-newsreader",
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   axes: ["opsz"],
   display: "swap",
 });
 
 const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   display: "swap",
 });
 

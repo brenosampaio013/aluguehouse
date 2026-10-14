@@ -21,6 +21,17 @@ export function parseDecimalInput(value: unknown): number | undefined {
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+const brlWhole = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 0,
+});
+
+/** Para preços em destaque: "R$ 1.800" (centavos só quando existem). */
+export function formatPrice(value: number): string {
+  return Number.isInteger(value) ? brlWhole.format(value) : brl.format(value);
+}
+
 export function formatBRL(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : brl.format(value);
 }
