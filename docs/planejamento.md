@@ -1,6 +1,6 @@
 # Alugue Houses — Planejamento técnico (Etapa 1)
 
-> Status: **aguardando aprovação**. Nenhum código foi escrito.
+> Status: **aprovado**.
 > Valores em dólar e limites de planos gratuitos são referências e devem ser
 > confirmados no momento da contratação.
 
@@ -284,6 +284,6 @@ somado ao Supabase sairia do orçamento.
 - [ ] Caminho de regularização do R1 (antes da publicação, Etapa 20).
 - [x] Hospedagem Cloudflare Workers + Supabase Free → **aprovada**.
 - [ ] Registro do domínio (exige CPF/CNPJ do titular no registro.br).
-- [ ] Aprovação das regras de preço (seção 6).
+- [x] Regras de preço (seção 6) → **aprovadas**.
 - [x] Logotipo provisório tipográfico na Etapa 2 → **aprovado**.
 - [ ] Decisão sobre Airbnb/Booking.

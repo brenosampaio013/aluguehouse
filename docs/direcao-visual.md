@@ -1,6 +1,6 @@
 # Alugue Houses — Direção visual (Etapa 2)
 
-> Status: **aguardando aprovação**. Prancha visual de referência:
+> Status: **aprovado**. Prancha visual de referência:
 > `docs/direcao-visual/prancha.html` (HTML estático, não faz parte do site),
 > com capturas em `prancha-desktop.png` e `prancha-celular.png`.
 > Toda imagem da prancha é **ilustrativa** e será substituída por fotos reais.
@@ -223,5 +223,5 @@ Voz direta, educada e sem exageros. Exemplos:
 
 ## 11. Pendências desta etapa
 
-- [ ] Confirmar a lista e a ordem das regiões da linha da costa.
+- [x] Lista e ordem das regiões da linha da costa → **aprovadas**.
 - [ ] Receber as fotos reais (com autorização de uso) para a home e os imóveis.
