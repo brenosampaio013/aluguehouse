@@ -1,6 +1,6 @@
 # Alugue Houses — Painel de solicitações, aprovação e bloqueios (Etapa 12)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ![Detalhe de uma solicitação no painel, desktop](solicitacao-desktop.png)
 

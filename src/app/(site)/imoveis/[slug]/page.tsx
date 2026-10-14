@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { AvailabilityCalendar } from "@/components/booking/availability-calendar";
 import { BookingRequestForm } from "@/components/booking/booking-request-form";
+import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { AreaMap } from "@/components/map/area-map";
 import { PropertyGallery } from "@/components/property/gallery";
 import { buttonClasses } from "@/components/ui/button";
@@ -196,12 +197,20 @@ export default async function ImovelPage({ params, searchParams }: Props) {
   return (
     <main id="conteudo" className="flex-1 pt-8 pb-28 md:pb-16">
       <Container className="grid gap-8">
-        <div className="grid gap-2">
-          <h1 className="font-serif text-h1 font-normal">{property.title}</h1>
-          <p className="text-rocha">
-            {propertyTypeLabels[property.property_type]}
-            {location ? ` em ${location}` : ""}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+          <div className="grid gap-2">
+            <h1 className="font-serif text-h1 font-normal">{property.title}</h1>
+            <p className="text-rocha">
+              {propertyTypeLabels[property.property_type]}
+              {location ? ` em ${location}` : ""}
+            </p>
+          </div>
+          <FavoriteButton
+            propertyId={property.id}
+            title={property.title}
+            variant="page"
+            className="-ml-3 sm:ml-0"
+          />
         </div>
 
         <PropertyGallery photos={property.images} supabaseUrl={supabaseUrl} />

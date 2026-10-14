@@ -62,3 +62,15 @@ export async function createAdminWithTotp() {
 
   return { email, secret: factor.totp.secret };
 }
+
+/**
+ * Entra como hóspede sem passar pelo e-mail: gera o mesmo link de acesso que o
+ * Supabase enviaria e abre o callback do site.
+ */
+export async function loginAsGuest(page: import("@playwright/test").Page, email: string) {
+  const api = adminApi();
+  await api.auth.admin.createUser({ email, email_confirm: true });
+  const { data, error } = await api.auth.admin.generateLink({ type: "magiclink", email });
+  if (error) throw error;
+  await page.goto(`/auth/callback?token_hash=${data.properties.hashed_token}&type=magiclink`);
+}

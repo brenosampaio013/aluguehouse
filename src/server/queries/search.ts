@@ -50,6 +50,7 @@ export async function searchRentals(
   const [covers, locations] = await Promise.all([loadCovers(ids), loadLocations(ids)]);
 
   const items = rows.map((row): RentalResult => ({
+    id: row.id,
     slug: row.slug,
     title: row.title,
     city: row.city,
@@ -136,6 +137,7 @@ export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
   const ids = data.map((row) => row.id);
   const [covers, locations] = await Promise.all([loadCovers(ids), loadLocations(ids)]);
   const items = data.map((row): PropertyCardData => ({
+    id: row.id,
     slug: row.slug,
     title: row.title,
     city: row.city,

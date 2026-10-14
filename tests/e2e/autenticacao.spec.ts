@@ -89,7 +89,7 @@ test.describe("login do hóspede", () => {
     await page.goto("/entrar");
     await page.getByLabel("E-mail").fill(email);
     await page.getByRole("button", { name: "Enviar link de acesso" }).click();
-    await expect(page.getByRole("status")).toContainText(
+    await expect(page.getByRole("status").filter({ hasText: /\S/ })).toContainText(
       `Enviamos um link de acesso para ${email}`,
     );
 

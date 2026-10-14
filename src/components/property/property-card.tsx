@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { formatPrice } from "@/lib/format";
 import { mediaSrcSet, publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import type { PropertyCardData } from "@/server/queries/public-properties";
@@ -62,6 +63,11 @@ export function PropertyCard({
             className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           />
         ) : null}
+        <FavoriteButton
+          propertyId={property.id}
+          title={property.title}
+          className="absolute top-3 right-3 z-10"
+        />
         {cover?.isDemo ? (
           <span className="absolute bottom-3 left-3 rounded-full bg-branco/95 px-2.5 py-1 text-small font-semibold text-abismo">
             Foto ilustrativa
@@ -70,7 +76,10 @@ export function PropertyCard({
       </div>
       <div className="grid gap-0.5">
         <h3 className="leading-snug font-semibold">
-          <Link href={href} className="after:absolute after:inset-0 after:rounded-photo">
+          <Link
+            href={href}
+            className="after:absolute after:inset-0 after:rounded-photo focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-petroleo"
+          >
             {property.title}
           </Link>
         </h3>

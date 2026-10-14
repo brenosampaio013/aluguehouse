@@ -3,6 +3,7 @@ import "server-only";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 
 export type PropertyCardData = {
+  id: string;
   slug: string;
   title: string;
   city: string;
@@ -17,7 +18,8 @@ export type PropertyCardData = {
   cover: { path: string; width: number; alt: string; isDemo: boolean } | null;
 };
 
-type Row = {
+export type CardRow = {
+  id: string;
   slug: string;
   title: string;
   city: string;
@@ -45,7 +47,7 @@ type Row = {
 /** Preço mostrado no cartão: diária, depois mensal, depois venda. */
 export function cardPrice(
   row: Pick<
-    Row,
+    CardRow,
     | "offers_seasonal"
     | "offers_monthly"
     | "offers_sale"
@@ -62,12 +64,13 @@ export function cardPrice(
   return null;
 }
 
-export function toCard(row: Row): PropertyCardData {
+export function toCard(row: CardRow): PropertyCardData {
   const images = row.property_media
     .filter((m) => m.kind === "image" && m.storage_path && m.width)
     .sort((a, b) => Number(b.is_cover) - Number(a.is_cover) || a.position - b.position);
   const cover = images[0];
   return {
+    id: row.id,
     slug: row.slug,
     title: row.title,
     city: row.city,
@@ -87,8 +90,8 @@ export function toCard(row: Row): PropertyCardData {
   };
 }
 
-const CARD_COLUMNS =
-  "slug, title, city, neighborhood, bedrooms, suites, max_guests, offers_seasonal, offers_monthly, offers_sale, nightly_price, monthly_price, sale_price, property_media(kind, storage_path, width, alt_text, is_cover, is_demo, position)";
+export const CARD_COLUMNS =
+  "id, slug, title, city, neighborhood, bedrooms, suites, max_guests, offers_seasonal, offers_monthly, offers_sale, nightly_price, monthly_price, sale_price, property_media(kind, storage_path, width, alt_text, is_cover, is_demo, position)";
 
 /** Imóveis publicados mais recentes, para a página inicial. */
 export async function getFeaturedProperties(limit = 6): Promise<PropertyCardData[]> {
@@ -100,5 +103,5 @@ export async function getFeaturedProperties(limit = 6): Promise<PropertyCardData
     .order("published_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data as Row[]).map(toCard);
+  return (data as CardRow[]).map(toCard);
 }
