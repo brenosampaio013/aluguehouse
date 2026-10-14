@@ -7,6 +7,7 @@ Lourenço e no Litoral Norte de São Paulo.
 - Direção visual: [`docs/direcao-visual.md`](docs/direcao-visual.md)
 - Fundação do projeto: [`docs/fundacao.md`](docs/fundacao.md)
 - Banco de dados e segurança: [`docs/banco.md`](docs/banco.md)
+- Login e acesso ao painel: [`docs/autenticacao.md`](docs/autenticacao.md)
 
 ## Requisitos
 

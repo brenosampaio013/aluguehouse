@@ -1,4 +1,8 @@
+import { loadEnvConfig } from "@next/env";
 import { defineConfig, devices } from "@playwright/test";
+
+// Carrega .env.local (Supabase local) para os auxiliares de teste.
+loadEnvConfig(process.cwd());
 
 const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;

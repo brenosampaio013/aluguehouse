@@ -29,7 +29,7 @@ export async function createSupabaseServerClient() {
             }
           } catch {
             // Server Components não podem gravar cookies; a renovação da
-            // sessão será feita no proxy (Etapa 5).
+            // sessão é feita no proxy (src/proxy.ts).
           }
         },
       },

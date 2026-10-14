@@ -1,6 +1,6 @@
 # Alugue Houses — Banco de dados e segurança (Etapa 4)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## Migrations
 

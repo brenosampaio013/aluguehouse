@@ -17,9 +17,9 @@ env:
 
 jobs:
   verificar:
-    name: Lint, tipos, testes e build
+    name: Lint, tipos, formatação e testes unitários
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -32,8 +32,41 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Lint, tipos, formatação e testes unitários
-        run: pnpm check
+      - run: pnpm check
+
+  e2e:
+    name: Build e testes de ponta a ponta (com Supabase local)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir Supabase local (banco, auth, API, storage e e-mail de teste)
+        run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+
+      - name: Gerar .env.local com as chaves locais de teste
+        run: |
+          eval "$(supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY|MAILPIT_URL)=')"
+          {
+            echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "MAILPIT_URL=$MAILPIT_URL"
+          } > .env.local
 
       - name: Build do Next.js
         run: pnpm build
