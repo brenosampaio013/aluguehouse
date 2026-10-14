@@ -9,11 +9,15 @@ const publicSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  /** Cloudflare Turnstile (anti-robô). Sem ela, o widget não aparece. */
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1).optional(),
 });
 
 /** Variáveis exclusivas do servidor. Nunca use o prefixo NEXT_PUBLIC_. */
 const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  /** Cloudflare Turnstile. Obrigatória em produção (veja docs/reserva.md). */
+  TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicSchema>;
@@ -53,5 +57,6 @@ export function getPublicEnv(): PublicEnv {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || undefined,
   });
 }

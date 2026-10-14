@@ -1,6 +1,6 @@
 # Alugue Houses — Página do imóvel e mapa (Etapa 10)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## Página `/imoveis/[slug]`
 
@@ -23,8 +23,7 @@ Só imóveis publicados; rascunhos, arquivados e endereços inexistentes mostram
   imóvel só de venda, o botão é "Agendar visita pelo WhatsApp".
 - **Celular**: barra fixa com o preço principal e o WhatsApp, no lugar da
   barra de atalhos.
-- O pedido de reserva pelo site entra na Etapa 11; a página avisa que estará
-  disponível em breve.
+- O pedido de reserva pelo site entrou na Etapa 11 (veja `docs/reserva.md`).
 
 ## Mapa
 

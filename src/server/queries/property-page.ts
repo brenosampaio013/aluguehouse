@@ -89,3 +89,15 @@ export async function isRangeAvailable(propertyId: string, checkIn: string, chec
   if (error) throw error;
   return data.length === 0;
 }
+
+/** Períodos ocupados na janela (para o calendário público). */
+export async function getUnavailableRanges(propertyId: string, from: string, to: string) {
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase.rpc("get_unavailable_ranges", {
+    p_property_id: propertyId,
+    p_from: from,
+    p_to: to,
+  });
+  if (error) throw error;
+  return data.map((row) => ({ start: row.start_date, end: row.end_date }));
+}

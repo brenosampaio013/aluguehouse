@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { AvailabilityCalendar } from "@/components/booking/availability-calendar";
+import { BookingRequestForm } from "@/components/booking/booking-request-form";
 import { AreaMap } from "@/components/map/area-map";
 import { PropertyGallery } from "@/components/property/gallery";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { ChatIcon } from "@/components/ui/icons";
+import { stayLimits, stayMode } from "@/lib/booking/calendar";
+import { bookingErrorMessage } from "@/lib/booking/schema";
+import { cn } from "@/lib/cn";
 import { getPublicEnv } from "@/lib/env";
-import { formatBRL, formatDateISO, formatPrice } from "@/lib/format";
+import { addDaysISO, formatBRL, formatDateISO, formatPrice } from "@/lib/format";
 import { publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import { propertyTypeLabels } from "@/lib/properties/labels";
 import { first, int, isRealDate } from "@/lib/search/shared";
 import { whatsappLink } from "@/lib/whatsapp";
 import {
   getPublicProperty,
+  getUnavailableRanges,
   isRangeAvailable,
   quoteForSearch,
   type PublicProperty,
@@ -57,17 +63,13 @@ function plural(n: number, one: string, many: string) {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-const quoteMessages: Record<string, (detail?: string) => string> = {
-  min_nights: (d) => `Nessas datas, este imóvel pede no mínimo ${d} noites.`,
-  max_nights: (d) => `Este imóvel aceita no máximo ${d} noites.`,
-  guests_exceeded: (d) => `Este imóvel recebe no máximo ${d} hóspedes.`,
-  mode_not_offered: () =>
-    "Este imóvel não está disponível nessa modalidade para o período escolhido.",
-  seasonal_max_29: () => "Temporada vai até 29 noites.",
-  monthly_min_30: () => "Aluguel mensal começa em 30 noites.",
-  price_unavailable: () =>
-    "Ainda não há preço para todas as noites desse período. Fale com a gente.",
-};
+/** Hoje no fuso de São Paulo (AAAA-MM-DD). */
+function todaySP() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+}
+
+/** Janela do calendário público: um ano a partir de hoje. */
+const CALENDAR_DAYS = 365;
 
 type SearchStay =
   | { status: "none" }
@@ -94,16 +96,13 @@ async function stayFromSearch(
 
   const guests = int(first(raw.hospedes), 1, 50) ?? 1;
   const base = { checkIn, checkOut, guests };
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(),
-  );
+  const today = todaySP();
   if (checkIn < today)
     return { status: "invalid", message: "A data de chegada já passou.", ...base };
   if (checkOut <= checkIn)
     return { status: "invalid", message: "A saída precisa ser depois da chegada.", ...base };
 
-  const nights = (Date.parse(checkOut) - Date.parse(checkIn)) / 86_400_000;
-  const mode = nights >= 30 ? "monthly" : "seasonal";
+  const mode = stayMode(checkIn, checkOut);
   if (!(await isRangeAvailable(property.id, checkIn, checkOut))) {
     return {
       status: "invalid",
@@ -113,9 +112,7 @@ async function stayFromSearch(
   }
   const result = await quoteForSearch(property.id, mode, checkIn, checkOut, guests);
   if (!result.ok) {
-    const message =
-      quoteMessages[result.reason]?.(result.detail) ??
-      "Não foi possível calcular o valor para essas datas.";
+    const message = bookingErrorMessage(result.reason, result.detail);
     return { status: "invalid", message, ...base };
   }
   return { status: "quoted", quote: result.quote, mode, ...base };
@@ -126,8 +123,16 @@ export default async function ImovelPage({ params, searchParams }: Props) {
   const property = await getPublicProperty(slug);
   if (!property) notFound();
 
-  const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl, NEXT_PUBLIC_SITE_URL: siteUrl } = getPublicEnv();
+  const {
+    NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+    NEXT_PUBLIC_SITE_URL: siteUrl,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: turnstileSiteKey,
+  } = getPublicEnv();
   const stay = await stayFromSearch(property, await searchParams);
+  const rents = property.offers_seasonal || property.offers_monthly;
+  const today = todaySP();
+  const lastDate = addDaysISO(today, CALENDAR_DAYS);
+  const blocked = rents ? await getUnavailableRanges(property.id, today, lastDate) : [];
   const location = place(property);
 
   const facts = [
@@ -225,6 +230,24 @@ export default async function ImovelPage({ params, searchParams }: Props) {
               </section>
             ) : null}
 
+            {rents ? (
+              <section aria-labelledby="disponibilidade" className="grid scroll-mt-6 gap-4">
+                <h2 id="disponibilidade" className="font-serif text-h2 font-normal">
+                  Disponibilidade
+                </h2>
+                <AvailabilityCalendar
+                  today={today}
+                  lastDate={lastDate}
+                  blocked={blocked}
+                  limits={stayLimits(property)}
+                  maxGuests={property.max_guests}
+                  initialCheckIn={stay.status !== "none" ? stay.checkIn : undefined}
+                  initialCheckOut={stay.status !== "none" ? stay.checkOut : undefined}
+                  initialGuests={stay.status !== "none" ? stay.guests : undefined}
+                />
+              </section>
+            ) : null}
+
             {property.amenities.length > 0 ? (
               <section aria-labelledby="comodidades" className="grid gap-4">
                 <h2 id="comodidades" className="font-serif text-h2 font-normal">
@@ -282,8 +305,13 @@ export default async function ImovelPage({ params, searchParams }: Props) {
           </div>
 
           <aside
+            id="valores"
             aria-label="Valores e contato"
-            className="grid gap-5 rounded-photo bg-areia p-6 lg:sticky lg:top-6"
+            className={cn(
+              "grid scroll-mt-6 gap-5 rounded-photo bg-areia p-6",
+              // Com o formulário, o painel fica alto demais para ficar fixo.
+              stay.status !== "quoted" && "lg:sticky lg:top-6",
+            )}
           >
             {stay.status === "quoted" ? (
               <div className="grid gap-3">
@@ -343,21 +371,33 @@ export default async function ImovelPage({ params, searchParams }: Props) {
               </p>
             ) : null}
 
+            {stay.status === "quoted" ? (
+              <div className="rounded-photo bg-branco p-5">
+                <BookingRequestForm
+                  propertyId={property.id}
+                  propertyTitle={property.title}
+                  checkIn={stay.checkIn}
+                  checkOut={stay.checkOut}
+                  guests={stay.guests}
+                  turnstileSiteKey={turnstileSiteKey}
+                />
+              </div>
+            ) : rents ? (
+              <a href="#disponibilidade" className={buttonClasses("primary")}>
+                Escolher datas para reservar
+              </a>
+            ) : null}
+
             <a
               href={whatsappLink(whatsappMessage)}
               target="_blank"
               rel="noopener noreferrer"
-              className={buttonClasses("primary")}
+              className={buttonClasses(rents ? "secondary" : "primary")}
             >
               <ChatIcon />
               {ctaLabel}
               <span className="sr-only"> (abre em nova aba)</span>
             </a>
-            {property.offers_seasonal || property.offers_monthly ? (
-              <p className="text-small text-rocha">
-                A solicitação de reserva pelo site estará disponível em breve.
-              </p>
-            ) : null}
           </aside>
         </div>
       </Container>
@@ -374,16 +414,26 @@ export default async function ImovelPage({ params, searchParams }: Props) {
             <strong className="font-semibold">{mainPrice.value}</strong>
           ) : null}
         </p>
-        <a
-          href={whatsappLink(whatsappMessage)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={buttonClasses("primary", "shrink-0")}
-        >
-          <ChatIcon />
-          WhatsApp
-          <span className="sr-only"> (abre em nova aba)</span>
-        </a>
+        <div className="flex shrink-0 gap-2">
+          {rents ? (
+            <a
+              href={stay.status === "quoted" ? "#valores" : "#disponibilidade"}
+              className={buttonClasses("primary", "px-4")}
+            >
+              {stay.status === "quoted" ? "Solicitar" : "Ver datas"}
+            </a>
+          ) : null}
+          <a
+            href={whatsappLink(whatsappMessage)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClasses(rents ? "secondary" : "primary", "px-4")}
+          >
+            <ChatIcon />
+            WhatsApp
+            <span className="sr-only"> (abre em nova aba)</span>
+          </a>
+        </div>
       </div>
     </main>
   );

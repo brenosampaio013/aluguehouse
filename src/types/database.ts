@@ -673,6 +673,10 @@ export type Database = {
           start_date: string;
         }[];
       };
+      hit_rate_limit: {
+        Args: { p_bucket: string; p_max: number; p_window_seconds: number };
+        Returns: boolean;
+      };
       quote_stay: {
         Args: {
           p_check_in: string;
