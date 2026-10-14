@@ -14,7 +14,7 @@
 | Público | Imóveis de alto padrão |
 | WhatsApp | +55 13 99619-5221 (`https://wa.me/5513996195221`) |
 | E-mail de contato | contatoaluguehouses@gmail.com |
-| CRECI | Não possui — ver risco R1 |
+| CRECI | Não possui; os imóveis são **de terceiros** — ver risco R1 |
 | Domínio | Ainda não registrado |
 | Mídia | Algumas fotos reais; o restante será demonstração **identificada como tal** |
 | Airbnb/Booking | Ainda não definido — ver risco R3 |
@@ -30,6 +30,8 @@
 6. **Tarifas sazonais e taxas configuráveis** pelo painel.
 7. **Reserva mediante solicitação** e confirmação manual pelo único administrador.
 8. **Orçamento de infraestrutura**: até R$ 100/mês.
+9. **Hospedagem aprovada**: Cloudflare Workers (plano pago) + Supabase Free.
+10. **Logotipo provisório tipográfico** autorizado, a ser criado na Etapa 2.
 
 ## 3. Arquitetura
 
@@ -241,7 +243,7 @@ somado ao Supabase sairia do orçamento.
 
 | # | Risco | Mitigação |
 |---|---|---|
-| R1 | **Sem CRECI.** Intermediar venda ou locação de imóveis de terceiros é atividade de corretor (Lei 6.530/78). | Confirmar se os imóveis são próprios. Se forem de terceiros, consultar CRECI-SP ou advogado e/ou firmar parceria com corretor credenciado antes de publicar a seção de venda. O site exibirá o CRECI do responsável quando houver. |
+| R1 | **Sem CRECI e imóveis de terceiros.** A Lei 6.530/78 (art. 3º) atribui ao corretor a intermediação de compra, venda, permuta **e locação** de imóveis. Isso pode alcançar tanto a venda quanto os aluguéis. | **Requisito de publicação, não de desenvolvimento**: antes de colocar o site no ar com imóveis de terceiros, consultar CRECI-SP ou advogado e/ou firmar parceria com corretor credenciado. O site terá um campo de configuração para exibir nome e CRECI do responsável no rodapé e nas páginas de venda. |
 | R2 | Limites do Supabase Free: pausa após 7 dias sem uso, sem backup, ~500 MB de banco, ~1 GB de storage, ~5 GB de tráfego. | Backup próprio diário; imagens leves; cache agressivo; monitorar uso; plano de migração para Pro. |
 | R3 | Overbooking com Airbnb/Booking. | Até decidir, bloqueio manual no painel. Importação iCal fica fora do escopo e cabe no esquema atual sem migração destrutiva. |
 | R4 | Next.js no Cloudflare tem diferenças em relação à Vercel (otimização de imagem, alguns recursos). | Imagens já otimizadas no upload; teste de deploy cedo, na Etapa 3. |
@@ -278,9 +280,10 @@ somado ao Supabase sairia do orçamento.
 
 ## 11. Pendências
 
-- [ ] Imóveis próprios ou de terceiros (R1).
-- [ ] Aprovação da hospedagem Cloudflare Workers + Supabase Free.
+- [x] Imóveis próprios ou de terceiros → **de terceiros** (R1).
+- [ ] Caminho de regularização do R1 (antes da publicação, Etapa 20).
+- [x] Hospedagem Cloudflare Workers + Supabase Free → **aprovada**.
 - [ ] Registro do domínio (exige CPF/CNPJ do titular no registro.br).
 - [ ] Aprovação das regras de preço (seção 6).
-- [ ] Aprovação de logotipo provisório tipográfico na Etapa 2.
+- [x] Logotipo provisório tipográfico na Etapa 2 → **aprovado**.
 - [ ] Decisão sobre Airbnb/Booking.
