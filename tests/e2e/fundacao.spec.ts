@@ -15,10 +15,10 @@ test.describe("fundação", () => {
 
   test("não tem rolagem horizontal", async ({ page }) => {
     await page.goto("/");
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    );
-    expect(overflow).toBe(false);
+    // Compara com a largura real da tela: no celular o navegador amplia a
+    // área de layout quando o conteúdo transborda.
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
   });
 
   test("primeiro Tab leva ao link de pular para o conteúdo", async ({ page, isMobile }) => {

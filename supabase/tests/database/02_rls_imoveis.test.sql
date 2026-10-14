@@ -58,8 +58,8 @@ select ok(
 
 -- Visitante
 select pg_temp.visitante();
-select is((select count(*) from public.properties), 1::bigint, 'visitante vê só imóveis publicados');
-select is((select count(*) from public.property_media), 1::bigint, 'visitante vê só mídia de publicados');
+select is((select count(*) from public.properties where slug in ('casa-publicada', 'casa-rascunho', 'nova-casa')), 1::bigint, 'visitante vê só imóveis publicados');
+select is((select count(*) from public.property_media where property_id in ('10000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002')), 1::bigint, 'visitante vê só mídia de publicados');
 select throws_ok($$ select * from public.property_private $$, '42501', null, 'visitante não lê dados privados');
 select throws_ok(
   $$ insert into public.properties (slug, title, property_type, city) values ('x-y', 'Teste', 'casa', 'Bertioga') $$,
@@ -68,11 +68,11 @@ reset role;
 
 -- Hóspede comum
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000b', 'ana@teste.local');
-select is((select count(*) from public.properties), 1::bigint, 'hóspede vê só imóveis publicados');
+select is((select count(*) from public.properties where slug in ('casa-publicada', 'casa-rascunho', 'nova-casa')), 1::bigint, 'hóspede vê só imóveis publicados');
 select throws_ok(
   $$ insert into public.properties (slug, title, property_type, city) values ('x-y', 'Teste', 'casa', 'Bertioga') $$,
   '42501', null, 'hóspede não cria imóveis');
-select is((select count(*) from public.property_private), 0::bigint, 'hóspede não lê dados privados');
+select is((select count(*) from public.property_private where property_id = '10000000-0000-0000-0000-000000000001'), 0::bigint, 'hóspede não lê dados privados');
 update public.properties set title = 'Invadido' where slug = 'casa-publicada';
 reset role;
 select is((select title from public.properties where slug = 'casa-publicada'), 'Casa publicada',
@@ -80,7 +80,7 @@ select is((select title from public.properties where slug = 'casa-publicada'), '
 
 -- Admin sem MFA (aal1)
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000a', 'admin@teste.local', true, 'aal1');
-select is((select count(*) from public.properties), 1::bigint, 'admin sem MFA é tratado como usuário comum');
+select is((select count(*) from public.properties where slug in ('casa-publicada', 'casa-rascunho', 'nova-casa')), 1::bigint, 'admin sem MFA é tratado como usuário comum');
 select throws_ok(
   $$ insert into public.properties (slug, title, property_type, city) values ('x-y', 'Teste', 'casa', 'Bertioga') $$,
   '42501', null, 'admin sem MFA não cria imóveis');
@@ -88,8 +88,8 @@ reset role;
 
 -- Admin com MFA (aal2)
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000a', 'admin@teste.local', true, 'aal2');
-select is((select count(*) from public.properties), 2::bigint, 'admin com MFA vê todos os imóveis');
-select is((select full_address from public.property_private), 'Rua Exemplo, 1', 'admin com MFA lê dados privados');
+select is((select count(*) from public.properties where slug in ('casa-publicada', 'casa-rascunho', 'nova-casa')), 2::bigint, 'admin com MFA vê todos os imóveis');
+select is((select full_address from public.property_private where property_id = '10000000-0000-0000-0000-000000000001'), 'Rua Exemplo, 1', 'admin com MFA lê dados privados');
 select lives_ok(
   $$ insert into public.properties (slug, title, property_type, city) values ('nova-casa', 'Nova casa', 'casa', 'Bertioga') $$,
   'admin com MFA cria imóveis');

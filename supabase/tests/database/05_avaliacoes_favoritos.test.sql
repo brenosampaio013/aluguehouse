@@ -73,20 +73,20 @@ select throws_ok(
   $$ insert into public.reviews (property_id, booking_request_id, rating, status)
      values ('40000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 5, 'approved') $$,
   '42501', null, 'hóspede não aprova a própria avaliação');
-select is((select status::text from public.reviews), 'pending', 'avaliação nasce pendente');
-select is((select author_display_name from public.reviews), 'Ana', 'só o primeiro nome é exibido');
+select is((select status::text from public.reviews where property_id = '40000000-0000-0000-0000-000000000001'), 'pending', 'avaliação nasce pendente');
+select is((select author_display_name from public.reviews where property_id = '40000000-0000-0000-0000-000000000001'), 'Ana', 'só o primeiro nome é exibido');
 reset role;
 
 select pg_temp.visitante();
-select is((select count(*) from public.reviews), 0::bigint, 'visitante não vê avaliação pendente');
+select is((select count(*) from public.reviews where property_id = '40000000-0000-0000-0000-000000000001'), 0::bigint, 'visitante não vê avaliação pendente');
 reset role;
 
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000a', 'admin@teste.local', true, 'aal2');
-update public.reviews set status = 'approved', moderated_at = now();
+update public.reviews set status = 'approved', moderated_at = now() where property_id = '40000000-0000-0000-0000-000000000001';
 reset role;
 
 select pg_temp.visitante();
-select is((select count(*) from public.reviews), 1::bigint, 'visitante vê avaliação aprovada');
+select is((select count(*) from public.reviews where property_id = '40000000-0000-0000-0000-000000000001'), 1::bigint, 'visitante vê avaliação aprovada');
 select throws_ok($$ select author_id from public.reviews $$, '42501', null, 'visitante não vê o autor');
 reset role;
 

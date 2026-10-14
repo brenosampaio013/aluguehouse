@@ -1,6 +1,6 @@
 # Alugue Houses — Login e acesso ao painel (Etapa 5)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## Como funciona
 

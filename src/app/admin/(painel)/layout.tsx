@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AdminNav } from "@/components/admin/admin-nav";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Wordmark } from "@/components/ui/wordmark";
@@ -19,9 +20,12 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
     <>
       <header className="border-b border-areia">
         <Container className="flex min-h-16 flex-wrap items-center justify-between gap-4 py-2">
-          <span className="flex items-baseline gap-3">
-            <Wordmark className="text-[1.25rem]" />
-            <span className="text-small text-rocha">Painel</span>
+          <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span className="flex items-baseline gap-3">
+              <Wordmark className="text-[1.25rem]" />
+              <span className="text-small text-rocha">Painel</span>
+            </span>
+            <AdminNav />
           </span>
           <span className="flex items-center gap-4">
             <span className="text-small text-rocha">{session.email}</span>
