@@ -18,4 +18,16 @@ export const siteConfig = {
     name: null as string | null,
     creci: null as string | null,
   },
+  /**
+   * LGPD: identificação do controlador (nome e CPF, ou razão social e CNPJ).
+   * Preencher antes do lançamento (docs/privacidade.md).
+   */
+  legal: {
+    controllerName: null as string | null,
+    controllerDocument: null as string | null,
+    /** Canal do encarregado de dados (pedidos de acesso, correção, exclusão). */
+    dpoEmail: "contatoaluguehouses@gmail.com",
+    /** Data da versão atual da política e dos termos (AAAA-MM-DD). */
+    updatedAt: "2026-10-14",
+  },
 } as const;

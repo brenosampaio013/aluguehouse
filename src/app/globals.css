@@ -110,3 +110,22 @@
     }
   }
 }
+
+/* Texto corrido das páginas legais. */
+@layer components {
+  .legal-text ul {
+    display: grid;
+    gap: 0.375rem;
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .legal-text p,
+  .legal-text li {
+    max-width: 68ch;
+  }
+  .legal-text a {
+    color: var(--color-petroleo);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}

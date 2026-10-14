@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { PrivacyLink } from "@/components/legal/privacy-link";
 import { CheckboxField } from "@/components/ui/checkbox-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
@@ -150,6 +151,11 @@ export function BookingRequestForm({
         name="consent"
         required
         label="Concordo que a Alugue Houses use estes dados apenas para responder a esta solicitação."
+        hint={
+          <>
+            Veja como tratamos seus dados na <PrivacyLink />.
+          </>
+        }
         error={errors.consent}
       />
 

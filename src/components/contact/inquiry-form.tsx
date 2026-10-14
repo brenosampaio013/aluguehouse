@@ -11,6 +11,7 @@ import {
 
 import { TurnstileWidget } from "@/components/booking/turnstile-widget";
 import { Button } from "@/components/ui/button";
+import { PrivacyLink } from "@/components/legal/privacy-link";
 import { CheckboxField } from "@/components/ui/checkbox-field";
 import { FormMessage } from "@/components/ui/form-message";
 import { SelectField } from "@/components/ui/select-field";
@@ -170,6 +171,11 @@ export function InquiryForm({
         name="consent"
         required
         label="Concordo que a Alugue Houses use estes dados apenas para responder a esta mensagem."
+        hint={
+          <>
+            Veja como tratamos seus dados na <PrivacyLink />.
+          </>
+        }
         error={errors.consent}
       />
 

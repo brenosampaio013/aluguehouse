@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { PrivacyLink, TermsLink } from "@/components/legal/privacy-link";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
@@ -35,6 +36,9 @@ export function MagicLinkForm({ next }: { next?: string }) {
       <Button type="submit" disabled={pending}>
         {pending ? "Enviando…" : "Enviar link de acesso"}
       </Button>
+      <p className="text-small text-rocha">
+        Ao entrar, você concorda com os <TermsLink /> e a <PrivacyLink />.
+      </p>
     </form>
   );
 }

@@ -65,9 +65,23 @@ export function SiteFooter() {
         </div>
       </Container>
       <Container>
-        <p className="mt-10 border-t border-rocha pt-6 text-small">
-          © {new Date().getFullYear()} {siteConfig.name}
-        </p>
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-rocha pt-6 text-small">
+          <p>
+            © {new Date().getFullYear()} {siteConfig.name}
+          </p>
+          <ul className="flex flex-wrap gap-x-5 gap-y-1">
+            <li>
+              <Link href="/privacidade" className="underline-offset-3 hover:underline">
+                Política de privacidade
+              </Link>
+            </li>
+            <li>
+              <Link href="/termos" className="underline-offset-3 hover:underline">
+                Termos de uso
+              </Link>
+            </li>
+          </ul>
+        </div>
       </Container>
     </footer>
   );

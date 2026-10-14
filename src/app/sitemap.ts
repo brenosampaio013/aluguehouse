@@ -24,6 +24,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: url("/mensal"), changeFrequency: "daily", priority: 0.8 },
     { url: url("/venda"), changeFrequency: "daily", priority: 0.8 },
     { url: url("/contato"), changeFrequency: "yearly", priority: 0.3 },
+    { url: url("/privacidade"), changeFrequency: "yearly", priority: 0.2 },
+    { url: url("/termos"), changeFrequency: "yearly", priority: 0.2 },
     ...data.map((property) => ({
       url: url(`/imoveis/${property.slug}`),
       lastModified: new Date(property.updated_at),

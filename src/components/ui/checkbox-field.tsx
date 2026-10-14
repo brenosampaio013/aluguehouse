@@ -4,7 +4,8 @@ import { cn } from "@/lib/cn";
 
 export type CheckboxFieldProps = Omit<ComponentPropsWithRef<"input">, "id" | "type"> & {
   label: string;
-  hint?: string;
+  /** Texto de apoio; aceita links (ex.: política de privacidade). */
+  hint?: React.ReactNode;
   /** Mensagem de erro. Quando presente, o campo é marcado como inválido. */
   error?: string;
 };

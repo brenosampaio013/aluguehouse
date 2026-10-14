@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FormFeedback } from "@/components/admin/form-feedback";
 import { useFormAction } from "@/components/admin/use-form-action";
 import { Button } from "@/components/ui/button";
+import { PrivacyLink } from "@/components/legal/privacy-link";
 import { TextareaField } from "@/components/ui/textarea-field";
 import { cn } from "@/lib/cn";
 import { submitReview } from "@/server/actions/reviews";
@@ -74,6 +75,11 @@ export function ReviewForm({
         hint="Conte como foi a estadia. Só o seu primeiro nome aparece no site."
         error={errors.comment}
       />
+      <p className="text-small text-rocha">
+        Ao enviar, você concorda em publicar a nota e o comentário com o seu primeiro nome, depois
+        da nossa moderação (<PrivacyLink />
+        ).
+      </p>
       <FormFeedback state={state} />
       <div>
         <Button type="submit" disabled={pending}>

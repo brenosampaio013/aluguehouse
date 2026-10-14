@@ -1,6 +1,6 @@
 # Alugue Houses — SEO técnico e segurança do navegador (Etapa 17)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## Indexação: desligada até o lançamento
 
