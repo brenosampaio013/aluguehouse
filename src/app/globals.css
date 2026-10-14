@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens aprovados na Etapa 2 (docs/direcao-visual.md).
+ * Contraste verificado: não troque cores de texto sem conferir WCAG AA.
+ */
+@theme {
+  --color-*: initial;
+  --color-abismo: #0d3b45; /* texto principal e títulos */
+  --color-petroleo: #13606e; /* ações, links, foco */
+  --color-nevoa: #dcebec; /* seleção de datas e filtros */
+  --color-areia: #efe6d6; /* faixas e painel de reserva */
+  --color-junco: #8a7856; /* bordas de campos (≥ 3:1) */
+  --color-duna: #cdb894; /* somente decoração */
+  --color-rocha: #52666a; /* texto secundário */
+  --color-branco: #ffffff;
+  --color-erro: #a8321f;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+
+  /* Escala tipográfica 1,25 sobre 16 px */
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.45;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 1.3;
+  --text-h2: 1.9375rem;
+  --text-h2--line-height: 1.15;
+  --text-h1: 2.4375rem;
+  --text-h1--line-height: 1.1;
+  --text-display: 3.8125rem;
+  --text-display--line-height: 1.02;
+
+  --radius-control: 0.5rem;
+  --radius-photo: 0.875rem;
+
+  --shadow-flutuante: 0 6px 24px rgb(13 59 69 / 0.12);
+
+  --container-site: 77.5rem; /* 1240 px */
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-branco);
+    color: var(--color-abismo);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-petroleo);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -38,53 +38,53 @@ editorial nos títulos, tons de petróleo em vez de cinza, e a linha da costa.
 
 ## 3. Paleta
 
-| Nome | Hex | Uso |
-|---|---|---|
-| Abismo | `#0D3B45` | Texto principal, títulos, rodapé |
-| Petróleo | `#13606E` | Botões primários, links, foco, datas selecionadas |
-| Névoa | `#DCEBEC` | Fundo de seleção (intervalo de datas, filtro ativo) |
-| Areia | `#EFE6D6` | Faixas de seção, chips, fundo do painel de reserva |
-| Junco | `#8A7856` | Bordas de campos de formulário |
-| Duna | `#CDB894` | Linhas e detalhes **apenas decorativos** |
-| Rocha | `#52666A` | Texto secundário |
-| Branco | `#FFFFFF` | Fundo base |
-| Erro | `#A8321F` | Mensagens de erro e validação |
+| Nome     | Hex       | Uso                                                 |
+| -------- | --------- | --------------------------------------------------- |
+| Abismo   | `#0D3B45` | Texto principal, títulos, rodapé                    |
+| Petróleo | `#13606E` | Botões primários, links, foco, datas selecionadas   |
+| Névoa    | `#DCEBEC` | Fundo de seleção (intervalo de datas, filtro ativo) |
+| Areia    | `#EFE6D6` | Faixas de seção, chips, fundo do painel de reserva  |
+| Junco    | `#8A7856` | Bordas de campos de formulário                      |
+| Duna     | `#CDB894` | Linhas e detalhes **apenas decorativos**            |
+| Rocha    | `#52666A` | Texto secundário                                    |
+| Branco   | `#FFFFFF` | Fundo base                                          |
+| Erro     | `#A8321F` | Mensagens de erro e validação                       |
 
 ### Contraste verificado (WCAG 2.1)
 
-| Combinação | Razão | Resultado |
-|---|---|---|
-| Abismo sobre branco | 12,15 | AAA |
-| Abismo sobre areia | 9,81 | AAA |
-| Petróleo sobre branco / branco sobre petróleo | 7,18 | AAA |
-| Petróleo sobre areia | 5,80 | AA |
-| Petróleo sobre névoa | 5,86 | AA |
-| Rocha sobre branco | 6,06 | AA |
-| Rocha sobre areia | 4,89 | AA |
-| Erro sobre branco | 6,69 | AA |
-| Junco (borda) sobre branco / areia | 4,28 / 3,46 | ≥ 3:1 para componentes |
-| Duna sobre branco | 1,93 | **Só decoração**, nunca texto ou borda funcional |
+| Combinação                                    | Razão       | Resultado                                        |
+| --------------------------------------------- | ----------- | ------------------------------------------------ |
+| Abismo sobre branco                           | 12,15       | AAA                                              |
+| Abismo sobre areia                            | 9,81        | AAA                                              |
+| Petróleo sobre branco / branco sobre petróleo | 7,18        | AAA                                              |
+| Petróleo sobre areia                          | 5,80        | AA                                               |
+| Petróleo sobre névoa                          | 5,86        | AA                                               |
+| Rocha sobre branco                            | 6,06        | AA                                               |
+| Rocha sobre areia                             | 4,89        | AA                                               |
+| Erro sobre branco                             | 6,69        | AA                                               |
+| Junco (borda) sobre branco / areia            | 4,28 / 3,46 | ≥ 3:1 para componentes                           |
+| Duna sobre branco                             | 1,93        | **Só decoração**, nunca texto ou borda funcional |
 
 Regra: estado nunca é comunicado só por cor. Datas ocupadas têm risco
 diagonal e texto riscado; erros têm ícone e mensagem.
 
 ## 4. Tipografia
 
-| Papel | Fonte | Observação |
-|---|---|---|
-| Títulos e marca | **Newsreader** (Google Fonts, variável, eixo óptico) | Editorial, sereno; usado de 25 px para cima |
-| Interface e texto | **Hanken Grotesk** (Google Fonts, variável) | Clara em telas pequenas; algarismos tabulares nos preços |
+| Papel             | Fonte                                                | Observação                                               |
+| ----------------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| Títulos e marca   | **Newsreader** (Google Fonts, variável, eixo óptico) | Editorial, sereno; usado de 25 px para cima              |
+| Interface e texto | **Hanken Grotesk** (Google Fonts, variável)          | Clara em telas pequenas; algarismos tabulares nos preços |
 
 Escala (razão 1,25, base 16 px):
 
-| Token | Tamanho / entrelinha | Uso |
-|---|---|---|
-| `display` | 61 / 1,02, Newsreader 400 | Título da home (desktop) |
-| `h1` | 39 / 1,1, Newsreader 400 | Título de página e do imóvel |
-| `h2` | 31 / 1,15, Newsreader 400 | Seções |
-| `h3` | 20 / 1,3, Hanken 600 | Títulos de cartão e blocos |
-| `body` | 16 / 1,6, Hanken 400 | Texto corrido (máx. 68 caracteres por linha) |
-| `small` | 13 / 1,45, Hanken 500 | Legendas e metadados |
+| Token     | Tamanho / entrelinha      | Uso                                          |
+| --------- | ------------------------- | -------------------------------------------- |
+| `display` | 61 / 1,02, Newsreader 400 | Título da home (desktop)                     |
+| `h1`      | 39 / 1,1, Newsreader 400  | Título de página e do imóvel                 |
+| `h2`      | 31 / 1,15, Newsreader 400 | Seções                                       |
+| `h3`      | 20 / 1,3, Hanken 600      | Títulos de cartão e blocos                   |
+| `body`    | 16 / 1,6, Hanken 400      | Texto corrido (máx. 68 caracteres por linha) |
+| `small`   | 13 / 1,45, Hanken 500     | Legendas e metadados                         |
 
 Sem rótulos em caixa alta, sem palavra destacada em cor dentro de títulos.
 

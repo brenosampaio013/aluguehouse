@@ -6,18 +6,18 @@
 
 ## 1. Negócio
 
-| Item | Definição |
-|---|---|
-| Marca | Alugue Houses (logotipo ainda não existe — será criado na Etapa 2) |
-| Região | Riviera de São Lourenço e Litoral Norte de São Paulo |
-| Modalidades | Temporada (até 29 noites), mensal (30 noites ou mais), venda |
-| Público | Imóveis de alto padrão |
-| WhatsApp | +55 13 99619-5221 (`https://wa.me/5513996195221`) |
-| E-mail de contato | contatoaluguehouses@gmail.com |
-| CRECI | Não possui; os imóveis são **de terceiros** — ver risco R1 |
-| Domínio | Ainda não registrado |
-| Mídia | Algumas fotos reais; o restante será demonstração **identificada como tal** |
-| Airbnb/Booking | Ainda não definido — ver risco R3 |
+| Item              | Definição                                                                   |
+| ----------------- | --------------------------------------------------------------------------- |
+| Marca             | Alugue Houses (logotipo ainda não existe — será criado na Etapa 2)          |
+| Região            | Riviera de São Lourenço e Litoral Norte de São Paulo                        |
+| Modalidades       | Temporada (até 29 noites), mensal (30 noites ou mais), venda                |
+| Público           | Imóveis de alto padrão                                                      |
+| WhatsApp          | +55 13 99619-5221 (`https://wa.me/5513996195221`)                           |
+| E-mail de contato | contatoaluguehouses@gmail.com                                               |
+| CRECI             | Não possui; os imóveis são **de terceiros** — ver risco R1                  |
+| Domínio           | Ainda não registrado                                                        |
+| Mídia             | Algumas fotos reais; o restante será demonstração **identificada como tal** |
+| Airbnb/Booking    | Ainda não definido — ver risco R3                                           |
 
 ## 2. Decisões tomadas
 
@@ -53,7 +53,7 @@ Apoio: Resend (e-mail), Cloudflare R2 (mapa PMTiles + backups),
 Princípios:
 
 - **Segurança no banco**: RLS protege os dados mesmo se a interface falhar.
-- **Overbooking impossível no banco**: *exclusion constraint* com `btree_gist`
+- **Overbooking impossível no banco**: _exclusion constraint_ com `btree_gist`
   em `calendar_blocks`.
 - **Chave `service_role` só no servidor**, em módulo `server-only`; nunca com
   prefixo `NEXT_PUBLIC_`.
@@ -88,7 +88,7 @@ aluguehouse/
 │  ├─ server/ actions/ queries/
 │  ├─ lib/ supabase/ validation/ dates.ts pricing.ts whatsapp.ts seo.ts site-config.ts
 │  ├─ types/database.ts             # gerado pela CLI do Supabase
-│  └─ middleware.ts
+│  └─ proxy.ts                     # renova a sessão e barra /admin (Next 16: antigo middleware)
 ├─ supabase/ config.toml migrations/ seed.sql tests/
 ├─ tests/ unit/ e2e/
 ├─ .github/workflows/ ci.yml backup.yml
@@ -98,19 +98,19 @@ aluguehouse/
 
 ## 5. Dependências
 
-| Finalidade | Pacotes |
-|---|---|
-| Base | `next`, `react`, `react-dom`, `typescript` |
-| Hospedagem | `@opennextjs/cloudflare`, `wrangler` (dev) |
-| Supabase | `@supabase/supabase-js`, `@supabase/ssr`, CLI `supabase` (dev) |
-| Interface | `tailwindcss`, `clsx`, `@radix-ui/react-*` (somente os usados) |
-| Formulários | `react-hook-form`, `zod`, `@hookform/resolvers` |
-| Datas | `date-fns`, `react-day-picker` |
-| Mapa | `maplibre-gl`, `pmtiles` |
-| E-mail | `resend` |
-| Segurança | `server-only`, Cloudflare Turnstile |
-| Testes | `vitest`, `@testing-library/react`, `@playwright/test`, `@axe-core/playwright`, pgTAP |
-| Qualidade | `eslint`, `prettier` |
+| Finalidade  | Pacotes                                                                               |
+| ----------- | ------------------------------------------------------------------------------------- |
+| Base        | `next`, `react`, `react-dom`, `typescript`                                            |
+| Hospedagem  | `@opennextjs/cloudflare`, `wrangler` (dev)                                            |
+| Supabase    | `@supabase/supabase-js`, `@supabase/ssr`, CLI `supabase` (dev)                        |
+| Interface   | `tailwindcss`, `clsx`, `@radix-ui/react-*` (somente os usados)                        |
+| Formulários | `react-hook-form`, `zod`, `@hookform/resolvers`                                       |
+| Datas       | `date-fns`, `react-day-picker`                                                        |
+| Mapa        | `maplibre-gl`, `pmtiles`                                                              |
+| E-mail      | `resend`                                                                              |
+| Segurança   | `server-only`, Cloudflare Turnstile                                                   |
+| Testes      | `vitest`, `@testing-library/react`, `@playwright/test`, `@axe-core/playwright`, pgTAP |
+| Qualidade   | `eslint`, `prettier`                                                                  |
 
 ## 6. Esquema do banco
 
@@ -200,17 +200,17 @@ O admin é identificado por `app_metadata.role = 'admin'` (definido uma única v
 por SQL; o usuário não consegue alterar). `is_admin()` também exige sessão com
 MFA (`aal2`).
 
-| Tabela | Anônimo | Logado | Admin |
-|---|---|---|---|
-| properties | lê `published` | igual | tudo |
-| property_private | — | — | tudo |
-| property_media, amenities, seasonal_rates, property_fees | lê os de imóveis publicados | igual | tudo |
-| calendar_blocks | só períodos ocupados, via `get_unavailable_ranges()` | igual | tudo |
-| booking_requests | sem acesso direto (\*) | lê as próprias, pelo e-mail verificado | tudo |
-| favorites | — | os próprios | lê |
-| reviews | lê `approved` (só primeiro nome) | cria para estadia própria concluída | modera |
-| inquiries | sem acesso direto (\*) | — | tudo |
-| profiles | — | o próprio | lê |
+| Tabela                                                   | Anônimo                                              | Logado                                 | Admin  |
+| -------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------- | ------ |
+| properties                                               | lê `published`                                       | igual                                  | tudo   |
+| property_private                                         | —                                                    | —                                      | tudo   |
+| property_media, amenities, seasonal_rates, property_fees | lê os de imóveis publicados                          | igual                                  | tudo   |
+| calendar_blocks                                          | só períodos ocupados, via `get_unavailable_ranges()` | igual                                  | tudo   |
+| booking_requests                                         | sem acesso direto (\*)                               | lê as próprias, pelo e-mail verificado | tudo   |
+| favorites                                                | —                                                    | os próprios                            | lê     |
+| reviews                                                  | lê `approved` (só primeiro nome)                     | cria para estadia própria concluída    | modera |
+| inquiries                                                | sem acesso direto (\*)                               | —                                      | tudo   |
+| profiles                                                 | —                                                    | o próprio                              | lê     |
 
 (\*) Entrada apenas por Server Action com Zod, Turnstile e limite de envio.
 
@@ -222,16 +222,16 @@ restrito a tipos e tamanhos de imagem. Cabeçalhos CSP e HSTS, cookies
 
 Câmbio de referência: R$ 5,50 por US$ (confirmar).
 
-| Serviço | Plano | Custo estimado |
-|---|---|---|
-| Cloudflare Workers | Paid (necessário pelo limite de CPU do plano grátis) | US$ 5 ≈ R$ 28/mês |
-| Supabase | Free | R$ 0 |
-| Cloudflare R2 | Free (mapa e backups) | R$ 0 |
-| Resend | Free | R$ 0 |
-| Cloudflare Turnstile | Free | R$ 0 |
-| GitHub Actions | Free | R$ 0 |
-| Domínio `.com.br` | registro.br | ≈ R$ 40/ano ≈ R$ 3,50/mês |
-| **Total** | | **≈ R$ 32/mês** |
+| Serviço              | Plano                                                | Custo estimado            |
+| -------------------- | ---------------------------------------------------- | ------------------------- |
+| Cloudflare Workers   | Paid (necessário pelo limite de CPU do plano grátis) | US$ 5 ≈ R$ 28/mês         |
+| Supabase             | Free                                                 | R$ 0                      |
+| Cloudflare R2        | Free (mapa e backups)                                | R$ 0                      |
+| Resend               | Free                                                 | R$ 0                      |
+| Cloudflare Turnstile | Free                                                 | R$ 0                      |
+| GitHub Actions       | Free                                                 | R$ 0                      |
+| Domínio `.com.br`    | registro.br                                          | ≈ R$ 40/ano ≈ R$ 3,50/mês |
+| **Total**            |                                                      | **≈ R$ 32/mês**           |
 
 Caminho de crescimento: migrar para Supabase Pro (≈ US$ 25 ≈ R$ 138/mês) quando
 houver tráfego ou receita que justifique — ultrapassa o orçamento atual.
@@ -241,42 +241,42 @@ somado ao Supabase sairia do orçamento.
 
 ## 9. Riscos
 
-| # | Risco | Mitigação |
-|---|---|---|
-| R1 | **Sem CRECI e imóveis de terceiros.** A Lei 6.530/78 (art. 3º) atribui ao corretor a intermediação de compra, venda, permuta **e locação** de imóveis. Isso pode alcançar tanto a venda quanto os aluguéis. | **Requisito de publicação, não de desenvolvimento**: antes de colocar o site no ar com imóveis de terceiros, consultar CRECI-SP ou advogado e/ou firmar parceria com corretor credenciado. O site terá um campo de configuração para exibir nome e CRECI do responsável no rodapé e nas páginas de venda. |
-| R2 | Limites do Supabase Free: pausa após 7 dias sem uso, sem backup, ~500 MB de banco, ~1 GB de storage, ~5 GB de tráfego. | Backup próprio diário; imagens leves; cache agressivo; monitorar uso; plano de migração para Pro. |
-| R3 | Overbooking com Airbnb/Booking. | Até decidir, bloqueio manual no painel. Importação iCal fica fora do escopo e cabe no esquema atual sem migração destrutiva. |
-| R4 | Next.js no Cloudflare tem diferenças em relação à Vercel (otimização de imagem, alguns recursos). | Imagens já otimizadas no upload; teste de deploy cedo, na Etapa 3. |
-| R5 | E-mail para hóspedes exige domínio verificado (SPF/DKIM). | Login por link mágico só funciona após registrar o domínio; antes disso, apenas avisos ao admin. |
-| R6 | Admin único é ponto único de falha. | MFA com códigos de recuperação guardados e procedimento documentado. |
-| R7 | LGPD (dados de hóspedes e interessados). | Consentimento registrado, política de privacidade, prazo de retenção e canal de exclusão. |
-| R8 | Temporada acima de 90 dias deixa de ser locação por temporada (Lei 8.245/91). | `max_nights` padrão 90. |
-| R9 | Direitos de imagem das fotos. | Usar apenas fotos com autorização; demonstrações marcadas com `is_demo` e aviso visível. |
+| #   | Risco                                                                                                                                                                                                       | Mitigação                                                                                                                                                                                                                                                                                                 |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | **Sem CRECI e imóveis de terceiros.** A Lei 6.530/78 (art. 3º) atribui ao corretor a intermediação de compra, venda, permuta **e locação** de imóveis. Isso pode alcançar tanto a venda quanto os aluguéis. | **Requisito de publicação, não de desenvolvimento**: antes de colocar o site no ar com imóveis de terceiros, consultar CRECI-SP ou advogado e/ou firmar parceria com corretor credenciado. O site terá um campo de configuração para exibir nome e CRECI do responsável no rodapé e nas páginas de venda. |
+| R2  | Limites do Supabase Free: pausa após 7 dias sem uso, sem backup, ~500 MB de banco, ~1 GB de storage, ~5 GB de tráfego.                                                                                      | Backup próprio diário; imagens leves; cache agressivo; monitorar uso; plano de migração para Pro.                                                                                                                                                                                                         |
+| R3  | Overbooking com Airbnb/Booking.                                                                                                                                                                             | Até decidir, bloqueio manual no painel. Importação iCal fica fora do escopo e cabe no esquema atual sem migração destrutiva.                                                                                                                                                                              |
+| R4  | Next.js no Cloudflare tem diferenças em relação à Vercel (otimização de imagem, alguns recursos).                                                                                                           | Imagens já otimizadas no upload; teste de deploy cedo, na Etapa 3.                                                                                                                                                                                                                                        |
+| R5  | E-mail para hóspedes exige domínio verificado (SPF/DKIM).                                                                                                                                                   | Login por link mágico só funciona após registrar o domínio; antes disso, apenas avisos ao admin.                                                                                                                                                                                                          |
+| R6  | Admin único é ponto único de falha.                                                                                                                                                                         | MFA com códigos de recuperação guardados e procedimento documentado.                                                                                                                                                                                                                                      |
+| R7  | LGPD (dados de hóspedes e interessados).                                                                                                                                                                    | Consentimento registrado, política de privacidade, prazo de retenção e canal de exclusão.                                                                                                                                                                                                                 |
+| R8  | Temporada acima de 90 dias deixa de ser locação por temporada (Lei 8.245/91).                                                                                                                               | `max_nights` padrão 90.                                                                                                                                                                                                                                                                                   |
+| R9  | Direitos de imagem das fotos.                                                                                                                                                                               | Usar apenas fotos com autorização; demonstrações marcadas com `is_demo` e aviso visível.                                                                                                                                                                                                                  |
 
 ## 10. Etapas verificáveis
 
-| # | Etapa | Verificação |
-|---|---|---|
-| 1 | Planejamento | Este documento aprovado |
-| 2 | Direção visual + logotipo provisório | Paleta com contraste AA comprovado, tipografia e esboços aprovados |
-| 3 | Fundação (Next, Tailwind, lint, CI, Supabase local, deploy de teste no Cloudflare) | Build, lint e typecheck no CI; página “olá” publicada |
-| 4 | Banco + RLS + funções de preço e aprovação | Testes pgTAP: RLS, sobreposição recusada, cálculo de preço |
-| 5 | Login de hóspede e acesso de admin com MFA | E2E: anônimo e hóspede não acessam `/admin` |
-| 6 | Admin: imóveis, mídia, tarifas e taxas | E2E: criar, publicar e arquivar imóvel |
-| 7 | Página inicial | axe sem violações graves; Lighthouse |
-| 8 | Listagens de temporada e mensal com filtros | Testes unitários e E2E dos filtros |
-| 9 | Listagem de venda (condicionada ao R1) | Idem |
-| 10 | Página do imóvel + mapa | E2E; coordenadas exatas não vazam |
-| 11 | Calendário + solicitação de reserva | Conflitos, preço sazonal, anti-spam |
-| 12 | Admin: solicitações, aprovação e bloqueios | Aprovação concorrente: só uma vence |
-| 13 | Favoritos | E2E |
-| 14 | Avaliações moderadas | Só elegíveis avaliam; só aprovadas aparecem |
-| 15 | Contato, interesse e WhatsApp | E-mail ao admin recebido em teste |
-| 16 | Experiência imersiva (fallback celular e movimento reduzido) | E2E em celular e `prefers-reduced-motion` |
-| 17 | SEO técnico e dados estruturados | Sitemap, metatags e JSON-LD válidos |
-| 18 | Privacidade/LGPD | Lista de verificação revisada |
-| 19 | Backups automatizados | Restauração real em banco descartável |
-| 20 | Testes finais, performance e publicação | Suíte completa em desktop, tablet e celular |
+| #   | Etapa                                                                              | Verificação                                                        |
+| --- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 1   | Planejamento                                                                       | Este documento aprovado                                            |
+| 2   | Direção visual + logotipo provisório                                               | Paleta com contraste AA comprovado, tipografia e esboços aprovados |
+| 3   | Fundação (Next, Tailwind, lint, CI, Supabase local, deploy de teste no Cloudflare) | Build, lint e typecheck no CI; página “olá” publicada              |
+| 4   | Banco + RLS + funções de preço e aprovação                                         | Testes pgTAP: RLS, sobreposição recusada, cálculo de preço         |
+| 5   | Login de hóspede e acesso de admin com MFA                                         | E2E: anônimo e hóspede não acessam `/admin`                        |
+| 6   | Admin: imóveis, mídia, tarifas e taxas                                             | E2E: criar, publicar e arquivar imóvel                             |
+| 7   | Página inicial                                                                     | axe sem violações graves; Lighthouse                               |
+| 8   | Listagens de temporada e mensal com filtros                                        | Testes unitários e E2E dos filtros                                 |
+| 9   | Listagem de venda (condicionada ao R1)                                             | Idem                                                               |
+| 10  | Página do imóvel + mapa                                                            | E2E; coordenadas exatas não vazam                                  |
+| 11  | Calendário + solicitação de reserva                                                | Conflitos, preço sazonal, anti-spam                                |
+| 12  | Admin: solicitações, aprovação e bloqueios                                         | Aprovação concorrente: só uma vence                                |
+| 13  | Favoritos                                                                          | E2E                                                                |
+| 14  | Avaliações moderadas                                                               | Só elegíveis avaliam; só aprovadas aparecem                        |
+| 15  | Contato, interesse e WhatsApp                                                      | E-mail ao admin recebido em teste                                  |
+| 16  | Experiência imersiva (fallback celular e movimento reduzido)                       | E2E em celular e `prefers-reduced-motion`                          |
+| 17  | SEO técnico e dados estruturados                                                   | Sitemap, metatags e JSON-LD válidos                                |
+| 18  | Privacidade/LGPD                                                                   | Lista de verificação revisada                                      |
+| 19  | Backups automatizados                                                              | Restauração real em banco descartável                              |
+| 20  | Testes finais, performance e publicação                                            | Suíte completa em desktop, tablet e celular                        |
 
 ## 11. Pendências
 
