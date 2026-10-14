@@ -9,6 +9,7 @@ import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { AreaMap } from "@/components/map/area-map";
 import { Stars } from "@/components/reviews/stars";
 import { PropertyGallery } from "@/components/property/gallery";
+import { HouseStory } from "@/components/property/house-story";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { ChatIcon } from "@/components/ui/icons";
@@ -498,6 +499,10 @@ export default async function ImovelPage({ params, searchParams }: Props) {
             )}
           </aside>
         </div>
+
+        {property.images.length >= 3 ? (
+          <HouseStory photos={property.images} supabaseUrl={supabaseUrl} />
+        ) : null}
       </Container>
 
       {/* Celular: barra fixa com o preço principal e o contato (substitui a barra de atalhos). */}

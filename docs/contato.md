@@ -1,6 +1,6 @@
 # Alugue Houses — Contato, visitas e avisos por e-mail (Etapa 15)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ![Página de contato, desktop](contato-desktop.png)
 
