@@ -4,6 +4,7 @@ import { z } from "zod";
 import { notFound } from "next/navigation";
 
 import { AmenitiesForm } from "@/components/admin/amenities-form";
+import { BlocksManager } from "@/components/admin/blocks-manager";
 import { FeesManager } from "@/components/admin/fees-manager";
 import { MediaManager } from "@/components/admin/media-manager";
 import { PropertyGeneralForm } from "@/components/admin/property-general-form";
@@ -15,6 +16,7 @@ import { Container } from "@/components/ui/container";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { getPublicEnv } from "@/lib/env";
 import { publishChecklist } from "@/lib/properties/publish";
+import { listUpcomingBlocks } from "@/server/queries/admin-bookings";
 import { getPropertyForEdit } from "@/server/queries/admin-properties";
 
 export const metadata: Metadata = { title: "Editar imóvel" };
@@ -26,6 +28,7 @@ const sections = [
   { id: "comodidades", label: "Comodidades" },
   { id: "tarifas", label: "Tarifas sazonais" },
   { id: "taxas", label: "Taxas" },
+  { id: "calendario", label: "Calendário" },
   { id: "localizacao", label: "Localização privada" },
 ];
 
@@ -62,7 +65,13 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
   if (!z.uuid().safeParse(id).success) notFound();
 
   const { supabase } = await requireAdmin();
-  const data = await getPropertyForEdit(supabase, id);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
+    new Date(),
+  );
+  const [data, blocks] = await Promise.all([
+    getPropertyForEdit(supabase, id),
+    listUpcomingBlocks(supabase, id, today),
+  ]);
   const { property } = data;
   const images = data.media.filter((item) => item.kind === "image");
   const checks = publishChecklist({ ...property, imageCount: images.length });
@@ -135,6 +144,25 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
 
         <Section id="taxas" title="Taxas" description="Limpeza, taxa por hóspede, caução e outras.">
           <FeesManager propertyId={property.id} fees={data.fees} />
+        </Section>
+
+        <Section
+          id="calendario"
+          title="Calendário"
+          description="Reservas aprovadas e datas bloqueadas daqui para frente. Datas bloqueadas aparecem ocupadas no site e não aceitam pedidos."
+        >
+          <BlocksManager
+            propertyId={property.id}
+            blocks={blocks.map((block) => ({
+              id: block.id,
+              kind: block.kind,
+              checkIn: block.checkIn,
+              checkOut: block.checkOut,
+              note: block.note,
+              booking_request_id: block.booking_request_id,
+              guestName: block.booking_requests?.guest_name ?? null,
+            }))}
+          />
         </Section>
 
         <Section

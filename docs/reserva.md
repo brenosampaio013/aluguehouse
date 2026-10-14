@@ -1,6 +1,6 @@
 # Alugue Houses — Calendário e solicitação de reserva (Etapa 11)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ![Página do imóvel com datas escolhidas, desktop](reserva-desktop.png)
 
@@ -80,7 +80,7 @@ Nenhuma chave foi criada ou versionada nesta etapa.
 - **Aviso por e-mail** ao administrador e ao hóspede: depende do SMTP
   (Resend) configurado; até lá, as solicitações ficam no banco e aparecerão
   no painel na Etapa 12.
-- Painel de solicitações, aprovação, recusa e bloqueios manuais: Etapa 12.
+- Painel de solicitações, aprovação, recusa e bloqueios manuais: entrou na Etapa 12 (`docs/painel-reservas.md`).
 - Link para a política de privacidade no consentimento: Etapa 18.
 - Expiração automática de pedidos pendentes cujas datas já passaram.
 

@@ -7,10 +7,11 @@ import { cn } from "@/lib/cn";
 
 const links = [
   { href: "/admin", label: "Início", exact: true },
+  { href: "/admin/solicitacoes", label: "Solicitações", exact: false },
   { href: "/admin/imoveis", label: "Imóveis", exact: false },
 ];
 
-export function AdminNav() {
+export function AdminNav({ pendingCount = 0 }: { pendingCount?: number }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Painel">
@@ -28,6 +29,12 @@ export function AdminNav() {
                 )}
               >
                 {link.label}
+                {link.href === "/admin/solicitacoes" && pendingCount > 0 ? (
+                  <span className="ml-2 inline-flex min-w-6 justify-center rounded-full bg-petroleo px-1.5 text-small text-branco tabular-nums">
+                    {pendingCount}
+                    <span className="sr-only"> pendentes</span>
+                  </span>
+                ) : null}
               </Link>
             </li>
           );
