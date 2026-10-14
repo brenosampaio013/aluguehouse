@@ -11,6 +11,7 @@ Lourenço e no Litoral Norte de São Paulo.
 - Cadastro de imóveis no painel: [`docs/painel-imoveis.md`](docs/painel-imoveis.md)
 - Página inicial: [`docs/pagina-inicial.md`](docs/pagina-inicial.md)
 - Listagens de temporada e mensal: [`docs/listagens-aluguel.md`](docs/listagens-aluguel.md)
+- Listagem de venda: [`docs/listagem-venda.md`](docs/listagem-venda.md)
 
 ## Requisitos
 

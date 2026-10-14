@@ -728,6 +728,33 @@ export type Database = {
           total_count: number;
         }[];
       };
+      search_sales: {
+        Args: {
+          p_amenities?: string[];
+          p_area_min?: number;
+          p_bedrooms?: number;
+          p_limit?: number;
+          p_offset?: number;
+          p_price_max?: number;
+          p_region?: string;
+          p_sort?: string;
+          p_type?: Database["public"]["Enums"]["property_type"];
+        };
+        Returns: {
+          area_m2: number;
+          bedrooms: number;
+          city: string;
+          id: string;
+          neighborhood: string;
+          property_type: Database["public"]["Enums"]["property_type"];
+          region: string;
+          sale_price: number;
+          slug: string;
+          suites: number;
+          title: string;
+          total_count: number;
+        }[];
+      };
     };
     Enums: {
       block_kind: "booking" | "owner" | "maintenance";

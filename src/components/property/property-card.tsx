@@ -15,8 +15,14 @@ function facts(property: PropertyCardData) {
       : property.bedrooms > 0
         ? `${property.bedrooms} ${property.bedrooms === 1 ? "quarto" : "quartos"}`
         : null;
-  const guests = `até ${property.maxGuests} ${property.maxGuests === 1 ? "hóspede" : "hóspedes"}`;
-  return [rooms, guests].filter(Boolean).join(" · ");
+  // Venda: área no lugar da capacidade de hóspedes.
+  const extra =
+    property.price?.kind === "sale"
+      ? property.areaM2
+        ? `${new Intl.NumberFormat("pt-BR").format(property.areaM2)} m²`
+        : null
+      : `até ${property.maxGuests} ${property.maxGuests === 1 ? "hóspede" : "hóspedes"}`;
+  return [rooms, extra].filter(Boolean).join(" · ");
 }
 
 /** Cartão de imóvel: a foto é a protagonista; texto curto e alinhado à esquerda. */

@@ -16,6 +16,7 @@ import {
 import { listAmenities, searchRentals } from "@/server/queries/search";
 
 import { FiltersDisclosure } from "./filters-disclosure";
+import { Pagination } from "./pagination";
 import { RentalFiltersForm } from "./rental-filters";
 
 const copy = {
@@ -149,42 +150,11 @@ export async function RentalListing({
                 </ul>
               )}
 
-              {totalPages > 1 ? (
-                <nav aria-label="Paginação" className="flex flex-wrap items-center gap-2">
-                  {filters.pagina > 1 ? (
-                    <Link
-                      href={rentalHref(text.path, filters, { pagina: filters.pagina - 1 })}
-                      className="inline-flex min-h-11 items-center rounded-control px-3 font-semibold text-petroleo underline"
-                    >
-                      Anterior
-                    </Link>
-                  ) : null}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Link
-                      key={page}
-                      href={rentalHref(text.path, filters, { pagina: page })}
-                      aria-current={page === filters.pagina ? "page" : undefined}
-                      className={
-                        "inline-flex size-11 items-center justify-center rounded-control font-semibold " +
-                        (page === filters.pagina
-                          ? "bg-petroleo text-branco"
-                          : "text-petroleo hover:bg-areia")
-                      }
-                    >
-                      <span className="sr-only">Página </span>
-                      {page}
-                    </Link>
-                  ))}
-                  {filters.pagina < totalPages ? (
-                    <Link
-                      href={rentalHref(text.path, filters, { pagina: filters.pagina + 1 })}
-                      className="inline-flex min-h-11 items-center rounded-control px-3 font-semibold text-petroleo underline"
-                    >
-                      Próxima
-                    </Link>
-                  ) : null}
-                </nav>
-              ) : null}
+              <Pagination
+                page={filters.pagina}
+                totalPages={totalPages}
+                hrefFor={(page) => rentalHref(text.path, filters, { pagina: page })}
+              />
             </>
           )}
         </section>

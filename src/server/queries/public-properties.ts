@@ -10,6 +10,7 @@ export type PropertyCardData = {
   bedrooms: number;
   suites: number;
   maxGuests: number;
+  areaM2?: number | null;
   price: { kind: "night" | "month" | "sale"; amount: number } | null;
   cover: { path: string; width: number; alt: string; isDemo: boolean } | null;
 };

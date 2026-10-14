@@ -1,6 +1,6 @@
 # Alugue Houses — Listagens de temporada e mensal (Etapa 8)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## Páginas
 
