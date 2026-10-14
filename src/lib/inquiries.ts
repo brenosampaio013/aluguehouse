@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 import { normalizePhone } from "@/lib/booking/schema";
 import { isRealDate } from "@/lib/search/shared";

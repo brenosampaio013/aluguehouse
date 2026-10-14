@@ -14,6 +14,7 @@ import { getPublicProperty } from "@/server/queries/property-page";
 export const metadata: Metadata = {
   title: "Contato",
   description: "Fale com a Alugue Houses por WhatsApp, e-mail ou pelo formulário.",
+  alternates: { canonical: "/contato" },
 };
 
 export default async function ContatoPage({ searchParams }: PageProps<"/contato">) {

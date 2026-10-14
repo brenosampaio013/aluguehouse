@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { notFound } from "next/navigation";
 
 import { AmenitiesForm } from "@/components/admin/amenities-form";

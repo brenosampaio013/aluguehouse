@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 import { BookingDecision } from "@/components/admin/booking-decision";
 import { BookingNotesForm } from "@/components/admin/booking-notes-form";

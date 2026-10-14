@@ -1,6 +1,6 @@
 # Alugue Houses — Experiência imersiva "Percorra a casa" (Etapa 16)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ![Percorra a casa no computador: foto fixa e descrição do ambiente](percorra-desktop.png)
 

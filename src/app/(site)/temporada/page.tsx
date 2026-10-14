@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "Aluguel por temporada",
   description:
     "Casas e apartamentos para temporada na Riviera de São Lourenço e no Litoral Norte de São Paulo, com reserva por solicitação.",
+  // Filtros e páginas da busca apontam para a listagem principal.
+  alternates: { canonical: "/temporada" },
 };
 
 export default async function TemporadaPage({ searchParams }: PageProps<"/temporada">) {

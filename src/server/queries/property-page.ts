@@ -17,6 +17,7 @@ export const getPublicProperty = cache(async (slug: string) => {
        approx_lat, approx_lng, bedrooms, suites, bathrooms, max_guests, parking_spots, area_m2,
        distance_to_beach_m, offers_seasonal, offers_monthly, offers_sale, nightly_price, monthly_price,
        min_nights, max_nights, sale_price, condo_fee, iptu_yearly, check_in_time, check_out_time, house_rules,
+       published_at,
        property_media(id, kind, storage_path, width, height, alt_text, is_cover, is_demo, position),
        property_amenities(amenities(slug, label))`,
     )

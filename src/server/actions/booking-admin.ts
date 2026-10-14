@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { addDaysISO } from "@/lib/format";

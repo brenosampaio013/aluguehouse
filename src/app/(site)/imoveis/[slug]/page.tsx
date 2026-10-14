@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { InquiryForm } from "@/components/contact/inquiry-form";
 import { AvailabilityCalendar } from "@/components/booking/availability-calendar";
 import { BookingRequestForm } from "@/components/booking/booking-request-form";
+import { JsonLd } from "@/components/seo/json-ld";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { AreaMap } from "@/components/map/area-map";
 import { Stars } from "@/components/reviews/stars";
@@ -21,6 +22,7 @@ import { addDaysISO, formatBRL, formatDateISO, formatPrice } from "@/lib/format"
 import { publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import { propertyTypeLabels } from "@/lib/properties/labels";
 import { averageRating } from "@/lib/reviews";
+import { breadcrumbJsonLd, listingJsonLd } from "@/lib/seo/json-ld";
 import { first, int, isRealDate } from "@/lib/search/shared";
 import { whatsappLink } from "@/lib/whatsapp";
 import {
@@ -46,20 +48,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: property.title,
     description:
       property.summary ?? `${propertyTypeLabels[property.property_type]} em ${place(property)}.`,
-    openGraph: cover
-      ? {
-          images: [
-            {
-              url: publicMediaUrl(
-                NEXT_PUBLIC_SUPABASE_URL,
-                variantPath(cover.path, variantWidths(cover.width).at(-1)!),
-              ),
-              alt: cover.alt,
-            },
-          ],
-        }
-      : undefined,
+    // Datas e hóspedes da busca não criam páginas novas para o Google.
+    alternates: { canonical: `/imoveis/${property.slug}` },
+    openGraph: {
+      type: "website",
+      url: `/imoveis/${property.slug}`,
+      title: property.title,
+      ...(cover
+        ? {
+            images: [
+              {
+                url: largestImage(NEXT_PUBLIC_SUPABASE_URL, cover),
+                alt: cover.alt,
+              },
+            ],
+          }
+        : {}),
+    },
   };
+}
+
+function largestImage(supabaseUrl: string, photo: { path: string; width: number }) {
+  return publicMediaUrl(supabaseUrl, variantPath(photo.path, variantWidths(photo.width).at(-1)!));
 }
 
 function place(p: Pick<PublicProperty, "neighborhood" | "city">) {
@@ -150,6 +160,53 @@ export default async function ImovelPage({ params, searchParams }: Props) {
     getPublishedReviews(property.id),
   ]);
   const average = averageRating(reviews.map((review) => review.rating));
+  const pageUrlCanonical = `${siteUrl}/imoveis/${property.slug}`;
+  const mainMode = property.offers_seasonal
+    ? { name: "Temporada", path: "/temporada" }
+    : property.offers_monthly
+      ? { name: "Mensal", path: "/mensal" }
+      : { name: "Venda", path: "/venda" };
+  const structuredData = [
+    listingJsonLd({
+      url: pageUrlCanonical,
+      title: property.title,
+      description: property.summary ?? property.description,
+      propertyType: property.property_type,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      geo:
+        property.approx_lat !== null && property.approx_lng !== null
+          ? { lat: property.approx_lat, lng: property.approx_lng }
+          : null,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      maxGuests: property.max_guests,
+      areaM2: property.area_m2,
+      amenities: property.amenities.map((amenity) => amenity.label),
+      images: property.images
+        .filter((image) => !image.isDemo)
+        .slice(0, 10)
+        .map((image) => largestImage(supabaseUrl, image)),
+      publishedAt: property.published_at,
+      prices: {
+        nightly: property.offers_seasonal ? property.nightly_price : null,
+        monthly: property.offers_monthly ? property.monthly_price : null,
+        sale: property.offers_sale ? property.sale_price : null,
+      },
+      rating:
+        reviews.length > 0
+          ? {
+              average: reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length,
+              count: reviews.length,
+            }
+          : null,
+    }),
+    breadcrumbJsonLd([
+      { name: "Início", url: `${siteUrl}/` },
+      { name: mainMode.name, url: `${siteUrl}${mainMode.path}` },
+      { name: property.title, url: pageUrlCanonical },
+    ]),
+  ];
   const location = place(property);
 
   const facts = [
@@ -212,6 +269,7 @@ export default async function ImovelPage({ params, searchParams }: Props) {
 
   return (
     <main id="conteudo" className="flex-1 pt-8 pb-28 md:pb-16">
+      <JsonLd data={structuredData} />
       <Container className="grid gap-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
           <div className="grid gap-2">

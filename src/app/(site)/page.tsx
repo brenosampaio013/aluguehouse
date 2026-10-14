@@ -4,13 +4,16 @@ import { connection } from "next/server";
 import { CoastLine } from "@/components/home/coast-line";
 import { HeroSearch } from "@/components/home/hero-search";
 import { PropertyCard } from "@/components/property/property-card";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
 import { getPublicEnv } from "@/lib/env";
+import { organizationJsonLd } from "@/lib/seo/json-ld";
 import { siteConfig } from "@/lib/site-config";
 import { getFeaturedProperties, type PropertyCardData } from "@/server/queries/public-properties";
 
 export const metadata: Metadata = {
   title: { absolute: `${siteConfig.name} | Riviera de São Lourenço e Litoral Norte` },
+  alternates: { canonical: "/" },
 };
 
 const steps = [
@@ -47,6 +50,7 @@ export default async function HomePage() {
 
   return (
     <main id="conteudo" className="flex-1">
+      <JsonLd data={organizationJsonLd(getPublicEnv().NEXT_PUBLIC_SITE_URL)} />
       {/*
         Topo gráfico: mar (abismo) e faixa de areia. Será substituído por uma
         foto real da Riviera quando houver uma em alta resolução.

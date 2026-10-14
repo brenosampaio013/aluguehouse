@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 import { isRealDate } from "@/lib/search/shared";
 

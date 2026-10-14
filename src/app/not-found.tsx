@@ -3,6 +3,8 @@ import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 
+export const metadata = { robots: { index: false } };
+
 export default function NotFound() {
   return (
     <main id="conteudo" className="flex flex-1 items-center py-16">
