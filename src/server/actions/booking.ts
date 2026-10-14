@@ -1,13 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
-
 import { stayMode } from "@/lib/booking/calendar";
 import { bookingErrorMessage, bookingRequestSchema } from "@/lib/booking/schema";
-import { getServerEnv } from "@/lib/server-env";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { clientIp, hashKey, withinRateLimits } from "@/server/security/rate-limit";
-import { verifyTurnstile } from "@/server/security/turnstile";
+import { formatBRL, formatDateISO } from "@/lib/format";
+import { notifyAdmin } from "@/server/email/notify-admin";
+import { guardPublicForm } from "@/server/security/public-form";
 
 export type BookingFormState = {
   status: "idle" | "success" | "error";
@@ -18,17 +15,6 @@ export type BookingFormState = {
   /** Número de protocolo mostrado ao hóspede. */
   reference?: string;
 };
-
-/** Limites por IP e por e-mail (as chaves vão ao banco como hash). */
-const RATE_RULES = {
-  ip: { windowSeconds: 60 * 60, max: 5 },
-  email: { windowSeconds: 24 * 60 * 60, max: 5 },
-};
-
-const RATE_LIMITED =
-  "Recebemos muitos pedidos seguidos daqui. Aguarde um pouco ou fale com a gente pelo WhatsApp.";
-
-let warnedTurnstile = false;
 
 /** Visitante (sem conta): registra uma solicitação de reserva pendente. */
 export async function submitBookingRequest(
@@ -76,41 +62,10 @@ export async function submitBookingRequest(
     };
   }
 
-  const env = getServerEnv();
-  const requestHeaders = await headers();
-  const ip = clientIp(requestHeaders);
-
-  const turnstile = await verifyTurnstile(
-    String(formData.get("cf-turnstile-response") ?? "") || null,
-    ip,
-    env.TURNSTILE_SECRET_KEY,
-  );
-  if (turnstile === "failed") {
-    return {
-      status: "error",
-      message: "Não conseguimos confirmar que você não é um robô. Tente enviar de novo.",
-      values,
-    };
-  }
-  if (turnstile === "disabled" && process.env.NODE_ENV === "production" && !warnedTurnstile) {
-    warnedTurnstile = true;
-    console.warn("TURNSTILE_SECRET_KEY ausente: formulário de reserva sem verificação anti-robô.");
-  }
-
   const data = parsed.data;
-  const admin = createSupabaseAdminClient();
-  const secret = env.SUPABASE_SERVICE_ROLE_KEY;
-  const allowed = await withinRateLimits(admin, [
-    {
-      bucket: `booking:ip:${await hashKey(ip ?? "desconhecido", secret)}`,
-      ...RATE_RULES.ip,
-    },
-    {
-      bucket: `booking:email:${await hashKey(data.email.toLowerCase(), secret)}`,
-      ...RATE_RULES.email,
-    },
-  ]);
-  if (!allowed) return { status: "error", message: RATE_LIMITED, values };
+  const guard = await guardPublicForm(formData, { scope: "booking", email: data.email });
+  if (!guard.ok) return { status: "error", message: guard.message, values };
+  const { admin } = guard;
 
   const { data: id, error } = await admin.rpc("request_booking", {
     p_property_id: data.propertyId,
@@ -137,9 +92,25 @@ export async function submitBookingRequest(
     };
   }
 
-  return {
-    status: "success",
-    message: "Solicitação enviada.",
-    reference: id.slice(0, 8).toUpperCase(),
-  };
+  const reference = id.slice(0, 8).toUpperCase();
+  const { data: request } = await admin
+    .from("booking_requests")
+    .select("quoted_total, properties(title)")
+    .eq("id", id)
+    .single();
+  await notifyAdmin({
+    subject: `Nova solicitação de reserva ${reference}`,
+    lines: [
+      `Imóvel: ${request?.properties?.title ?? "—"}`,
+      `Hóspede: ${data.name}`,
+      `Datas: ${formatDateISO(data.checkIn)} a ${formatDateISO(data.checkOut)} · ${data.guests} hóspede(s)`,
+      `Total estimado: ${formatBRL(request?.quoted_total)}`,
+      "",
+      "A solicitação está pendente: aprove ou recuse no painel.",
+    ],
+    path: `/admin/solicitacoes/${id}`,
+    replyTo: data.email,
+  });
+
+  return { status: "success", message: "Solicitação enviada.", reference };
 }

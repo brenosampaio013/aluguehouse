@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { InquiryForm } from "@/components/contact/inquiry-form";
 import { AvailabilityCalendar } from "@/components/booking/availability-calendar";
 import { BookingRequestForm } from "@/components/booking/booking-request-form";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
@@ -380,7 +382,7 @@ export default async function ImovelPage({ params, searchParams }: Props) {
             className={cn(
               "grid scroll-mt-6 gap-5 rounded-photo bg-areia p-6",
               // Com o formulário, o painel fica alto demais para ficar fixo.
-              stay.status !== "quoted" && "lg:sticky lg:top-6",
+              stay.status !== "quoted" && !property.offers_sale && "lg:sticky lg:top-6",
             )}
           >
             {stay.status === "quoted" ? (
@@ -468,6 +470,32 @@ export default async function ImovelPage({ params, searchParams }: Props) {
               {ctaLabel}
               <span className="sr-only"> (abre em nova aba)</span>
             </a>
+
+            {property.offers_sale ? (
+              <section
+                id="visita"
+                aria-labelledby="visita-titulo"
+                className="grid scroll-mt-6 gap-4 rounded-photo bg-branco p-5"
+              >
+                <h2 id="visita-titulo" className="font-serif text-h3 font-normal">
+                  Agendar visita ou tirar dúvidas
+                </h2>
+                <InquiryForm
+                  variant="sale"
+                  propertyId={property.id}
+                  today={today}
+                  turnstileSiteKey={turnstileSiteKey}
+                  submitLabel="Enviar pedido"
+                />
+              </section>
+            ) : (
+              <Link
+                href={`/contato?imovel=${property.slug}`}
+                className="text-center text-petroleo underline underline-offset-3"
+              >
+                Enviar uma pergunta por mensagem
+              </Link>
+            )}
           </aside>
         </div>
       </Container>

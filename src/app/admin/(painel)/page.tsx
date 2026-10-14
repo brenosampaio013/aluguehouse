@@ -4,20 +4,22 @@ import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { countPendingBookings } from "@/server/queries/admin-bookings";
+import { countNewInquiries } from "@/server/queries/inquiries";
 import { countPendingReviews } from "@/server/queries/reviews";
 
 export default async function PainelPage() {
   const { supabase } = await requireAdmin();
-  const [pending, pendingReviews] = await Promise.all([
+  const [pending, pendingReviews, newInquiries] = await Promise.all([
     countPendingBookings(supabase),
     countPendingReviews(supabase),
+    countNewInquiries(supabase),
   ]);
 
   return (
     <main id="conteudo" className="flex-1 py-12">
       <Container className="grid gap-8">
         <h1 className="font-serif text-h1 font-normal">Painel</h1>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <section
             aria-labelledby="painel-solicitacoes"
             className="grid gap-3 rounded-photo bg-areia p-6"
@@ -51,6 +53,24 @@ export default async function PainelPage() {
             <div>
               <Link href="/admin/avaliacoes" className={buttonClasses("secondary")}>
                 Moderar avaliações
+              </Link>
+            </div>
+          </section>
+          <section
+            aria-labelledby="painel-contatos"
+            className="grid gap-3 rounded-photo border border-areia p-6"
+          >
+            <h2 id="painel-contatos" className="font-serif text-h3 font-normal">
+              Contatos
+            </h2>
+            <p>
+              {newInquiries === 0
+                ? "Nenhuma mensagem nova."
+                : `${newInquiries} ${newInquiries === 1 ? "mensagem nova" : "mensagens novas"}.`}
+            </p>
+            <div>
+              <Link href="/admin/contatos" className={buttonClasses("secondary")}>
+                Ver contatos
               </Link>
             </div>
           </section>

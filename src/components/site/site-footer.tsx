@@ -49,6 +49,11 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
+              <Link href="/contato" className="underline-offset-3 hover:underline">
+                Formulário de contato
+              </Link>
+            </li>
+            <li>
               <a
                 href={`mailto:${contact.email}`}
                 className="break-all underline-offset-3 hover:underline"

@@ -8,6 +8,7 @@ import { getSessionState } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { signOut } from "@/server/actions/auth";
 import { countPendingBookings } from "@/server/queries/admin-bookings";
+import { countNewInquiries } from "@/server/queries/inquiries";
 import { countPendingReviews } from "@/server/queries/reviews";
 
 /**
@@ -19,9 +20,10 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
   if (session.status === "admin_needs_mfa") redirect("/admin/mfa");
   if (session.status !== "admin") redirect("/admin/entrar");
   const supabase = await createSupabaseServerClient();
-  const [bookings, reviews] = await Promise.all([
+  const [bookings, reviews, inquiries] = await Promise.all([
     countPendingBookings(supabase),
     countPendingReviews(supabase),
+    countNewInquiries(supabase),
   ]);
 
   return (
@@ -33,7 +35,13 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
               <Wordmark className="text-[1.25rem]" />
               <span className="text-small text-rocha">Painel</span>
             </span>
-            <AdminNav pending={{ "/admin/solicitacoes": bookings, "/admin/avaliacoes": reviews }} />
+            <AdminNav
+              pending={{
+                "/admin/solicitacoes": bookings,
+                "/admin/avaliacoes": reviews,
+                "/admin/contatos": inquiries,
+              }}
+            />
           </span>
           <span className="flex items-center gap-4">
             <span className="text-small text-rocha">{session.email}</span>

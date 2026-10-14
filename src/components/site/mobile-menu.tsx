@@ -40,7 +40,7 @@ export function MobileMenu() {
       </button>
       <nav
         id={panelId}
-        aria-label="Modalidades"
+        aria-label="Menu principal"
         hidden={!open}
         className="absolute inset-x-0 top-full z-30 border-b border-areia bg-branco shadow-flutuante"
       >
@@ -56,6 +56,15 @@ export function MobileMenu() {
               </Link>
             </li>
           ))}
+          <li className="mt-1 border-t border-areia pt-1">
+            <Link
+              href="/contato"
+              onClick={() => setOpen(false)}
+              className="flex min-h-12 items-center font-semibold text-petroleo"
+            >
+              Contato
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>

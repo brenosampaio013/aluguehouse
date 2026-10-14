@@ -1,6 +1,6 @@
 # Alugue Houses — Avaliações moderadas (Etapa 14)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ![Seção de avaliações na página do imóvel](avaliacoes-imovel-desktop.png)
 
