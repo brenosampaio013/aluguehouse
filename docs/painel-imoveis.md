@@ -67,6 +67,6 @@ arquiva, exclui a foto e confirma que o arquivo saiu do Storage.
 
 ## Fora desta etapa
 
-- Vídeos e tours: Etapa 9 (o banco já aceita, o painel ainda não).
+- Vídeos e tours: o banco já aceita, mas o painel e o site ainda não. Etapa a definir (veja docs/pagina-imovel.md).
 - Escolher a localização num mapa: junto com o mapa público.
 - Excluir imóvel definitivamente: não implementado; use "Arquivar".

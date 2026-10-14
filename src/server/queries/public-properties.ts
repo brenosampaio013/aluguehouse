@@ -11,6 +11,8 @@ export type PropertyCardData = {
   suites: number;
   maxGuests: number;
   areaM2?: number | null;
+  /** Localização pública aproximada (nunca a exata). */
+  location?: { lat: number; lng: number } | null;
   price: { kind: "night" | "month" | "sale"; amount: number } | null;
   cover: { path: string; width: number; alt: string; isDemo: boolean } | null;
 };

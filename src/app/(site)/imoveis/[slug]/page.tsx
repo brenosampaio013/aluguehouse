@@ -1,0 +1,390 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import { AreaMap } from "@/components/map/area-map";
+import { PropertyGallery } from "@/components/property/gallery";
+import { buttonClasses } from "@/components/ui/button";
+import { Container } from "@/components/ui/container";
+import { ChatIcon } from "@/components/ui/icons";
+import { getPublicEnv } from "@/lib/env";
+import { formatBRL, formatDateISO, formatPrice } from "@/lib/format";
+import { publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
+import { propertyTypeLabels } from "@/lib/properties/labels";
+import { first, int, isRealDate } from "@/lib/search/shared";
+import { whatsappLink } from "@/lib/whatsapp";
+import {
+  getPublicProperty,
+  isRangeAvailable,
+  quoteForSearch,
+  type PublicProperty,
+  type StayQuote,
+} from "@/server/queries/property-page";
+
+type Props = PageProps<"/imoveis/[slug]">;
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const property = await getPublicProperty(slug);
+  if (!property) return { title: "Imóvel não encontrado" };
+
+  const { NEXT_PUBLIC_SUPABASE_URL } = getPublicEnv();
+  const cover = property.images[0];
+  return {
+    title: property.title,
+    description:
+      property.summary ?? `${propertyTypeLabels[property.property_type]} em ${place(property)}.`,
+    openGraph: cover
+      ? {
+          images: [
+            {
+              url: publicMediaUrl(
+                NEXT_PUBLIC_SUPABASE_URL,
+                variantPath(cover.path, variantWidths(cover.width).at(-1)!),
+              ),
+              alt: cover.alt,
+            },
+          ],
+        }
+      : undefined,
+  };
+}
+
+function place(p: Pick<PublicProperty, "neighborhood" | "city">) {
+  return [p.neighborhood, p.city].filter(Boolean).join(", ");
+}
+
+function plural(n: number, one: string, many: string) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+const quoteMessages: Record<string, (detail?: string) => string> = {
+  min_nights: (d) => `Nessas datas, este imóvel pede no mínimo ${d} noites.`,
+  max_nights: (d) => `Este imóvel aceita no máximo ${d} noites.`,
+  guests_exceeded: (d) => `Este imóvel recebe no máximo ${d} hóspedes.`,
+  mode_not_offered: () =>
+    "Este imóvel não está disponível nessa modalidade para o período escolhido.",
+  seasonal_max_29: () => "Temporada vai até 29 noites.",
+  monthly_min_30: () => "Aluguel mensal começa em 30 noites.",
+  price_unavailable: () =>
+    "Ainda não há preço para todas as noites desse período. Fale com a gente.",
+};
+
+type SearchStay =
+  | { status: "none" }
+  | { status: "invalid"; message: string; checkIn: string; checkOut: string; guests: number }
+  | {
+      status: "quoted";
+      quote: StayQuote;
+      checkIn: string;
+      checkOut: string;
+      guests: number;
+      mode: "seasonal" | "monthly";
+    };
+
+/** Datas vindas da busca: confere disponibilidade e calcula o total estimado. */
+async function stayFromSearch(
+  property: PublicProperty,
+  raw: Record<string, string | string[] | undefined>,
+): Promise<SearchStay> {
+  const checkIn = first(raw.chegada);
+  const checkOut = first(raw.saida);
+  if (!checkIn || !checkOut || !isRealDate(checkIn) || !isRealDate(checkOut))
+    return { status: "none" };
+  if (!property.offers_seasonal && !property.offers_monthly) return { status: "none" };
+
+  const guests = int(first(raw.hospedes), 1, 50) ?? 1;
+  const base = { checkIn, checkOut, guests };
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
+    new Date(),
+  );
+  if (checkIn < today)
+    return { status: "invalid", message: "A data de chegada já passou.", ...base };
+  if (checkOut <= checkIn)
+    return { status: "invalid", message: "A saída precisa ser depois da chegada.", ...base };
+
+  const nights = (Date.parse(checkOut) - Date.parse(checkIn)) / 86_400_000;
+  const mode = nights >= 30 ? "monthly" : "seasonal";
+  if (!(await isRangeAvailable(property.id, checkIn, checkOut))) {
+    return {
+      status: "invalid",
+      message: "Essas datas não estão disponíveis. Tente outro período.",
+      ...base,
+    };
+  }
+  const result = await quoteForSearch(property.id, mode, checkIn, checkOut, guests);
+  if (!result.ok) {
+    const message =
+      quoteMessages[result.reason]?.(result.detail) ??
+      "Não foi possível calcular o valor para essas datas.";
+    return { status: "invalid", message, ...base };
+  }
+  return { status: "quoted", quote: result.quote, mode, ...base };
+}
+
+export default async function ImovelPage({ params, searchParams }: Props) {
+  const { slug } = await params;
+  const property = await getPublicProperty(slug);
+  if (!property) notFound();
+
+  const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl, NEXT_PUBLIC_SITE_URL: siteUrl } = getPublicEnv();
+  const stay = await stayFromSearch(property, await searchParams);
+  const location = place(property);
+
+  const facts = [
+    property.bedrooms > 0 ? plural(property.bedrooms, "quarto", "quartos") : null,
+    property.suites > 0 ? plural(property.suites, "suíte", "suítes") : null,
+    property.bathrooms > 0 ? plural(property.bathrooms, "banheiro", "banheiros") : null,
+    property.offers_seasonal || property.offers_monthly
+      ? `até ${plural(property.max_guests, "hóspede", "hóspedes")}`
+      : null,
+    property.parking_spots > 0 ? plural(property.parking_spots, "vaga", "vagas") : null,
+    property.area_m2 ? `${new Intl.NumberFormat("pt-BR").format(property.area_m2)} m²` : null,
+    property.distance_to_beach_m !== null
+      ? property.distance_to_beach_m === 0
+        ? "pé na areia"
+        : `${new Intl.NumberFormat("pt-BR").format(property.distance_to_beach_m)} m da praia`
+      : null,
+  ].filter(Boolean) as string[];
+
+  const prices = [
+    property.offers_seasonal && property.nightly_price !== null
+      ? {
+          label: "Temporada",
+          value: `${formatPrice(property.nightly_price)} por noite`,
+          note: `Diária base; mínimo de ${plural(property.min_nights, "noite", "noites")}. Feriados podem ter tarifa diferente.`,
+        }
+      : null,
+    property.offers_monthly && property.monthly_price !== null
+      ? {
+          label: "Mensal",
+          value: `${formatPrice(property.monthly_price)} por mês`,
+          note: "De 30 a 90 noites, valor proporcional.",
+        }
+      : null,
+    property.offers_sale && property.sale_price !== null
+      ? {
+          label: "Venda",
+          value: formatPrice(property.sale_price),
+          note:
+            [
+              property.condo_fee ? `Condomínio ${formatBRL(property.condo_fee)}/mês` : null,
+              property.iptu_yearly ? `IPTU ${formatBRL(property.iptu_yearly)}/ano` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || null,
+        }
+      : null,
+  ].filter(Boolean) as { label: string; value: string; note: string | null }[];
+
+  const pageUrl = `${siteUrl}/imoveis/${property.slug}`;
+  const datesText =
+    stay.status !== "none"
+      ? ` para ${formatDateISO(stay.checkIn)} a ${formatDateISO(stay.checkOut)}, ${plural(stay.guests, "hóspede", "hóspedes")}`
+      : "";
+  const onlySale = property.offers_sale && !property.offers_seasonal && !property.offers_monthly;
+  const whatsappMessage = onlySale
+    ? `Olá! Gostaria de agendar uma visita ao imóvel "${property.title}": ${pageUrl}`
+    : `Olá! Tenho interesse no imóvel "${property.title}"${datesText}: ${pageUrl}`;
+  const ctaLabel = onlySale ? "Agendar visita pelo WhatsApp" : "Falar no WhatsApp";
+  const mainPrice = prices[0];
+
+  return (
+    <main id="conteudo" className="flex-1 pt-8 pb-28 md:pb-16">
+      <Container className="grid gap-8">
+        <div className="grid gap-2">
+          <h1 className="font-serif text-h1 font-normal">{property.title}</h1>
+          <p className="text-rocha">
+            {propertyTypeLabels[property.property_type]}
+            {location ? ` em ${location}` : ""}
+          </p>
+        </div>
+
+        <PropertyGallery photos={property.images} supabaseUrl={supabaseUrl} />
+
+        <div className="grid gap-12 lg:grid-cols-[1fr_380px] lg:items-start">
+          <div className="grid min-w-0 gap-12">
+            {facts.length > 0 ? (
+              <ul
+                aria-label="Características"
+                className="flex flex-wrap gap-x-5 gap-y-2 border-b border-areia pb-6 text-h3"
+              >
+                {facts.map((fact) => (
+                  <li key={fact}>{fact}</li>
+                ))}
+              </ul>
+            ) : null}
+
+            {property.description || property.summary ? (
+              <section aria-labelledby="sobre" className="grid gap-4">
+                <h2 id="sobre" className="font-serif text-h2 font-normal">
+                  Sobre o imóvel
+                </h2>
+                <p className="max-w-[68ch] whitespace-pre-line">
+                  {property.description ?? property.summary}
+                </p>
+              </section>
+            ) : null}
+
+            {property.amenities.length > 0 ? (
+              <section aria-labelledby="comodidades" className="grid gap-4">
+                <h2 id="comodidades" className="font-serif text-h2 font-normal">
+                  Comodidades
+                </h2>
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {property.amenities.map((amenity) => (
+                    <li key={amenity.slug} className="flex items-center gap-2">
+                      <span aria-hidden="true" className="size-1.5 rounded-full bg-petroleo" />
+                      {amenity.label}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            {property.offers_seasonal || property.offers_monthly ? (
+              <section aria-labelledby="regras" className="grid gap-4">
+                <h2 id="regras" className="font-serif text-h2 font-normal">
+                  Horários e regras
+                </h2>
+                <p>
+                  Check-in a partir das {property.check_in_time.slice(0, 5)} · check-out até{" "}
+                  {property.check_out_time.slice(0, 5)}
+                </p>
+                {property.house_rules ? (
+                  <p className="max-w-[68ch] whitespace-pre-line">{property.house_rules}</p>
+                ) : null}
+              </section>
+            ) : null}
+
+            {property.approx_lat !== null && property.approx_lng !== null ? (
+              <section aria-labelledby="localizacao" className="grid gap-4">
+                <h2 id="localizacao" className="font-serif text-h2 font-normal">
+                  Localização
+                </h2>
+                <p className="max-w-[68ch] text-rocha">
+                  {location ? `${location}. ` : ""}Por segurança, o mapa mostra só a área aproximada
+                  do imóvel.
+                </p>
+                <AreaMap
+                  label={`Mapa com a área aproximada do imóvel${location ? ` em ${location}` : ""}`}
+                  areas={[
+                    {
+                      id: property.id,
+                      lat: property.approx_lat,
+                      lng: property.approx_lng,
+                      label: property.title,
+                    },
+                  ]}
+                  className="h-[320px] sm:h-[400px]"
+                />
+              </section>
+            ) : null}
+          </div>
+
+          <aside
+            aria-label="Valores e contato"
+            className="grid gap-5 rounded-photo bg-areia p-6 lg:sticky lg:top-6"
+          >
+            {stay.status === "quoted" ? (
+              <div className="grid gap-3">
+                <p className="text-small font-semibold">
+                  Sua busca: {formatDateISO(stay.checkIn)} a {formatDateISO(stay.checkOut)} ·{" "}
+                  {plural(stay.guests, "hóspede", "hóspedes")}
+                </p>
+                <dl className="grid gap-1 tabular-nums">
+                  {stay.quote.lines.map((line) => (
+                    <div key={line.label + line.unit_price} className="flex justify-between gap-4">
+                      <dt>
+                        {line.label === "Aluguel mensal"
+                          ? `Aluguel (${plural(line.nights, "noite", "noites")})`
+                          : `${line.label} · ${plural(line.nights, "noite", "noites")} × ${formatBRL(line.unit_price)}`}
+                      </dt>
+                      <dd>{formatBRL(line.amount)}</dd>
+                    </div>
+                  ))}
+                  {stay.quote.fees.map((fee) => (
+                    <div key={fee.label} className="flex justify-between gap-4">
+                      <dt>{fee.label}</dt>
+                      <dd>{formatBRL(fee.amount)}</dd>
+                    </div>
+                  ))}
+                  <div className="mt-2 flex justify-between gap-4 border-t border-junco pt-2 font-semibold">
+                    <dt>Total estimado</dt>
+                    <dd>{formatBRL(stay.quote.total)}</dd>
+                  </div>
+                </dl>
+                {stay.quote.deposits.map((deposit) => (
+                  <p key={deposit.label} className="text-small">
+                    {deposit.label} (reembolsável): {formatBRL(deposit.amount)}, fora do total.
+                  </p>
+                ))}
+                <p className="text-small text-rocha">
+                  Valor confirmado na resposta à sua solicitação.
+                </p>
+              </div>
+            ) : (
+              <dl className="grid gap-4">
+                {prices.map((price) => (
+                  <div key={price.label} className="grid gap-0.5">
+                    <dt className="text-small font-semibold text-rocha">{price.label}</dt>
+                    <dd className="text-h3 font-semibold tabular-nums">{price.value}</dd>
+                    {price.note ? <dd className="text-small text-rocha">{price.note}</dd> : null}
+                  </div>
+                ))}
+              </dl>
+            )}
+
+            {stay.status === "invalid" ? (
+              <p
+                role="status"
+                className="rounded-control border border-erro bg-branco px-3 py-2 text-small text-erro"
+              >
+                {stay.message}
+              </p>
+            ) : null}
+
+            <a
+              href={whatsappLink(whatsappMessage)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonClasses("primary")}
+            >
+              <ChatIcon />
+              {ctaLabel}
+              <span className="sr-only"> (abre em nova aba)</span>
+            </a>
+            {property.offers_seasonal || property.offers_monthly ? (
+              <p className="text-small text-rocha">
+                A solicitação de reserva pelo site estará disponível em breve.
+              </p>
+            ) : null}
+          </aside>
+        </div>
+      </Container>
+
+      {/* Celular: barra fixa com o preço principal e o contato (substitui a barra de atalhos). */}
+      <div className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-4 border-t border-areia bg-branco px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
+        <p className="tabular-nums">
+          {stay.status === "quoted" ? (
+            <>
+              <strong className="font-semibold">{formatPrice(stay.quote.total)}</strong>
+              <span className="block text-small text-rocha">total estimado</span>
+            </>
+          ) : mainPrice ? (
+            <strong className="font-semibold">{mainPrice.value}</strong>
+          ) : null}
+        </p>
+        <a
+          href={whatsappLink(whatsappMessage)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonClasses("primary", "shrink-0")}
+        >
+          <ChatIcon />
+          WhatsApp
+          <span className="sr-only"> (abre em nova aba)</span>
+        </a>
+      </div>
+    </main>
+  );
+}

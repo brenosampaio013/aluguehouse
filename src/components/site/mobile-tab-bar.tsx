@@ -15,6 +15,8 @@ const tabs = [
 /** Barra inferior fixa do celular (aprovada na Etapa 2). */
 export function MobileTabBar() {
   const pathname = usePathname();
+  // Na página do imóvel, a barra inferior mostra preço e contato no lugar dos atalhos.
+  if (pathname.startsWith("/imoveis/")) return null;
   return (
     <nav
       aria-label="Atalhos"

@@ -12,6 +12,7 @@ Lourenço e no Litoral Norte de São Paulo.
 - Página inicial: [`docs/pagina-inicial.md`](docs/pagina-inicial.md)
 - Listagens de temporada e mensal: [`docs/listagens-aluguel.md`](docs/listagens-aluguel.md)
 - Listagem de venda: [`docs/listagem-venda.md`](docs/listagem-venda.md)
+- Página do imóvel e mapa: [`docs/pagina-imovel.md`](docs/pagina-imovel.md)
 
 ## Requisitos
 

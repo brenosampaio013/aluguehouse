@@ -17,6 +17,7 @@ import { listAmenities, searchRentals } from "@/server/queries/search";
 
 import { FiltersDisclosure } from "./filters-disclosure";
 import { Pagination } from "./pagination";
+import { ResultsWithMap } from "./results-with-map";
 import { RentalFiltersForm } from "./rental-filters";
 
 const copy = {
@@ -135,19 +136,35 @@ export async function RentalListing({
                   </Link>
                 </p>
               ) : (
-                <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-                  {result.items.map((item, index) => (
-                    <li key={item.slug}>
-                      <PropertyCard
-                        property={item}
-                        supabaseUrl={supabaseUrl}
-                        priority={index < 2}
-                        href={`/imoveis/${item.slug}${staySuffix}`}
-                        stay={item.stay}
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <ResultsWithMap
+                  areas={result.items.flatMap((item) =>
+                    item.location
+                      ? [
+                          {
+                            id: item.slug,
+                            lat: item.location.lat,
+                            lng: item.location.lng,
+                            label: item.title,
+                            href: `/imoveis/${item.slug}`,
+                          },
+                        ]
+                      : [],
+                  )}
+                >
+                  <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-2">
+                    {result.items.map((item, index) => (
+                      <li key={item.slug}>
+                        <PropertyCard
+                          property={item}
+                          supabaseUrl={supabaseUrl}
+                          priority={index < 2}
+                          href={`/imoveis/${item.slug}${staySuffix}`}
+                          stay={item.stay}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </ResultsWithMap>
               )}
 
               <Pagination

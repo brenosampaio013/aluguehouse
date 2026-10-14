@@ -46,7 +46,8 @@ export async function searchRentals(
   }
 
   const rows = data ?? [];
-  const covers = await loadCovers(rows.map((row) => row.id));
+  const ids = rows.map((row) => row.id);
+  const [covers, locations] = await Promise.all([loadCovers(ids), loadLocations(ids)]);
 
   const items = rows.map((row): RentalResult => ({
     slug: row.slug,
@@ -61,6 +62,7 @@ export async function searchRentals(
         ? null
         : { kind: mode === "seasonal" ? "night" : "month", amount: row.base_price },
     cover: covers.get(row.id) ?? null,
+    location: locations.get(row.id) ?? null,
     stay:
       row.nights && row.quote_total !== null
         ? { nights: row.nights, total: row.quote_total }
@@ -97,6 +99,23 @@ async function loadCovers(
   return covers;
 }
 
+/** Localização aproximada (pública) de cada imóvel, para o mapa da listagem. */
+async function loadLocations(ids: string[]): Promise<Map<string, { lat: number; lng: number }>> {
+  const locations = new Map<string, { lat: number; lng: number }>();
+  if (ids.length === 0) return locations;
+  const { data, error } = await createSupabasePublicClient()
+    .from("properties")
+    .select("id, approx_lat, approx_lng")
+    .in("id", ids);
+  if (error) throw error;
+  for (const row of data) {
+    if (row.approx_lat !== null && row.approx_lng !== null) {
+      locations.set(row.id, { lat: row.approx_lat, lng: row.approx_lng });
+    }
+  }
+  return locations;
+}
+
 export type SaleSearch = { items: PropertyCardData[]; total: number };
 
 export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
@@ -114,7 +133,8 @@ export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
   });
   if (error) throw error;
 
-  const covers = await loadCovers(data.map((row) => row.id));
+  const ids = data.map((row) => row.id);
+  const [covers, locations] = await Promise.all([loadCovers(ids), loadLocations(ids)]);
   const items = data.map((row): PropertyCardData => ({
     slug: row.slug,
     title: row.title,
@@ -126,6 +146,7 @@ export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
     areaM2: row.area_m2,
     price: { kind: "sale", amount: row.sale_price },
     cover: covers.get(row.id) ?? null,
+    location: locations.get(row.id) ?? null,
   }));
   return { items, total: data[0]?.total_count ?? 0 };
 }

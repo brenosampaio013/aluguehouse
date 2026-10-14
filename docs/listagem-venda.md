@@ -1,6 +1,6 @@
 # Alugue Houses — Listagem de venda (Etapa 9)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## Página `/venda`
 

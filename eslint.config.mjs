@@ -19,6 +19,7 @@ const eslintConfig = defineConfig([
     "supabase/.temp/**",
     "playwright-report/**",
     "test-results/**",
+    "public/vendor/**",
   ]),
 ]);
 
