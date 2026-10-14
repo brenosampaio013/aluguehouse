@@ -54,6 +54,26 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  banco:
+    name: Banco de dados (migrations, lint e pgTAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir Postgres local com as migrations
+        run: supabase db start
+
+      - name: Lint das funções SQL
+        run: supabase db lint --level warning --fail-on warning
+
+      - name: Testes pgTAP (RLS, calendário, preços, avaliações, storage)
+        run: supabase test db
+
   segredos:
     name: Busca de segredos
     runs-on: ubuntu-latest

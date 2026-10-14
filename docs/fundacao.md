@@ -1,6 +1,6 @@
 # Alugue Houses — Fundação do projeto (Etapa 3)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ## O que foi configurado
 

@@ -1,0 +1,2 @@
+-- Dados locais de DEMONSTRAÇÃO. Nunca usados em produção.
+-- Por enquanto vazio: comodidades são dados de referência e ficam na migration.

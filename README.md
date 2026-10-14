@@ -6,6 +6,7 @@ Lourenço e no Litoral Norte de São Paulo.
 - Planejamento técnico: [`docs/planejamento.md`](docs/planejamento.md)
 - Direção visual: [`docs/direcao-visual.md`](docs/direcao-visual.md)
 - Fundação do projeto: [`docs/fundacao.md`](docs/fundacao.md)
+- Banco de dados e segurança: [`docs/banco.md`](docs/banco.md)
 
 ## Requisitos
 
@@ -34,6 +35,8 @@ pnpm dev                     # http://localhost:3000
 | `pnpm db:start` / `db:stop` | Liga e desliga o Supabase local                                      |
 | `pnpm db:reset`             | Recria o banco local a partir das migrations                         |
 | `pnpm db:types`             | Gera os tipos TypeScript do banco                                    |
+| `pnpm db:test`              | Testes pgTAP do banco (RLS, calendário, preços)                      |
+| `pnpm db:lint`              | Verifica as funções SQL                                              |
 
 ## Segurança
 
