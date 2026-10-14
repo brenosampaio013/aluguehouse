@@ -8,6 +8,7 @@ import { getSessionState } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { signOut } from "@/server/actions/auth";
 import { countPendingBookings } from "@/server/queries/admin-bookings";
+import { countPendingReviews } from "@/server/queries/reviews";
 
 /**
  * Autorização definitiva do painel: papel admin + MFA concluído.
@@ -17,7 +18,11 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
   const session = await getSessionState();
   if (session.status === "admin_needs_mfa") redirect("/admin/mfa");
   if (session.status !== "admin") redirect("/admin/entrar");
-  const pendingCount = await countPendingBookings(await createSupabaseServerClient());
+  const supabase = await createSupabaseServerClient();
+  const [bookings, reviews] = await Promise.all([
+    countPendingBookings(supabase),
+    countPendingReviews(supabase),
+  ]);
 
   return (
     <>
@@ -28,7 +33,7 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
               <Wordmark className="text-[1.25rem]" />
               <span className="text-small text-rocha">Painel</span>
             </span>
-            <AdminNav pendingCount={pendingCount} />
+            <AdminNav pending={{ "/admin/solicitacoes": bookings, "/admin/avaliacoes": reviews }} />
           </span>
           <span className="flex items-center gap-4">
             <span className="text-small text-rocha">{session.email}</span>

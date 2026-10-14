@@ -5,6 +5,7 @@ import { AvailabilityCalendar } from "@/components/booking/availability-calendar
 import { BookingRequestForm } from "@/components/booking/booking-request-form";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { AreaMap } from "@/components/map/area-map";
+import { Stars } from "@/components/reviews/stars";
 import { PropertyGallery } from "@/components/property/gallery";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -16,6 +17,7 @@ import { getPublicEnv } from "@/lib/env";
 import { addDaysISO, formatBRL, formatDateISO, formatPrice } from "@/lib/format";
 import { publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import { propertyTypeLabels } from "@/lib/properties/labels";
+import { averageRating } from "@/lib/reviews";
 import { first, int, isRealDate } from "@/lib/search/shared";
 import { whatsappLink } from "@/lib/whatsapp";
 import {
@@ -26,6 +28,7 @@ import {
   type PublicProperty,
   type StayQuote,
 } from "@/server/queries/property-page";
+import { getPublishedReviews } from "@/server/queries/reviews";
 
 type Props = PageProps<"/imoveis/[slug]">;
 
@@ -59,6 +62,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 function place(p: Pick<PublicProperty, "neighborhood" | "city">) {
   return [p.neighborhood, p.city].filter(Boolean).join(", ");
 }
+
+const reviewMonth = new Intl.DateTimeFormat("pt-BR", {
+  month: "long",
+  year: "numeric",
+  timeZone: "America/Sao_Paulo",
+});
 
 function plural(n: number, one: string, many: string) {
   return `${n} ${n === 1 ? one : many}`;
@@ -133,7 +142,11 @@ export default async function ImovelPage({ params, searchParams }: Props) {
   const rents = property.offers_seasonal || property.offers_monthly;
   const today = todaySP();
   const lastDate = addDaysISO(today, CALENDAR_DAYS);
-  const blocked = rents ? await getUnavailableRanges(property.id, today, lastDate) : [];
+  const [blocked, reviews] = await Promise.all([
+    rents ? getUnavailableRanges(property.id, today, lastDate) : [],
+    getPublishedReviews(property.id),
+  ]);
+  const average = averageRating(reviews.map((review) => review.rating));
   const location = place(property);
 
   const facts = [
@@ -285,6 +298,54 @@ export default async function ImovelPage({ params, searchParams }: Props) {
                 {property.house_rules ? (
                   <p className="max-w-[68ch] whitespace-pre-line">{property.house_rules}</p>
                 ) : null}
+              </section>
+            ) : null}
+
+            {reviews.length > 0 ? (
+              <section aria-labelledby="avaliacoes" className="grid gap-5">
+                <div className="grid gap-1">
+                  <h2 id="avaliacoes" className="font-serif text-h2 font-normal">
+                    Avaliações
+                  </h2>
+                  <p className="flex items-center gap-2">
+                    <Stars
+                      decorative
+                      rating={Math.round(
+                        reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length,
+                      )}
+                    />
+                    <span>
+                      <strong className="font-semibold">{average}</strong> de 5 ·{" "}
+                      {plural(reviews.length, "avaliação", "avaliações")} de hóspedes
+                    </span>
+                  </p>
+                </div>
+                <ul className="grid gap-6 sm:grid-cols-2">
+                  {reviews.map((review) => (
+                    <li key={review.id} className="grid content-start gap-2">
+                      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="font-semibold">
+                          {review.author_display_name || "Hóspede"}
+                        </span>
+                        <span className="text-small text-rocha">
+                          {reviewMonth.format(new Date(review.created_at))}
+                        </span>
+                      </p>
+                      <Stars rating={review.rating} />
+                      {review.comment ? (
+                        <p className="max-w-[68ch] whitespace-pre-line">{review.comment}</p>
+                      ) : null}
+                      {review.admin_reply ? (
+                        <p className="max-w-[68ch] border-l-2 border-junco pl-3 text-small text-rocha">
+                          <span className="font-semibold text-abismo">
+                            Resposta da Alugue Houses:
+                          </span>{" "}
+                          {review.admin_reply}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
               </section>
             ) : null}
 

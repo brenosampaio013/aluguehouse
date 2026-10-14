@@ -8,14 +8,20 @@ import { cn } from "@/lib/cn";
 const links = [
   { href: "/admin", label: "Início", exact: true },
   { href: "/admin/solicitacoes", label: "Solicitações", exact: false },
+  { href: "/admin/avaliacoes", label: "Avaliações", exact: false },
   { href: "/admin/imoveis", label: "Imóveis", exact: false },
 ];
 
-export function AdminNav({ pendingCount = 0 }: { pendingCount?: number }) {
+export function AdminNav({
+  pending = {},
+}: {
+  /** Pendências por link (ex.: solicitações e avaliações). */
+  pending?: Record<string, number>;
+}) {
   const pathname = usePathname();
   return (
     <nav aria-label="Painel">
-      <ul className="flex gap-1">
+      <ul className="flex flex-wrap gap-1">
         {links.map((link) => {
           const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
           return (
@@ -29,9 +35,9 @@ export function AdminNav({ pendingCount = 0 }: { pendingCount?: number }) {
                 )}
               >
                 {link.label}
-                {link.href === "/admin/solicitacoes" && pendingCount > 0 ? (
+                {(pending[link.href] ?? 0) > 0 ? (
                   <span className="ml-2 inline-flex min-w-6 justify-center rounded-full bg-petroleo px-1.5 text-small text-branco tabular-nums">
-                    {pendingCount}
+                    {pending[link.href]}
                     <span className="sr-only"> pendentes</span>
                   </span>
                 ) : null}

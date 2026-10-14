@@ -73,6 +73,13 @@ export function BookingRequestForm({
           disponibilidade e responder pelo e-mail ou telefone informados.
         </p>
         <p className="text-small text-rocha">Nada foi cobrado.</p>
+        <p className="text-small text-rocha">
+          Depois da estadia, entre com este e-mail em{" "}
+          <a href="/minhas-estadias" className="text-petroleo underline underline-offset-3">
+            Minhas estadias
+          </a>{" "}
+          para avaliar o imóvel.
+        </p>
       </div>
     );
   }

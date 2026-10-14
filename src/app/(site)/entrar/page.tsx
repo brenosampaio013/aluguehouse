@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { MagicLinkForm } from "@/components/auth/magic-link-form";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { FormMessage } from "@/components/ui/form-message";
 import { getSessionState } from "@/lib/auth/session";
@@ -42,8 +43,20 @@ export default async function EntrarPage({ searchParams }: PageProps<"/entrar">)
             <p className="max-w-[60ch] text-rocha">
               Conectado como <strong className="text-abismo">{session.email}</strong>.
             </p>
+            <ul className="flex flex-wrap gap-3">
+              <li>
+                <Link href="/favoritos" className={buttonClasses("secondary")}>
+                  Favoritos
+                </Link>
+              </li>
+              <li>
+                <Link href="/minhas-estadias" className={buttonClasses("secondary")}>
+                  Minhas estadias
+                </Link>
+              </li>
+            </ul>
             <form action={signOut}>
-              <Button type="submit" variant="secondary">
+              <Button type="submit" variant="text">
                 Sair
               </Button>
             </form>

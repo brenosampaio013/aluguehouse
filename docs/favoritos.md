@@ -1,6 +1,6 @@
 # Alugue Houses — Favoritos (Etapa 13)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ![Página de favoritos, desktop](favoritos-desktop.png)
 

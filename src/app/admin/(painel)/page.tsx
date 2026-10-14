@@ -4,16 +4,20 @@ import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { countPendingBookings } from "@/server/queries/admin-bookings";
+import { countPendingReviews } from "@/server/queries/reviews";
 
 export default async function PainelPage() {
   const { supabase } = await requireAdmin();
-  const pending = await countPendingBookings(supabase);
+  const [pending, pendingReviews] = await Promise.all([
+    countPendingBookings(supabase),
+    countPendingReviews(supabase),
+  ]);
 
   return (
     <main id="conteudo" className="flex-1 py-12">
       <Container className="grid gap-8">
         <h1 className="font-serif text-h1 font-normal">Painel</h1>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <section
             aria-labelledby="painel-solicitacoes"
             className="grid gap-3 rounded-photo bg-areia p-6"
@@ -29,6 +33,24 @@ export default async function PainelPage() {
             <div>
               <Link href="/admin/solicitacoes" className={buttonClasses("primary")}>
                 Ver solicitações
+              </Link>
+            </div>
+          </section>
+          <section
+            aria-labelledby="painel-avaliacoes"
+            className="grid gap-3 rounded-photo border border-areia p-6"
+          >
+            <h2 id="painel-avaliacoes" className="font-serif text-h3 font-normal">
+              Avaliações
+            </h2>
+            <p>
+              {pendingReviews === 0
+                ? "Nenhuma avaliação esperando moderação."
+                : `${pendingReviews} ${pendingReviews === 1 ? "avaliação esperando" : "avaliações esperando"} moderação.`}
+            </p>
+            <div>
+              <Link href="/admin/avaliacoes" className={buttonClasses("secondary")}>
+                Moderar avaliações
               </Link>
             </div>
           </section>
