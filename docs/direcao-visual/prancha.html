@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alugue Houses — Prancha visual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Prancha de referência da Etapa 2 — não é código do site. */
+  :root {
+    --abismo: #0D3B45;
+    --petroleo: #13606E;
+    --nevoa: #DCEBEC;
+    --areia: #EFE6D6;
+    --junco: #8A7856;
+    --duna: #CDB894;
+    --rocha: #52666A;
+    --branco: #FFFFFF;
+    --erro: #A8321F;
+    --serif: "Newsreader", Georgia, serif;
+    --sans: "Hanken Grotesk", system-ui, sans-serif;
+    --sombra: 0 6px 24px rgb(13 59 69 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--branco);
+    color: var(--abismo);
+    font: 400 16px/1.6 var(--sans);
+  }
+  :focus-visible { outline: 2px solid var(--petroleo); outline-offset: 2px; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 40px; }
+  @media (max-width: 720px) { .wrap { padding: 0 16px; } }
+
+  h1, h2 { font-family: var(--serif); font-weight: 400; margin: 0; }
+  h2 { font-size: 31px; line-height: 1.15; margin-bottom: 8px; }
+  .lead { color: var(--rocha); max-width: 62ch; margin: 0 0 32px; }
+  section.board { padding: 64px 0; border-top: 1px solid var(--duna); }
+
+  .notice {
+    background: var(--areia);
+    padding: 12px 0;
+    font-size: 13px;
+    color: var(--abismo);
+  }
+
+  /* Cabeçalho da prancha */
+  .intro { padding: 72px 0 56px; }
+  .intro h1 { font-size: clamp(39px, 6vw, 61px); line-height: 1.02; letter-spacing: -0.01em; max-width: 16ch; }
+  .intro p { color: var(--rocha); max-width: 60ch; margin-top: 20px; }
+
+  /* Logotipo */
+  .wordmark { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; }
+  .logos { display: grid; grid-template-columns: repeat(3, 1fr) 160px; gap: 16px; }
+  .logo-tile { border-radius: 14px; min-height: 160px; display: grid; place-items: center; font-size: 34px; }
+  .logo-tile.on-white { border: 1px solid var(--duna); }
+  .logo-tile.on-petroleo { background: var(--petroleo); color: var(--branco); }
+  .logo-tile.on-areia { background: var(--areia); }
+  .monogram {
+    width: 96px; height: 96px; border-radius: 22%;
+    background: var(--petroleo); color: var(--branco);
+    display: grid; place-items: center;
+    font: 500 44px/1 var(--serif); letter-spacing: -0.03em;
+  }
+  @media (max-width: 900px) { .logos { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .logos { grid-template-columns: 1fr; } }
+
+  /* Paleta */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+  .swatch { margin: 0; }
+  .swatch .chip { height: 96px; border-radius: 14px; border: 1px solid rgb(13 59 69 / 0.08); }
+  .swatch figcaption { padding-top: 10px; font-size: 13px; line-height: 1.45; color: var(--rocha); }
+  .swatch strong { display: block; font-size: 16px; color: var(--abismo); font-weight: 600; }
+
+  /* Tipografia */
+  .type-row { display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--areia); }
+  .type-row .meta { font-size: 13px; color: var(--rocha); }
+  .t-display { font: 400 61px/1.02 var(--serif); letter-spacing: -0.01em; }
+  .t-h1 { font: 400 39px/1.1 var(--serif); }
+  .t-h2 { font: 400 31px/1.15 var(--serif); }
+  .t-h3 { font: 600 20px/1.3 var(--sans); }
+  .t-body { font: 400 16px/1.6 var(--sans); max-width: 68ch; }
+  .t-small { font: 500 13px/1.45 var(--sans); color: var(--rocha); }
+  @media (max-width: 720px) {
+    .type-row { grid-template-columns: 1fr; gap: 4px; }
+    .t-display { font-size: 39px; }
+    .t-h1 { font-size: 31px; }
+  }
+
+  /* Componentes */
+  .components { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+  @media (max-width: 900px) { .components { grid-template-columns: 1fr; } }
+  .stack { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .label { font-size: 13px; color: var(--rocha); margin: 0 0 12px; }
+  .btn {
+    min-height: 44px; padding: 0 20px; border-radius: 8px;
+    font: 600 16px/1 var(--sans); cursor: pointer; border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--petroleo); color: var(--branco); }
+  .btn-primary:hover { background: var(--abismo); }
+  .btn-secondary { background: var(--branco); color: var(--petroleo); border-color: var(--petroleo); }
+  .btn-text { background: none; color: var(--petroleo); text-decoration: underline; text-underline-offset: 3px; padding: 0 4px; }
+
+  .field { display: grid; gap: 6px; max-width: 320px; }
+  .field label { font-size: 13px; font-weight: 600; }
+  .field input {
+    min-height: 44px; border: 1px solid var(--junco); border-radius: 8px;
+    padding: 0 12px; font: 400 16px var(--sans); color: var(--abismo); background: var(--branco);
+  }
+  .field.error input { border-color: var(--erro); border-width: 2px; }
+  .field .msg { font-size: 13px; color: var(--erro); display: flex; gap: 6px; align-items: center; }
+
+  .segmented {
+    display: inline-flex; background: var(--areia); border-radius: 999px; padding: 4px;
+  }
+  .segmented button {
+    min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: none;
+    font: 600 14px var(--sans); color: var(--abismo); cursor: pointer;
+  }
+  .segmented button[aria-pressed="true"] { background: var(--branco); box-shadow: var(--sombra); }
+
+  .search {
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr auto; align-items: center;
+    background: var(--branco); border-radius: 999px; box-shadow: var(--sombra);
+    border: 1px solid rgb(13 59 69 / 0.08); padding: 6px 6px 6px 8px; max-width: 860px;
+  }
+  .search .slot { padding: 8px 18px; border-right: 1px solid var(--areia); }
+  .search .slot:nth-child(4) { border-right: 0; }
+  .search .slot span { display: block; font-size: 13px; font-weight: 600; }
+  .search .slot small { color: var(--rocha); font-size: 14px; }
+  .search .go { border-radius: 999px; min-height: 52px; padding: 0 24px; }
+  @media (max-width: 720px) {
+    .search { grid-template-columns: 1fr auto; border-radius: 999px; }
+    .search .slot:nth-child(n+2):nth-child(-n+4) { display: none; }
+    .search .slot { border: 0; }
+  }
+
+  /* Calendário */
+  .cal { display: grid; grid-template-columns: repeat(7, 44px); gap: 4px 0; font-size: 14px; }
+  .cal .dow { color: var(--rocha); font-size: 13px; text-align: center; padding-bottom: 6px; }
+  .cal .d { height: 44px; display: grid; place-items: center; }
+  .cal .busy {
+    color: var(--rocha); text-decoration: line-through;
+    background: repeating-linear-gradient(135deg, transparent 0 5px, rgb(13 59 69 / 0.10) 5px 6px);
+  }
+  .cal .range { background: var(--nevoa); }
+  .cal .edge { background: var(--petroleo); color: var(--branco); border-radius: 999px; font-weight: 600; }
+  .cal .edge.start { box-shadow: 22px 0 0 var(--nevoa); }
+  .cal .edge.end { box-shadow: -22px 0 0 var(--nevoa); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--rocha); margin-top: 12px; }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+
+  /* Cartão de imóvel */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 32px 24px; }
+  .card { color: inherit; text-decoration: none; display: block; }
+  .photo {
+    position: relative; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden;
+    background:
+      linear-gradient(180deg, transparent 55%, rgb(239 230 214 / 0.9) 55% 100%),
+      linear-gradient(180deg, #9FC3C7 0 55%, transparent 55%);
+  }
+  .photo.v2 { background: linear-gradient(180deg, #6E9DA4 0 48%, var(--areia) 48%); }
+  .photo.v3 { background: linear-gradient(180deg, #B9D3D5 0 62%, #E3D6BC 62%); }
+  .tag {
+    position: absolute; left: 12px; bottom: 12px; background: rgb(255 255 255 / 0.92);
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  }
+  .fav {
+    position: absolute; right: 10px; top: 10px; width: 44px; height: 44px; border-radius: 999px;
+    background: rgb(255 255 255 / 0.92); border: 0; display: grid; place-items: center; cursor: pointer;
+  }
+  .card h3 { font: 600 16px/1.35 var(--sans); margin: 12px 0 2px; }
+  .card .where, .card .facts { font-size: 14px; color: var(--rocha); margin: 0; }
+  .card .price { margin: 6px 0 0; font-variant-numeric: tabular-nums; }
+  .card .price strong { font-weight: 600; }
+
+  /* Linha da costa */
+  .coast { position: relative; padding: 24px 0 8px; overflow-x: auto; }
+  .coast ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; min-width: 720px; position: relative; }
+  .coast ol::before {
+    content: ""; position: absolute; left: 10px; right: 10px; top: 10px; height: 2px; background: var(--petroleo);
+    transform-origin: left; animation: draw 1.2s ease-out both;
+  }
+  .coast li { position: relative; display: grid; justify-items: start; gap: 12px; }
+  .coast li:last-child { justify-items: end; text-align: right; }
+  .coast a {
+    display: grid; gap: 12px; justify-items: inherit; color: var(--abismo); text-decoration: none; min-height: 44px;
+  }
+  .coast .dot { width: 22px; height: 22px; border-radius: 50%; background: var(--branco); border: 2px solid var(--petroleo); position: relative; z-index: 1; }
+  .coast a[aria-current="true"] .dot { background: var(--petroleo); }
+  .coast .name { font: 400 20px/1.2 var(--serif); }
+  .coast .count { font-size: 13px; color: var(--rocha); }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @media (prefers-reduced-motion: reduce) { .coast ol::before { animation: none; } }
+
+  /* Mock da home */
+  .frames { display: grid; grid-template-columns: 1fr 340px; gap: 32px; align-items: start; }
+  @media (max-width: 1000px) { .frames { grid-template-columns: 1fr; } }
+  .frames > div { min-width: 0; }
+  .scroll-x { overflow-x: auto; }
+  @media (max-width: 1000px) { .mini-home { min-width: 900px; } }
+  .frame { border: 1px solid var(--duna); border-radius: 14px; overflow: hidden; background: var(--branco); }
+  .frame-cap { font-size: 13px; color: var(--rocha); margin-top: 8px; }
+  .site-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; gap: 16px; }
+  .site-head nav { display: flex; gap: 24px; font-weight: 500; font-size: 15px; }
+  .site-head nav a { color: var(--abismo); text-decoration: none; }
+  .site-head .right { display: flex; gap: 16px; font-size: 15px; font-weight: 500; }
+  .hero {
+    position: relative; min-height: 380px; display: grid; align-content: end; gap: 20px; padding: 32px;
+    background:
+      linear-gradient(180deg, rgb(13 59 69 / 0.15) 0%, rgb(13 59 69 / 0.7) 100%),
+      linear-gradient(180deg, #4F8790 0 52%, #2F6C76 52% 70%, #A99A7C 70%);
+    color: var(--branco);
+  }
+  .hero h1 { font-size: 49px; line-height: 1.05; max-width: 15ch; letter-spacing: -0.01em; }
+  .hero .tag { left: auto; right: 16px; top: 16px; bottom: auto; color: var(--abismo); }
+  .mini-home .body { padding: 32px; display: grid; gap: 40px; }
+  .phone { width: 340px; }
+  .phone .hero { min-height: 300px; padding: 20px; }
+  .phone .hero h1 { font-size: 31px; }
+  .phone .mobile-search {
+    display: flex; align-items: center; justify-content: space-between; background: var(--branco);
+    color: var(--abismo); border-radius: 999px; padding: 10px 10px 10px 18px; box-shadow: var(--sombra);
+  }
+  .phone .mobile-search span { font-weight: 600; font-size: 14px; }
+  .phone .mobile-search small { display: block; color: var(--rocha); font-size: 12px; font-weight: 400; }
+  .round { width: 44px; height: 44px; border-radius: 999px; background: var(--petroleo); display: grid; place-items: center; }
+  .tabbar { display: flex; justify-content: space-around; border-top: 1px solid var(--areia); padding: 8px 0 12px; font-size: 12px; font-weight: 600; }
+  .tabbar a { display: grid; justify-items: center; gap: 2px; color: var(--rocha); text-decoration: none; min-width: 64px; }
+  .tabbar a[aria-current="page"] { color: var(--petroleo); }
+
+  footer.end { background: var(--abismo); color: var(--areia); padding: 48px 0; }
+  footer.end p { margin: 0; max-width: 60ch; }
+</style>
+</head>
+<body>
+  <div class="notice">
+    <div class="wrap">Prancha de referência da Etapa 2. Todas as imagens são ilustrativas e serão substituídas por fotos reais dos imóveis.</div>
+  </div>
+
+  <header class="intro wrap">
+    <span class="wordmark" style="font-size:20px">Alugue Houses</span>
+    <h1 style="margin-top:40px">Beira-mar organizada</h1>
+    <p>Fundo branco, fotos grandes e uma interface quieta em volta delas. Petróleo do mar fundo, areia da faixa de praia, branco da arquitetura. O único gesto ousado é a linha da costa, que leva da Riviera a Ubatuba.</p>
+  </header>
+
+  <main>
+    <section class="board wrap" aria-labelledby="s-logo">
+      <h2 id="s-logo">Logotipo provisório</h2>
+      <p class="lead">Marca nominativa em Newsreader 500 e monograma para favicon. Pode ser trocado por um logotipo definitivo sem alterar o restante do sistema.</p>
+      <div class="logos">
+        <div class="logo-tile on-white"><span class="wordmark">Alugue Houses</span></div>
+        <div class="logo-tile on-petroleo"><span class="wordmark">Alugue Houses</span></div>
+        <div class="logo-tile on-areia"><span class="wordmark">Alugue Houses</span></div>
+        <div class="logo-tile on-white"><div class="monogram" aria-label="Monograma AH">AH</div></div>
+      </div>
+    </section>
+
+    <section class="board wrap" aria-labelledby="s-cor">
+      <h2 id="s-cor">Paleta</h2>
+      <p class="lead">Contraste conferido pela WCAG 2.1. Duna é só decorativa; bordas de campos usam junco.</p>
+      <div class="swatches">
+        <figure class="swatch"><div class="chip" style="background:#0D3B45"></div><figcaption><strong>Abismo</strong>#0D3B45 · texto e títulos · 12,2:1 no branco</figcaption></figure>
+        <figure class="swatch"><div class="chip" style="background:#13606E"></div><figcaption><strong>Petróleo</strong>#13606E · ações e links · 7,2:1</figcaption></figure>
+        <figure class="swatch"><div class="chip" style="background:#DCEBEC"></div><figcaption><strong>Névoa</strong>#DCEBEC · seleção de datas e filtros</figcaption></figure>
+        <figure class="swatch"><div class="chip" style="background:#EFE6D6"></div><figcaption><strong>Areia</strong>#EFE6D6 · faixas e painel de reserva</figcaption></figure>
+        <figure class="swatch"><div class="chip" style="background:#8A7856"></div><figcaption><strong>Junco</strong>#8A7856 · bordas de campos · 4,3:1</figcaption></figure>
+        <figure class="swatch"><div class="chip" style="background:#CDB894"></div><figcaption><strong>Duna</strong>#CDB894 · só decoração</figcaption></figure>
+        <figure class="swatch"><div class="chip" style="background:#52666A"></div><figcaption><strong>Rocha</strong>#52666A · texto secundário · 6,1:1</figcaption></figure>
+        <figure class="swatch"><div class="chip" style="background:#A8321F"></div><figcaption><strong>Erro</strong>#A8321F · validação · 6,7:1</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="board wrap" aria-labelledby="s-tipo">
+      <h2 id="s-tipo">Tipografia</h2>
+      <p class="lead">Newsreader nos títulos, Hanken Grotesk na interface. Escala de razão 1,25 sobre 16 px.</p>
+      <div class="type-row"><span class="meta">display 61</span><span class="t-display">Casas de frente para o mar</span></div>
+      <div class="type-row"><span class="meta">h1 39</span><span class="t-h1">Casa com piscina no Módulo 5</span></div>
+      <div class="type-row"><span class="meta">h2 31</span><span class="t-h2">Comodidades</span></div>
+      <div class="type-row"><span class="meta">h3 20</span><span class="t-h3">Quatro suítes, a 180 m da praia</span></div>
+      <div class="type-row"><span class="meta">body 16</span><p class="t-body" style="margin:0">Casa térrea em rua arborizada, com varanda gourmet voltada para a piscina e acesso a pé à praia pela passarela do jundu. Texto ilustrativo.</p></div>
+      <div class="type-row"><span class="meta">small 13</span><span class="t-small">Check-in a partir das 15h · check-out até 11h</span></div>
+    </section>
+
+    <section class="board wrap" aria-labelledby="s-comp">
+      <h2 id="s-comp">Componentes</h2>
+      <p class="lead">Raio de 8 px em botões e campos, 14 px em fotos, arredondado total só na busca e no seletor de modalidade. Sombra apenas no que flutua.</p>
+
+      <p class="label">Busca</p>
+      <div class="segmented" role="group" aria-label="Modalidade" style="margin-bottom:16px">
+        <button aria-pressed="true">Temporada</button>
+        <button aria-pressed="false">Mensal</button>
+        <button aria-pressed="false">Venda</button>
+      </div>
+      <div class="search" role="search">
+        <div class="slot"><span>Onde</span><small>Riviera de São Lourenço</small></div>
+        <div class="slot"><span>Chegada</span><small>27 dez</small></div>
+        <div class="slot"><span>Saída</span><small>3 jan</small></div>
+        <div class="slot"><span>Hóspedes</span><small>8 pessoas</small></div>
+        <button class="btn btn-primary go">Buscar</button>
+      </div>
+
+      <div class="components" style="margin-top:48px">
+        <div>
+          <p class="label">Botões</p>
+          <div class="stack">
+            <button class="btn btn-primary">Solicitar reserva</button>
+            <button class="btn btn-secondary">Falar no WhatsApp</button>
+            <button class="btn btn-text">Ver todas as fotos</button>
+          </div>
+          <p class="label" style="margin-top:32px">Campos</p>
+          <div class="stack" style="align-items:start">
+            <div class="field"><label for="f1">Nome completo</label><input id="f1" value="Marina Alves"></div>
+            <div class="field error"><label for="f2">Telefone</label><input id="f2" value="13 9961" aria-invalid="true" aria-describedby="f2m"><span class="msg" id="f2m">⚠ Informe o telefone com DDD, ex.: 13 99999-9999.</span></div>
+          </div>
+        </div>
+        <div>
+          <p class="label">Calendário — dezembro</p>
+          <div class="cal" aria-hidden="true">
+            <span class="dow">D</span><span class="dow">S</span><span class="dow">T</span><span class="dow">Q</span><span class="dow">Q</span><span class="dow">S</span><span class="dow">S</span>
+            <span class="d"></span><span class="d">1</span><span class="d">2</span><span class="d">3</span><span class="d">4</span><span class="d">5</span><span class="d">6</span>
+            <span class="d">7</span><span class="d">8</span><span class="d busy">9</span><span class="d busy">10</span><span class="d busy">11</span><span class="d busy">12</span><span class="d">13</span>
+            <span class="d">14</span><span class="d">15</span><span class="d">16</span><span class="d">17</span><span class="d">18</span><span class="d">19</span><span class="d">20</span>
+            <span class="d">21</span><span class="d">22</span><span class="d">23</span><span class="d">24</span><span class="d">25</span><span class="d">26</span><span class="d edge start">27</span>
+            <span class="d range">28</span><span class="d range">29</span><span class="d range">30</span><span class="d edge end">31</span><span class="d"></span><span class="d"></span><span class="d"></span>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--petroleo)"></i>Chegada e saída</span>
+            <span><i style="background:var(--nevoa)"></i>Período escolhido</span>
+            <span><i style="background:repeating-linear-gradient(135deg,transparent 0 3px,rgb(13 59 69/.25) 3px 4px)"></i>Indisponível (riscado)</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="label" style="margin-top:48px">Cartões de imóvel</p>
+      <div class="cards">
+        <a class="card" href="#">
+          <div class="photo"><span class="tag">Foto ilustrativa</span><button class="fav" aria-label="Salvar nos favoritos">♡</button></div>
+          <h3>Casa com piscina e jardim</h3>
+          <p class="where">Riviera de São Lourenço, Módulo 5</p>
+          <p class="facts">4 suítes · até 10 hóspedes</p>
+          <p class="price"><strong>R$ 1.800</strong> por noite</p>
+        </a>
+        <a class="card" href="#">
+          <div class="photo v2"><span class="tag">Foto ilustrativa</span><button class="fav" aria-label="Salvar nos favoritos">♡</button></div>
+          <h3>Apartamento frente ao mar</h3>
+          <p class="where">Riviera de São Lourenço, Módulo 6</p>
+          <p class="facts">3 suítes · até 6 hóspedes</p>
+          <p class="price"><strong>R$ 14.000</strong> por mês</p>
+        </a>
+        <a class="card" href="#">
+          <div class="photo v3"><span class="tag">Foto ilustrativa</span><button class="fav" aria-label="Salvar nos favoritos">♡</button></div>
+          <h3>Casa térrea com varanda gourmet</h3>
+          <p class="where">Juquehy, São Sebastião</p>
+          <p class="facts">5 quartos · 420 m²</p>
+          <p class="price"><strong>R$ 3.900.000</strong> à venda</p>
+        </a>
+      </div>
+      <p class="t-small" style="margin-top:16px">Valores e endereços desta prancha são exemplos, não imóveis reais.</p>
+    </section>
+
+    <section class="board wrap" aria-labelledby="s-costa">
+      <h2 id="s-costa">Linha da costa</h2>
+      <p class="lead">O elemento de assinatura: regiões em ordem geográfica pela Rio-Santos. Funciona como filtro de região na home e se desenha uma única vez ao aparecer. Lista a confirmar.</p>
+      <nav class="coast" aria-label="Regiões">
+        <ol>
+          <li><a href="#" aria-current="true"><span class="dot"></span><span class="name">Riviera de<br>São Lourenço</span><span class="count">Bertioga</span></a></li>
+          <li><a href="#"><span class="dot"></span><span class="name">São Sebastião</span><span class="count">Costa sul</span></a></li>
+          <li><a href="#"><span class="dot"></span><span class="name">Ilhabela</span><span class="count">Arquipélago</span></a></li>
+          <li><a href="#"><span class="dot"></span><span class="name">Caraguatatuba</span><span class="count">Litoral Norte</span></a></li>
+          <li><a href="#"><span class="dot"></span><span class="name">Ubatuba</span><span class="count">Divisa com RJ</span></a></li>
+        </ol>
+      </nav>
+    </section>
+
+    <section class="board wrap" aria-labelledby="s-tela">
+      <h2 id="s-tela">Página inicial em esboço</h2>
+      <p class="lead">Desktop e celular. A foto do topo será uma foto real da Riviera.</p>
+      <div class="frames">
+        <div class="scroll-x">
+          <div class="frame mini-home">
+            <div class="site-head">
+              <span class="wordmark" style="font-size:22px">Alugue Houses</span>
+              <nav aria-label="Modalidades (esboço)"><a href="#">Temporada</a><a href="#">Mensal</a><a href="#">Venda</a></nav>
+              <div class="right"><span>♡ Favoritos</span><span>Entrar</span></div>
+            </div>
+            <div class="hero">
+              <span class="tag">Foto ilustrativa</span>
+              <h1>Casas de alto padrão na Riviera e no Litoral Norte</h1>
+              <div class="search" style="max-width:100%">
+                <div class="slot"><span style="color:var(--abismo)">Onde</span><small>Escolha a região</small></div>
+                <div class="slot"><span style="color:var(--abismo)">Chegada</span><small>Data</small></div>
+                <div class="slot"><span style="color:var(--abismo)">Saída</span><small>Data</small></div>
+                <div class="slot"><span style="color:var(--abismo)">Hóspedes</span><small>Quantos?</small></div>
+                <button class="btn btn-primary go">Buscar</button>
+              </div>
+            </div>
+            <div class="body">
+              <div>
+                <h2 style="font-size:25px">Da Riviera a Ubatuba</h2>
+                <div style="height:2px;background:var(--petroleo);margin-top:20px;position:relative">
+                  <span style="position:absolute;left:0;top:-7px;width:16px;height:16px;border-radius:50%;background:var(--petroleo)"></span>
+                  <span style="position:absolute;left:25%;top:-7px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--petroleo)"></span>
+                  <span style="position:absolute;left:50%;top:-7px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--petroleo)"></span>
+                  <span style="position:absolute;left:75%;top:-7px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--petroleo)"></span>
+                  <span style="position:absolute;right:0;top:-7px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--petroleo)"></span>
+                </div>
+              </div>
+              <div class="cards" style="grid-template-columns:repeat(3,1fr)">
+                <div class="card"><div class="photo"></div><h3>Casa com piscina e jardim</h3><p class="price"><strong>R$ 1.800</strong> por noite</p></div>
+                <div class="card"><div class="photo v2"></div><h3>Apartamento frente ao mar</h3><p class="price"><strong>R$ 14.000</strong> por mês</p></div>
+                <div class="card"><div class="photo v3"></div><h3>Casa térrea com varanda</h3><p class="price"><strong>R$ 1.250</strong> por noite</p></div>
+              </div>
+            </div>
+          </div>
+          <p class="frame-cap">Desktop, largura 1240 px (reduzido).</p>
+        </div>
+        <div>
+          <div class="frame phone">
+            <div class="site-head" style="padding:14px 16px"><span class="wordmark" style="font-size:19px">Alugue Houses</span><span aria-hidden="true">☰</span></div>
+            <div class="hero">
+              <span class="tag">Foto ilustrativa</span>
+              <h1>Casas de alto padrão na Riviera e no Litoral Norte</h1>
+              <div class="mobile-search"><span>Onde e quando?<small>Região · datas · hóspedes</small></span><span class="round" aria-hidden="true" style="color:#fff">⌕</span></div>
+            </div>
+            <div style="padding:20px 16px">
+              <div class="card"><div class="photo"></div><h3>Casa com piscina e jardim</h3><p class="where">Riviera, Módulo 5</p><p class="price"><strong>R$ 1.800</strong> por noite</p></div>
+            </div>
+            <nav class="tabbar" aria-label="Navegação (esboço)">
+              <a href="#" aria-current="page"><span aria-hidden="true">⌕</span>Explorar</a>
+              <a href="#"><span aria-hidden="true">♡</span>Favoritos</a>
+              <a href="#"><span aria-hidden="true">○</span>Entrar</a>
+            </nav>
+          </div>
+          <p class="frame-cap">Celular, 340 px. Barra inferior fixa.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="end">
+    <div class="wrap">
+      <span class="wordmark" style="font-size:24px;color:var(--branco)">Alugue Houses</span>
+      <p style="margin-top:12px">Rodapé em abismo com contato, WhatsApp (13) 99619-5221, contatoaluguehouses@gmail.com, responsável e CRECI, privacidade e termos.</p>
+    </div>
+  </footer>
+</body>
+</html>
