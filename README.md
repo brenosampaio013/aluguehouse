@@ -38,6 +38,21 @@ pnpm db:start                # sobe o Supabase local (Docker)
 pnpm dev                     # http://localhost:3000
 ```
 
+### Ver com dados de demonstração
+
+```bash
+pnpm demo:seed   # imóvel 01 (fotos reais, valores fictícios) e admin local
+```
+
+- Site: <http://localhost:3000> · imóvel: `/imoveis/imovel-01-demonstracao`
+- Painel: <http://localhost:3000/admin> com `admin@alugue.local` /
+  `SenhaLocal2026` (no primeiro acesso, leia o QR code com um app
+  autenticador, como Google Authenticator).
+- E-mails de login dos hóspedes chegam na caixa local: <http://127.0.0.1:54324>.
+- O script só funciona com o Supabase local; nunca use essas credenciais em
+  produção.
+- Capturas de tela da demonstração: `docs/demonstracao/`.
+
 ## Comandos
 
 | Comando                     | O que faz                                                            |

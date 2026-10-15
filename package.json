@@ -23,7 +23,8 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/types/database.ts && prettier --write src/types/database.ts",
     "db:test": "supabase test db",
-    "db:lint": "supabase db lint --level warning --fail-on warning"
+    "db:lint": "supabase db lint --level warning --fail-on warning",
+    "demo:seed": "node scripts/demo-seed.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
