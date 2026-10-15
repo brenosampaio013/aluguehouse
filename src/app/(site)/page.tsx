@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { unstable_rethrow } from "next/navigation";
 import { connection } from "next/server";
 
 import { Destinations } from "@/components/home/destinations";
@@ -34,6 +35,8 @@ async function loadFeatured(): Promise<PropertyCardData[]> {
   try {
     return await getFeaturedProperties(6);
   } catch (error) {
+    // Sinais internos do Next (página dinâmica, redirect, 404) não são falhas.
+    unstable_rethrow(error);
     // A página continua útil sem os destaques se o banco estiver fora do ar.
     console.error("Falha ao carregar destaques", error);
     return [];
@@ -44,6 +47,8 @@ async function loadCapacity(): Promise<number> {
   try {
     return (await getMaxGuestCapacity()) ?? MAX_SEARCH_GUESTS;
   } catch (error) {
+    // Sinais internos do Next (página dinâmica, redirect, 404) não são falhas.
+    unstable_rethrow(error);
     console.error("Falha ao carregar a capacidade máxima", error);
     return MAX_SEARCH_GUESTS;
   }
@@ -53,6 +58,8 @@ async function loadRegionCounts(): Promise<Partial<Record<RegionSlug, number>>> 
   try {
     return await getSeasonalCountsByRegion();
   } catch (error) {
+    // Sinais internos do Next (página dinâmica, redirect, 404) não são falhas.
+    unstable_rethrow(error);
     // Sem a contagem, os destinos continuam com o convite "Ver imóveis".
     console.error("Falha ao contar imóveis por região", error);
     return {};
