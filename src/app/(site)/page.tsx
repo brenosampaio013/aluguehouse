@@ -1,20 +1,24 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 
-import { CoastLine } from "@/components/home/coast-line";
+import { Destinations } from "@/components/home/destinations";
 import { HeroSearch } from "@/components/home/hero-search";
 import { HomeHero } from "@/components/home/home-hero";
 import { PropertyCard } from "@/components/property/property-card";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
+import { ArrowRightIcon } from "@/components/ui/icons";
 import { getPublicEnv } from "@/lib/env";
 import { heroPhoto } from "@/lib/home/hero-photo";
 import { organizationJsonLd } from "@/lib/seo/json-ld";
-import { siteConfig } from "@/lib/site-config";
+import type { RegionSlug } from "@/lib/regions";
 import { MAX_SEARCH_GUESTS } from "@/lib/search/home-search";
+import { siteConfig } from "@/lib/site-config";
 import {
   getFeaturedProperties,
   getMaxGuestCapacity,
+  getSeasonalCountsByRegion,
   type PropertyCardData,
 } from "@/server/queries/public-properties";
 
@@ -57,6 +61,16 @@ async function loadCapacity(): Promise<number> {
   }
 }
 
+async function loadRegionCounts(): Promise<Partial<Record<RegionSlug, number>>> {
+  try {
+    return await getSeasonalCountsByRegion();
+  } catch (error) {
+    // Sem a contagem, os destinos continuam com o convite "Ver imóveis".
+    console.error("Falha ao contar imóveis por região", error);
+    return {};
+  }
+}
+
 /** Hoje no fuso de São Paulo (AAAA-MM-DD), como no calendário do imóvel. */
 function todaySP() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -66,7 +80,11 @@ export default async function HomePage() {
   // Gera a página a cada visita para os destaques refletirem o que está
   // publicado agora. Cache com revalidação entra na etapa de otimização.
   await connection();
-  const [featured, maxGuests] = await Promise.all([loadFeatured(), loadCapacity()]);
+  const [featured, maxGuests, regionCounts] = await Promise.all([
+    loadFeatured(),
+    loadCapacity(),
+    loadRegionCounts(),
+  ]);
   const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl } = getPublicEnv();
 
   return (
@@ -80,15 +98,28 @@ export default async function HomePage() {
         </div>
       </Container>
 
-      <Container className="grid gap-20 pt-14 pb-16 sm:pt-16 sm:pb-20">
-        <CoastLine />
-
+      <Container className="grid gap-20 pt-14 pb-16 sm:gap-24 sm:pt-16 sm:pb-24">
         {featured.length > 0 ? (
           <section aria-labelledby="titulo-destaques" className="grid gap-8">
-            <h2 id="titulo-destaques" className="font-serif text-h2 font-normal">
-              Em destaque
-            </h2>
-            <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+              <div className="grid gap-3">
+                <p className="flex items-center gap-3 text-small font-semibold tracking-[0.18em] text-rocha uppercase">
+                  <span aria-hidden="true" className="h-px w-10 bg-dourado" />
+                  Seleção
+                </p>
+                <h2 id="titulo-destaques" className="font-serif text-h2 font-normal">
+                  Em destaque
+                </h2>
+              </div>
+              <Link
+                href="/temporada"
+                className="inline-flex min-h-11 items-center gap-2 font-semibold text-petroleo underline-offset-4 hover:underline"
+              >
+                Ver todos os imóveis
+                <ArrowRightIcon width={16} height={16} />
+              </Link>
+            </div>
+            <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((property) => (
                 <li key={property.slug}>
                   <PropertyCard
@@ -102,6 +133,8 @@ export default async function HomePage() {
             </ul>
           </section>
         ) : null}
+
+        <Destinations counts={regionCounts} />
       </Container>
 
       <section aria-labelledby="titulo-como-funciona" className="bg-areia py-16 sm:py-20">

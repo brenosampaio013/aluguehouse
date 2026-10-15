@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { RegionSlug } from "@/lib/regions";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 
 export type PropertyCardData = {
@@ -122,4 +123,24 @@ export async function getMaxGuestCapacity(): Promise<number | null> {
     .maybeSingle();
   if (error) throw error;
   return data?.max_guests ?? null;
+}
+
+/**
+ * Quantos imóveis cada região tem na listagem de temporada (mesmo critério
+ * de `search_rentals` sem filtros: publicado e com temporada).
+ */
+export async function getSeasonalCountsByRegion(): Promise<Partial<Record<RegionSlug, number>>> {
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("region")
+    .eq("status", "published")
+    .eq("offers_seasonal", true)
+    .not("region", "is", null);
+  if (error) throw error;
+  const counts: Partial<Record<RegionSlug, number>> = {};
+  for (const { region } of data as { region: RegionSlug }[]) {
+    counts[region] = (counts[region] ?? 0) + 1;
+  }
+  return counts;
 }

@@ -83,43 +83,6 @@
 }
 
 /*
- * Linha da costa: traço que liga as regiões. Desenha-se uma única vez ao
- * entrar na tela (animação ligada à rolagem). Sem suporte ou com movimento
- * reduzido, aparece pronta.
- */
-@layer components {
-  .coast-line::before {
-    content: "";
-    position: absolute;
-    left: 11px;
-    right: 11px;
-    top: 10px;
-    height: 2px;
-    background: var(--color-petroleo);
-    transform-origin: left;
-  }
-
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .coast-line::before {
-        animation: coast-draw linear both;
-        animation-timeline: view();
-        animation-range: entry 10% cover 35%;
-      }
-    }
-  }
-
-  @keyframes coast-draw {
-    from {
-      transform: scaleX(0);
-    }
-    to {
-      transform: scaleX(1);
-    }
-  }
-}
-
-/*
  * Fundo do topo da página inicial enquanto não há foto: mar fundo em
  * petróleo e marinho, com um brilho de fim de tarde no horizonte.
  */
@@ -129,6 +92,15 @@
       radial-gradient(110% 75% at 80% 115%, rgb(183 154 105 / 0.38), transparent 62%),
       radial-gradient(80% 60% at 0% 0%, rgb(16 59 64 / 0.95), transparent 70%),
       linear-gradient(165deg, var(--color-petroleo) 0%, var(--color-abismo) 72%);
+  }
+}
+
+/* Cartões de destino enquanto não há foto: mesmo mar do topo, mais compacto. */
+@layer components {
+  .destino-sem-foto {
+    background:
+      radial-gradient(90% 70% at 75% 0%, rgb(183 154 105 / 0.22), transparent 65%),
+      linear-gradient(170deg, var(--color-petroleo) 0%, var(--color-abismo) 80%);
   }
 }
 

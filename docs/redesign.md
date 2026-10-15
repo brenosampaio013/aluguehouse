@@ -95,7 +95,7 @@ lateral. A foto é carregada com prioridade (é o maior elemento da tela).
 
 ## Etapa 4 — Barra de busca
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 Substitui a busca da página inicial (`src/components/home/hero-search.tsx`).
 Lógica pura e testada em `src/lib/search/home-search.ts`; calendário em
@@ -129,3 +129,50 @@ Lógica pura e testada em `src/lib/search/home-search.ts`; calendário em
 - **Disponibilidade na busca**: as datas filtram os imóveis livres na
   listagem (função `search_rentals`, já existente); o calendário da busca
   não mostra datas ocupadas, pois cada imóvel tem as suas.
+
+## Etapa 5 — Cards de imóveis e destinos
+
+> Status: **aguardando aprovação**.
+
+### Cartão de imóvel
+
+`src/components/property/property-card.tsx`, usado na página inicial, em
+Temporada, Mensal, Venda e Favoritos.
+
+- Foto grande (4:3) com leve zoom ao passar o mouse; sem foto, "Fotos em
+  breve" em vez de um espaço vazio.
+- Localização em versalete ("Riviera de São Lourenço · Bertioga"), título em
+  serifa e uma linha de informações com ícones: **quartos**, **suítes** e
+  **capacidade** (venda: área no lugar da capacidade). Itens com zero não
+  aparecem.
+- Preço real cadastrado (por noite, por mês ou à venda) ou o total da estadia
+  quando há datas, abaixo de um filete dourado.
+- Mantidos: coração de favoritos, selo "Foto ilustrativa", link para a página
+  do imóvel (com as datas, nas listagens) e os filtros.
+
+### Destinos
+
+`src/components/home/destinations.tsx`, com os textos em
+`src/lib/home/destinations.ts`. Substitui a linha da costa da página inicial,
+que levava às mesmas cinco listagens.
+
+- Riviera de São Lourenço em destaque (cartão maior), depois São Sebastião,
+  Ilhabela, Caraguatatuba e Ubatuba, na ordem da Rio-Santos.
+- Cada cartão leva a `/temporada?regiao=…` e mostra quantos imóveis a região
+  tem para temporada (contagem do banco, mesmo critério da listagem). Sem
+  imóveis, mostra só "Ver imóveis", sem número.
+- Os textos descrevem apenas a geografia de cada região.
+
+**Fotos dos destinos: ainda não há.** Cada cartão usa um desenho próprio em
+traços dourados (praia com o sol, enseadas, a ilha, a baía, a serra), que não
+simula foto. O desenho fica acima do texto e nunca passa por trás dele. Para
+colocar uma foto: `pnpm hero:photo caminho/da/foto.jpg destino-<slug>` e
+preencher `photo` do destino em `src/lib/home/destinations.ts` (com
+`illustrative: true` se não for de um imóvel anunciado; aparece o selo "Foto
+ilustrativa").
+
+### O que não foi inventado
+
+Nenhum imóvel, preço, avaliação ou disponibilidade fictícios: tudo vem do
+banco. Os cartões não mostram nota de avaliação porque a listagem ainda não
+traz esse dado (ele aparece na página do imóvel).

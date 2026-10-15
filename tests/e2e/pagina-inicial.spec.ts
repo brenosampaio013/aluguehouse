@@ -32,6 +32,7 @@ test.describe("página inicial", () => {
         property_type: "casa",
         city: "Bertioga",
         neighborhood: "Riviera de São Lourenço",
+        region: "riviera-de-sao-lourenco",
         bedrooms: 3,
         suites: 2,
         max_guests: 6,
@@ -71,19 +72,23 @@ test.describe("página inicial", () => {
     await api.from("properties").delete().eq("id", propertyId);
   });
 
-  test("mostra título, linha da costa e como funciona", async ({ page }) => {
+  test("mostra título, destinos e como funciona", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Seu próximo capítulo começa aqui.",
     );
 
-    const costa = page.getByRole("navigation", { name: "Da Riviera a Ubatuba" });
-    const links = costa.getByRole("link");
+    const destinos = page.getByRole("region", { name: "Da Riviera a Ubatuba" });
+    const links = destinos.getByRole("link");
     await expect(links).toHaveCount(regions.length);
     for (const [index, region] of regions.entries()) {
-      await expect(links.nth(index)).toContainText(region.name);
+      await expect(links.nth(index).getByRole("heading", { level: 3 })).toHaveText(region.name);
       await expect(links.nth(index)).toHaveAttribute("href", `/temporada?regiao=${region.slug}`);
     }
+    // A contagem vem do banco: a casa deste teste está na Riviera.
+    await expect(links.first()).toContainText(/\d+ imóve(l|is) para temporada/);
+    // Sem foto dos destinos, nenhum cartão simula uma: o desenho é decorativo.
+    await expect(destinos.getByRole("img")).toHaveCount(0);
 
     const passos = page
       .getByRole("region", { name: "Como funciona a reserva" })
@@ -122,8 +127,12 @@ test.describe("página inicial", () => {
       "href",
       `/imoveis/${slug}`,
     );
-    await expect(card).toContainText("Riviera de São Lourenço, Bertioga");
-    await expect(card).toContainText("2 suítes · até 6 hóspedes");
+    await expect(card).toContainText("Riviera de São Lourenço · Bertioga");
+    await expect(card.getByRole("listitem")).toHaveText([
+      "3 quartos",
+      "2 suítes",
+      "até 6 hóspedes",
+    ]);
     await expect(card).toContainText("R$ 1.234 por noite");
     await expect(card.getByText("Foto ilustrativa")).toBeVisible();
     const img = card.getByRole("img", { name: "Sala de jantar com mesa redonda" });

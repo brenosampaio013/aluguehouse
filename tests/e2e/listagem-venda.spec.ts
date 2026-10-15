@@ -107,8 +107,13 @@ test.describe("listagem de venda", () => {
     await page.goto("/venda");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Imóveis à venda");
     await expect(card(page, A)).toContainText("R$ 1.800.000 à venda");
-    await expect(card(page, A)).toContainText("4 quartos · 320 m²");
-    await expect(card(page, B)).toContainText("1 suíte · 110 m²");
+    // Quartos, suítes (só quando há) e área; venda não mostra hóspedes.
+    await expect(card(page, A).getByRole("listitem")).toHaveText(["4 quartos", "320 m²"]);
+    await expect(card(page, B).getByRole("listitem")).toHaveText([
+      "2 quartos",
+      "1 suíte",
+      "110 m²",
+    ]);
     await expect(card(page, C)).toHaveCount(0);
     await expect(card(page, D)).toHaveCount(0);
   });
