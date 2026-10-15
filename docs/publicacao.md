@@ -107,6 +107,56 @@ Pode esperar o lançamento oficial: domínio, Resend (sem ele, o login de
 hóspedes usa o e-mail embutido do Supabase, limitado a poucos por hora, e os
 avisos ao administrador ficam desligados), `SITE_INDEXING=on`.
 
+## Publicação pelo painel da Cloudflare (Workers Builds)
+
+Alternativa ao workflow "Publicar" do GitHub: a Cloudflare faz o build e o
+deploy a cada push na `main`. **Use só um dos dois caminhos** (com o painel,
+deixe `DEPLOY_ENABLED` desligado no GitHub, senão os dois publicam).
+
+Workers & Pages → `alugue-houses` → Settings → Build:
+
+| Campo                                | Valor                                                                               |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| Git repository / branch de produção  | `brenosampaio013/aluguehouse` / `main`                                              |
+| Root directory                       | `/` (vazio)                                                                         |
+| **Build command**                    | `pnpm run cf:build`                                                                 |
+| **Deploy command**                   | `pnpm exec opennextjs-cloudflare deploy`                                            |
+| Non-production branch deploy command | `pnpm exec opennextjs-cloudflare upload` (ou desligue os builds de outras branches) |
+
+- **Por que o build é obrigatório**: `opennextjs-cloudflare deploy` (e
+  `npx wrangler deploy`, que repassa para ele) **não compila**: procura
+  `.open-next/.build/open-next.config.edge.mjs`, gerado por
+  `opennextjs-cloudflare build`. Com o build vazio ou só `next build`, o
+  deploy falha com "Could not find compiled Open Next config, did you run
+  the build command?". `cf:build` roda o build do Next (com a cópia do
+  MapLibre) e o empacotamento do OpenNext.
+- **O nome do Worker no painel precisa ser `alugue-houses`** (o mesmo do
+  `wrangler.jsonc`, usado também em `WORKER_SELF_REFERENCE`).
+- **Plano Workers Paid**: o Worker comprimido tem cerca de 3,1 MB; o plano
+  Free aceita até 3 MB.
+- Node 22 vem do `.nvmrc`; o pnpm 10, do `packageManager` do `package.json`.
+
+**Variáveis de build** (Settings → Build → Variables and secrets) — entram
+no código durante o build; sem elas o build para com "Build interrompido:
+variáveis públicas ausentes":
+
+- `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+  (opcional), `NEXT_PUBLIC_MAP_STYLE_URL` (opcional).
+
+**Variáveis e segredos do Worker** (Settings → Variables and Secrets) — lidos
+quando o site roda; marque como **Secret** os sigilosos:
+
+- Secret: `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`,
+  `RESEND_API_KEY` (quando houver).
+- Texto: `EMAIL_FROM`, `ADMIN_NOTIFY_EMAIL` (opcionais). `SITE_INDEXING`:
+  não crie até o lançamento oficial.
+
+**Banco de dados**: o build do painel não aplica migrations. No GitHub,
+crie o segredo `SUPABASE_DB_URL` e a variável `MIGRATIONS_ENABLED=true`, e
+rode Actions → **Banco de dados (migrations)** → Run workflow **antes** do
+primeiro deploy; depois ele roda sozinho quando chegarem migrations novas.
+
 ## O que falta — em ordem
 
 ### 1. Decisões e pendências legais (antes de anunciar)

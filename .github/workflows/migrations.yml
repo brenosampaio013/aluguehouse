@@ -1,0 +1,47 @@
+# Aplica as migrations no Supabase de produção. Use quando o site é
+# publicado pelo painel da Cloudflare (Workers Builds), que só faz o build e
+# o deploy. Se a publicação for pelo workflow "Publicar" (deploy.yml), ele já
+# aplica as migrations: deixe MIGRATIONS_ENABLED desligado.
+#
+# Liga com a variável MIGRATIONS_ENABLED=true e o segredo SUPABASE_DB_URL
+# (conexão "Session pooler"). Roda sozinho quando chegam migrations novas na
+# main, ou pelo botão "Run workflow".
+name: Banco de dados (migrations)
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrations-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Aplicar migrations
+    if: vars.MIGRATIONS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Permite exigir aprovação manual em Settings → Environments → production.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Aplicar migrations no Supabase de produção
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Defina o segredo SUPABASE_DB_URL (Supabase → Connect → Session pooler)."
+            exit 1
+          fi
+          supabase db push --db-url "$SUPABASE_DB_URL" --yes
