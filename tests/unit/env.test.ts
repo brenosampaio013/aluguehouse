@@ -25,4 +25,18 @@ describe("variáveis de ambiente", () => {
   it("exige a chave do servidor", () => {
     expect(() => parseServerEnv({})).toThrowError(/SUPABASE_SERVICE_ROLE_KEY/);
   });
+
+  it("limites de vídeo têm padrão e são configuráveis dentro do teto do banco", () => {
+    const base = { SUPABASE_SERVICE_ROLE_KEY: "x" };
+    expect(parseServerEnv(base)).toMatchObject({
+      VIDEO_MAX_UPLOAD_MB: 50,
+      VIDEO_MAX_PER_PROPERTY: 6,
+    });
+    expect(
+      parseServerEnv({ ...base, VIDEO_MAX_UPLOAD_MB: "200", VIDEO_MAX_PER_PROPERTY: "10" }),
+    ).toMatchObject({ VIDEO_MAX_UPLOAD_MB: 200, VIDEO_MAX_PER_PROPERTY: 10 });
+    expect(() => parseServerEnv({ ...base, VIDEO_MAX_PER_PROPERTY: "21" })).toThrowError(
+      /VIDEO_MAX_PER_PROPERTY/,
+    );
+  });
 });

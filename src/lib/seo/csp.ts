@@ -44,6 +44,8 @@ export function buildCsp({ nonce, isDev, siteUrl, supabaseUrl, mapStyleUrl }: Cs
     // Estilos inline: atributos style do React e do MapLibre.
     ["style-src", ["'self'", "'unsafe-inline'"]],
     ["img-src", ["'self'", "data:", "blob:", ...extra(supabase, map)]],
+    // Vídeos enviados (Storage do Supabase) e a prévia local no painel (blob:).
+    ["media-src", ["'self'", "blob:", ...extra(supabase)]],
     ["font-src", ["'self'"]],
     ["connect-src", ["'self'", ...extra(supabase, map, turnstile, isDev && "ws:")]],
     ["worker-src", ["'self'", "blob:"]],

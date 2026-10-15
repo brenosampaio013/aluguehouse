@@ -200,7 +200,7 @@ function AltTextForm({
   );
 }
 
-function RefForm({
+export function RefForm({
   action,
   propertyId,
   mediaId,

@@ -10,5 +10,7 @@ export function getServerEnv(): ServerEnv {
     EMAIL_FROM: process.env.EMAIL_FROM || undefined,
     ADMIN_NOTIFY_EMAIL: process.env.ADMIN_NOTIFY_EMAIL || undefined,
     MAILPIT_URL: process.env.MAILPIT_URL || undefined,
+    VIDEO_MAX_UPLOAD_MB: process.env.VIDEO_MAX_UPLOAD_MB || undefined,
+    VIDEO_MAX_PER_PROPERTY: process.env.VIDEO_MAX_PER_PROPERTY || undefined,
   });
 }

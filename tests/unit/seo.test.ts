@@ -38,6 +38,7 @@ describe("CSP", () => {
       "img-src 'self' data: blob: https://xyz.supabase.co https://tiles.openfreemap.org",
     );
     expect(directive(csp, "frame-src")).toBe("frame-src https://challenges.cloudflare.com");
+    expect(directive(csp, "media-src")).toBe("media-src 'self' blob: https://xyz.supabase.co");
   });
 
   it("desenvolvimento: unsafe-eval e websocket; http local sem upgrade", () => {

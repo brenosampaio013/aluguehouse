@@ -1,3 +1,8 @@
+import {
+  DEFAULT_VIDEO_MAX_MB,
+  DEFAULT_VIDEO_MAX_PER_PROPERTY,
+  VIDEO_HARD_LIMIT_PER_PROPERTY,
+} from "@/lib/videos";
 import { z } from "@/lib/zod";
 
 /** Variáveis exclusivas do servidor. Nunca use o prefixo NEXT_PUBLIC_. */
@@ -13,6 +18,15 @@ const serverSchema = z.object({
   ADMIN_NOTIFY_EMAIL: z.email().optional(),
   /** Só desenvolvimento e testes: caixa de e-mail local (Mailpit). */
   MAILPIT_URL: z.url().optional(),
+  /** Tamanho máximo de cada vídeo enviado, em MB (padrão 50, o limite do plano gratuito). */
+  VIDEO_MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(5000).default(DEFAULT_VIDEO_MAX_MB),
+  /** Vídeos por imóvel (padrão 6; o banco aceita no máximo 20). */
+  VIDEO_MAX_PER_PROPERTY: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(VIDEO_HARD_LIMIT_PER_PROPERTY)
+    .default(DEFAULT_VIDEO_MAX_PER_PROPERTY),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

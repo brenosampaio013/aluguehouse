@@ -12,10 +12,12 @@ import { PropertyPrivateForm } from "@/components/admin/property-private-form";
 import { PublishPanel } from "@/components/admin/publish-panel";
 import { RatesManager } from "@/components/admin/rates-manager";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { VideoManager } from "@/components/admin/video-manager";
 import { Container } from "@/components/ui/container";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { getPublicEnv } from "@/lib/env";
 import { publishChecklist } from "@/lib/properties/publish";
+import { getServerEnv } from "@/lib/server-env";
 import { listUpcomingBlocks } from "@/server/queries/admin-bookings";
 import { getPropertyForEdit } from "@/server/queries/admin-properties";
 
@@ -25,6 +27,7 @@ const sections = [
   { id: "publicacao", label: "Publicação" },
   { id: "dados-gerais", label: "Dados gerais" },
   { id: "fotos", label: "Fotos" },
+  { id: "videos", label: "Vídeos" },
   { id: "comodidades", label: "Comodidades" },
   { id: "tarifas", label: "Tarifas sazonais" },
   { id: "taxas", label: "Taxas" },
@@ -74,6 +77,8 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
   ]);
   const { property } = data;
   const images = data.media.filter((item) => item.kind === "image");
+  const videos = data.media.filter((item) => item.kind === "video" && item.video_source === "file");
+  const env = getServerEnv();
   const checks = publishChecklist({ ...property, imageCount: images.length });
 
   return (
@@ -120,6 +125,20 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
             propertyId={property.id}
             supabaseUrl={getPublicEnv().NEXT_PUBLIC_SUPABASE_URL}
             items={images}
+          />
+        </Section>
+
+        <Section
+          id="videos"
+          title="Vídeos do imóvel"
+          description="Envie vídeos curtos em MP4 ou WebM. O arquivo vai direto para o armazenamento do site e é conferido no servidor antes de aparecer."
+        >
+          <VideoManager
+            propertyId={property.id}
+            supabaseUrl={getPublicEnv().NEXT_PUBLIC_SUPABASE_URL}
+            items={videos}
+            maxBytes={env.VIDEO_MAX_UPLOAD_MB * 1024 * 1024}
+            maxPerProperty={env.VIDEO_MAX_PER_PROPERTY}
           />
         </Section>
 

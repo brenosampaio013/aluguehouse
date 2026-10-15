@@ -125,10 +125,20 @@ export async function moveMedia(formData: FormData) {
   const direction = z.enum(["up", "down"]).parse(formData.get("direction"));
   const { supabase } = await requireAdmin();
 
+  // Fotos e vídeos têm ordens separadas: só reordena os do mesmo tipo.
+  const { data: current } = await supabase
+    .from("property_media")
+    .select("kind")
+    .eq("id", mediaId)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+  if (!current) return;
+
   const { data: items } = await supabase
     .from("property_media")
     .select("id, position")
     .eq("property_id", propertyId)
+    .eq("kind", current.kind)
     .order("position")
     .order("created_at");
   if (!items) return;
@@ -156,6 +166,8 @@ export async function deleteMedia(formData: FormData) {
     .select("storage_path, width, is_cover")
     .eq("id", mediaId)
     .eq("property_id", propertyId)
+    // Vídeos têm arquivos em outro bucket: são removidos por deleteVideo.
+    .eq("kind", "image")
     .single();
   if (!media) return;
 

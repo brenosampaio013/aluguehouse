@@ -460,7 +460,9 @@ export type Database = {
       property_media: {
         Row: {
           alt_text: string;
+          caption: string | null;
           created_at: string;
+          duration_seconds: number | null;
           external_url: string | null;
           height: number | null;
           id: string;
@@ -468,14 +470,19 @@ export type Database = {
           is_demo: boolean;
           kind: Database["public"]["Enums"]["media_kind"];
           position: number;
+          poster_path: string | null;
           property_id: string;
           storage_path: string | null;
+          video_ref: string | null;
+          video_source: string | null;
           width: number | null;
         };
         ComputedFields: never;
         Insert: {
           alt_text: string;
+          caption?: string | null;
           created_at?: string;
+          duration_seconds?: number | null;
           external_url?: string | null;
           height?: number | null;
           id?: string;
@@ -483,13 +490,18 @@ export type Database = {
           is_demo?: boolean;
           kind: Database["public"]["Enums"]["media_kind"];
           position?: number;
+          poster_path?: string | null;
           property_id: string;
           storage_path?: string | null;
+          video_ref?: string | null;
+          video_source?: string | null;
           width?: number | null;
         };
         Update: {
           alt_text?: string;
+          caption?: string | null;
           created_at?: string;
+          duration_seconds?: number | null;
           external_url?: string | null;
           height?: number | null;
           id?: string;
@@ -497,8 +509,11 @@ export type Database = {
           is_demo?: boolean;
           kind?: Database["public"]["Enums"]["media_kind"];
           position?: number;
+          poster_path?: string | null;
           property_id?: string;
           storage_path?: string | null;
+          video_ref?: string | null;
+          video_source?: string | null;
           width?: number | null;
         };
         Relationships: [
