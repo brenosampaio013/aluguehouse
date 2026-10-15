@@ -6,7 +6,7 @@ interface; o restante daquele documento continua valendo.
 
 ## Etapa 2 — Identidade visual e cabeçalho
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ### Paleta
 
@@ -56,3 +56,39 @@ No rodapé (fundo marinho) o contorno de foco é dourado (`.sobre-escuro`).
   o menu ganhou Favoritos e a conta, e a barra inferior mostra "Conta"
   depois do login.
 - Busca, rotas e demais páginas não mudaram.
+
+## Etapa 3 — Topo da página inicial
+
+> Status: **aguardando aprovação**.
+
+- Título "Seu próximo capítulo começa aqui.", subtítulo e as chamadas
+  **Explorar imóveis** (`/temporada`) e **Conheça a Riviera**
+  (`/temporada?regiao=riviera-de-sao-lourenco`, a listagem real da região;
+  pode apontar para a seção da Riviera quando ela existir, na Etapa 6).
+- A busca atual foi mantida e sobe sobre a borda inferior do topo; ela será
+  refeita na Etapa 4.
+- Sem animações.
+
+### Foto
+
+**Ainda não há foto.** Não recebemos uma foto da casa e a rede do ambiente
+de desenvolvimento bloqueia bancos de imagem (Unsplash, Pexels, Wikimedia).
+Enquanto isso o topo usa um **fundo desenhado** (petróleo e marinho com
+ondas douradas finas), sem simular uma foto.
+
+Para colocar a foto:
+
+1. Foto horizontal com pelo menos 1600 px de largura (ideal 2400 px ou mais),
+   com direito de uso.
+2. `pnpm hero:photo caminho/da/foto.jpg` — gera `public/inicio/capa-*.webp`
+   (960, 1600 e 2400 px, sem metadados de localização).
+3. Preencher `heroPhoto` em `src/lib/home/hero-photo.ts`:
+   `{ basePath: "/inicio/capa", widths: [960, 1600, 2400], alt: "…",
+illustrative: true }`. `illustrative: true` mostra o aviso "Foto
+   ilustrativa" (obrigatório se a casa não for um imóvel anunciado).
+
+O modo com foto foi testado com uma imagem sintética **bem clara** (pior
+caso): um véu marinho mais forte à esquerda (computador) e embaixo (celular)
+mantém o texto acima do contraste mínimo — pior caso medido 5,5:1 no texto
+pequeno e 5,6:1 no título — sem violações de acessibilidade e sem rolagem
+lateral. A foto é carregada com prioridade (é o maior elemento da tela).

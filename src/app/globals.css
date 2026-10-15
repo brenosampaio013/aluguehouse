@@ -119,6 +119,19 @@
   }
 }
 
+/*
+ * Fundo do topo da página inicial enquanto não há foto: mar fundo em
+ * petróleo e marinho, com um brilho de fim de tarde no horizonte.
+ */
+@layer components {
+  .hero-sem-foto {
+    background:
+      radial-gradient(110% 75% at 80% 115%, rgb(183 154 105 / 0.38), transparent 62%),
+      radial-gradient(80% 60% at 0% 0%, rgb(16 59 64 / 0.95), transparent 70%),
+      linear-gradient(165deg, var(--color-petroleo) 0%, var(--color-abismo) 72%);
+  }
+}
+
 /* Texto corrido das páginas legais. */
 @layer components {
   .legal-text ul {

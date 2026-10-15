@@ -3,10 +3,12 @@ import { connection } from "next/server";
 
 import { CoastLine } from "@/components/home/coast-line";
 import { HeroSearch } from "@/components/home/hero-search";
+import { HomeHero } from "@/components/home/home-hero";
 import { PropertyCard } from "@/components/property/property-card";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
 import { getPublicEnv } from "@/lib/env";
+import { heroPhoto } from "@/lib/home/hero-photo";
 import { organizationJsonLd } from "@/lib/seo/json-ld";
 import { siteConfig } from "@/lib/site-config";
 import { getFeaturedProperties, type PropertyCardData } from "@/server/queries/public-properties";
@@ -51,29 +53,15 @@ export default async function HomePage() {
   return (
     <main id="conteudo" className="flex-1">
       <JsonLd data={organizationJsonLd(getPublicEnv().NEXT_PUBLIC_SITE_URL)} />
-      {/*
-        Topo gráfico: mar (abismo) e faixa de areia. Será substituído por uma
-        foto real da Riviera quando houver uma em alta resolução.
-      */}
-      <section aria-labelledby="titulo-inicio" className="relative bg-abismo text-branco">
-        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-areia sm:h-24" />
-        <Container className="relative grid gap-6 pt-14 pb-10 sm:pt-20 lg:pt-28">
-          <h1
-            id="titulo-inicio"
-            className="max-w-[15ch] font-serif text-h1 font-normal tracking-[-0.01em] sm:text-display"
-          >
-            Casas de alto padrão na Riviera e no Litoral Norte
-          </h1>
-          <p className="max-w-[52ch] text-areia">
-            Temporada, aluguel mensal e venda, com reserva por solicitação e atendimento direto.
-          </p>
-          <div className="mt-4 max-w-[60rem]">
-            <HeroSearch />
-          </div>
-        </Container>
-      </section>
+      <HomeHero photo={heroPhoto} />
+      {/* A busca sobe sobre a borda inferior do topo. */}
+      <Container className="relative z-10 -mt-20 sm:-mt-24">
+        <div className="max-w-[60rem]">
+          <HeroSearch />
+        </div>
+      </Container>
 
-      <Container className="grid gap-20 py-16 sm:py-20">
+      <Container className="grid gap-20 pt-14 pb-16 sm:pt-16 sm:pb-20">
         <CoastLine />
 
         {featured.length > 0 ? (

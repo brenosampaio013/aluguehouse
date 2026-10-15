@@ -80,7 +80,7 @@ test.describe("página inicial", () => {
   test("mostra título, linha da costa e como funciona", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Casas de alto padrão na Riviera e no Litoral Norte",
+      "Seu próximo capítulo começa aqui.",
     );
 
     const costa = page.getByRole("navigation", { name: "Da Riviera a Ubatuba" });
@@ -95,6 +95,27 @@ test.describe("página inicial", () => {
       .getByRole("region", { name: "Como funciona a reserva" })
       .getByRole("listitem");
     await expect(passos).toHaveCount(3);
+  });
+
+  test("topo com subtítulo e chamadas para os imóveis e a Riviera", async ({ page }) => {
+    await page.goto("/");
+    const topo = page.getByRole("region", { name: "Seu próximo capítulo começa aqui." });
+    await expect(
+      topo.getByText(
+        "Casas extraordinárias, experiências exclusivas e o melhor do litoral paulista.",
+      ),
+    ).toBeVisible();
+    await expect(topo.getByRole("link", { name: "Explorar imóveis" })).toHaveAttribute(
+      "href",
+      "/temporada",
+    );
+    await expect(topo.getByRole("link", { name: "Conheça a Riviera" })).toHaveAttribute(
+      "href",
+      "/temporada?regiao=riviera-de-sao-lourenco",
+    );
+    // Título e chamadas cabem na primeira tela, sem rolar.
+    const box = await topo.getByRole("link", { name: "Explorar imóveis" }).boundingBox();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   });
 
   test("imóvel publicado aparece em destaque com foto, preço e aviso de foto ilustrativa", async ({
