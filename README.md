@@ -13,6 +13,16 @@ Lourenço e no Litoral Norte de São Paulo.
 - Listagens de temporada e mensal: [`docs/listagens-aluguel.md`](docs/listagens-aluguel.md)
 - Listagem de venda: [`docs/listagem-venda.md`](docs/listagem-venda.md)
 - Página do imóvel e mapa: [`docs/pagina-imovel.md`](docs/pagina-imovel.md)
+- Calendário e solicitação de reserva: [`docs/reserva.md`](docs/reserva.md)
+- Painel de solicitações e bloqueios: [`docs/painel-reservas.md`](docs/painel-reservas.md)
+- Favoritos: [`docs/favoritos.md`](docs/favoritos.md)
+- Avaliações moderadas: [`docs/avaliacoes.md`](docs/avaliacoes.md)
+- Contato, visitas e avisos por e-mail: [`docs/contato.md`](docs/contato.md)
+- Experiência "Percorra a casa": [`docs/percorra-a-casa.md`](docs/percorra-a-casa.md)
+- SEO técnico e CSP: [`docs/seo.md`](docs/seo.md)
+- Privacidade e LGPD: [`docs/privacidade.md`](docs/privacidade.md)
+- Backups e restauração: [`docs/backups.md`](docs/backups.md)
+- **Publicação (lista do que falta): [`docs/publicacao.md`](docs/publicacao.md)**
 
 ## Requisitos
 

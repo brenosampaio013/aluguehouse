@@ -59,6 +59,7 @@ export function PropertyCard({
             sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
             alt={cover.alt}
             loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : undefined}
             decoding="async"
             className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           />

@@ -82,12 +82,13 @@ export default async function HomePage() {
               Em destaque
             </h2>
             <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((property, index) => (
+              {featured.map((property) => (
                 <li key={property.slug}>
                   <PropertyCard
                     property={property}
                     supabaseUrl={supabaseUrl}
-                    priority={index < 2}
+                    // Abaixo da busca: sem prioridade, para não atrasar o título.
+                    priority={false}
                   />
                 </li>
               ))}

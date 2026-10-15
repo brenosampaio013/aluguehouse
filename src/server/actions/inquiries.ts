@@ -5,13 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "@/lib/zod";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
-import {
-  formatVisit,
-  inquiryKindLabels,
-  inquirySchema,
-  parseInquiryTab,
-  visitDateTime,
-} from "@/lib/inquiries";
+import { formatVisit, inquiryKindLabels, parseInquiryTab, visitDateTime } from "@/lib/inquiries";
+import { inquirySchema } from "@/lib/inquiry-schema";
 import { notifyAdmin } from "@/server/email/notify-admin";
 import { guardPublicForm } from "@/server/security/public-form";
 

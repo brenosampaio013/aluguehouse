@@ -9,10 +9,12 @@ import { siteConfig } from "@/lib/site-config";
 
 import "./globals.css";
 
+// Só os pesos usados (400 nos títulos, 500 no logotipo): arquivos estáticos
+// bem menores que a fonte variável com eixo óptico (melhor LCP no celular).
 const newsreader = Newsreader({
   variable: "--font-newsreader",
   subsets: ["latin"],
-  axes: ["opsz"],
+  weight: ["400", "500"],
   display: "swap",
 });
 

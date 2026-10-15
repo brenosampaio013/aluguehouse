@@ -1,6 +1,6 @@
 # Alugue Houses — Backups automáticos e restauração testada (Etapa 19)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 O plano gratuito do Supabase não oferece backups para baixar. Por isso o
 próprio projeto faz o backup, todos os dias, e prova que ele restaura.

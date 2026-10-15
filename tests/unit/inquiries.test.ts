@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { formatVisit, inquirySchema, parseInquiryTab, visitDateTime } from "@/lib/inquiries";
+import { formatVisit, parseInquiryTab, visitDateTime } from "@/lib/inquiries";
+import { inquirySchema } from "@/lib/inquiry-schema";
 
 const today = "2026-10-14";
 const base = {

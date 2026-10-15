@@ -1,0 +1,102 @@
+name: Publicar
+
+# Publica no Cloudflare Workers depois que o CI passa na branch main (ou pelo
+# botão "Run workflow"). Desligado até DEPLOY_ENABLED=true (docs/publicacao.md).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Migrations, build e publicação
+    if: >-
+      vars.DEPLOY_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Permite exigir aprovação manual em Settings → Environments → production.
+    environment:
+      name: production
+      url: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Públicas: entram no build.
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+      NEXT_PUBLIC_MAP_STYLE_URL: ${{ vars.NEXT_PUBLIC_MAP_STYLE_URL }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Aplicar migrations no Supabase de produção
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --yes
+
+      - name: Build para o Cloudflare
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: pnpm exec opennextjs-cloudflare build
+
+      - name: Nenhum segredo no código do navegador
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: scripts/check-client-bundle.sh
+
+      - name: Publicar no Cloudflare Workers
+        run: pnpm exec opennextjs-cloudflare deploy
+
+      - name: Segredos do servidor no Worker
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          ADMIN_NOTIFY_EMAIL: ${{ vars.ADMIN_NOTIFY_EMAIL }}
+          SITE_INDEXING: ${{ vars.SITE_INDEXING }}
+        run: |
+          # Só envia os que estão definidos; os demais continuam como estão.
+          node -e '
+            const names = ["SUPABASE_SERVICE_ROLE_KEY", "TURNSTILE_SECRET_KEY", "RESEND_API_KEY",
+              "EMAIL_FROM", "ADMIN_NOTIFY_EMAIL", "SITE_INDEXING"];
+            const out = {};
+            for (const n of names) if (process.env[n]) out[n] = process.env[n];
+            require("fs").writeFileSync(process.env.RUNNER_TEMP + "/secrets.json", JSON.stringify(out));
+          '
+          pnpm exec wrangler secret bulk "$RUNNER_TEMP/secrets.json"
+          rm -f "$RUNNER_TEMP/secrets.json"
+
+      - name: Verificação depois de publicar
+        run: |
+          sleep 10
+          scripts/smoke-test.sh "$NEXT_PUBLIC_SITE_URL"

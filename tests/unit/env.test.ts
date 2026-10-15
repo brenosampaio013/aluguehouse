@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePublicEnv, parseServerEnv } from "@/lib/env";
+import { parsePublicEnv } from "@/lib/env";
+import { parseServerEnv } from "@/lib/server-env-schema";
 
 describe("variáveis de ambiente", () => {
   it("aceita configuração pública válida", () => {

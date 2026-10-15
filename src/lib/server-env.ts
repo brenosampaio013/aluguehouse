@@ -1,6 +1,6 @@
 import "server-only";
 
-import { parseServerEnv, type ServerEnv } from "./env";
+import { parseServerEnv, type ServerEnv } from "./server-env-schema";
 
 export function getServerEnv(): ServerEnv {
   return parseServerEnv({

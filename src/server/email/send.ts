@@ -1,7 +1,7 @@
 import "server-only";
 
 import { siteConfig } from "@/lib/site-config";
-import type { ServerEnv } from "@/lib/env";
+import type { ServerEnv } from "@/lib/server-env-schema";
 
 export type Email = { to: string; subject: string; text: string; replyTo?: string };
 export type SendResult = "sent" | "disabled" | "failed";
