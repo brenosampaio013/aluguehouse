@@ -2,12 +2,12 @@
 
 Implementação em partes, cada uma aprovada antes da seguinte:
 
-| Parte | O quê                                              | Status                   |
-| ----- | -------------------------------------------------- | ------------------------ |
-| A + C | Banco de dados e **upload de arquivo** no painel   | **Aguardando aprovação** |
-| B     | Links do YouTube e do Vimeo no painel              | A fazer                  |
-| D     | Galeria e visualizador na página pública do imóvel | A fazer                  |
-| E     | Revisão final e testes completos                   | A fazer                  |
+| Parte | O quê                                              | Status                              |
+| ----- | -------------------------------------------------- | ----------------------------------- |
+| A + C | Banco de dados e **upload de arquivo** no painel   | Concluído                           |
+| B     | Links do YouTube e do Vimeo no painel              | **Descartado** (decisão do cliente) |
+| D     | Galeria e visualizador na página pública do imóvel | Concluído                           |
+| E     | Revisão final e testes completos                   | Concluído                           |
 
 ## Na página do imóvel (parte D)
 
@@ -50,7 +50,7 @@ abrir o vídeo na prévia, o painel avisa e não deixa salvar.
 
 - **Banco**: os vídeos ficam na tabela `property_media` (a mesma das fotos),
   com `kind = 'video'`. Campos novos, todos opcionais e só para vídeos:
-  `video_source` (`file`; `youtube`/`vimeo` na parte B), `video_ref`,
+  `video_source` (sempre `file`), `video_ref`,
   `caption`, `poster_path` e `duration_seconds`. `storage_path` guarda o
   caminho do arquivo; `width`/`height` a proporção (o player não distorce).
   Fotos e vídeos têm ordens separadas.
@@ -84,7 +84,8 @@ Feita sobre o upload (partes A + C). Problemas encontrados e corrigidos:
   prévia agora dá um play sem som, fora da tela, e pausa. **Não foi possível
   testar num iPhone real aqui** — confira enviando um vídeo pelo celular.
 
-Pendente: links do YouTube/Vimeo (parte B).
+Os vídeos entram só por upload de arquivo: links do YouTube/Vimeo (parte B)
+foram descartados.
 
 ## Segurança
 
@@ -94,7 +95,7 @@ Pendente: links do YouTube/Vimeo (parte B).
 - O bucket só aceita `video/mp4` e `video/webm`, até 50 MB, e só no caminho
   `<imóvel>/<mídia>/video.mp4|webm`.
 - Regras no banco: vídeo enviado precisa de arquivo e miniatura; foto não
-  aceita campos de vídeo; códigos de YouTube/Vimeo só no formato válido;
+  aceita campos de vídeo;
   **no máximo 20 vídeos por imóvel**.
 - Política de segurança (CSP): `media-src` liberado só para o próprio site,
   o Supabase e `blob:` (prévia local no painel).
@@ -113,11 +114,18 @@ arquivo**; no Pro, o limite global é configurável.
 
 **Custos**: cada reprodução de um vídeo enviado conta no tráfego de saída do
 Supabase (o plano gratuito tem cota mensal pequena). Para vídeos longos ou
-muito acessados, prefira YouTube ou Vimeo (parte B), que não usam o seu
+muito acessados, considere reduzir a resolução e a duração antes de enviar,
+para economizar o seu
 tráfego.
 
 **Sem conversão de vídeo**: não há serviço de conversão; o vídeo é exibido
 como foi enviado. Por isso a orientação de MP4 (H.264).
+
+**Links do YouTube/Vimeo não são usados.** A migração já previa esses
+valores em `video_source` (e a coluna `video_ref`), mas nada no site os grava
+nem os exibe: o painel só envia arquivos e a página só mostra vídeos com
+`video_source = 'file'`. Ficam sem uso; removê-los exigiria outra migração
+sem ganho prático.
 
 ## Migração do banco
 

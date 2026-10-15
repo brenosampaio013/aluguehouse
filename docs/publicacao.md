@@ -80,7 +80,8 @@ reviewers).
       `legal.controllerName` e `legal.controllerDocument`.
 - [ ] **Revisão jurídica** da política de privacidade e dos termos
       (pontos em `docs/privacidade.md`).
-- [ ] **Vídeos e tours**: decidir se entram (o banco já suporta).
+- [x] **Vídeos**: upload no painel e galeria do imóvel (`docs/videos.md`).
+      Tours 360°: decidir se entram (o banco já suporta).
 - [ ] **Foto real da Riviera** em alta resolução para o topo da página
       inicial (hoje é um fundo gráfico).
 

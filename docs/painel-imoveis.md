@@ -67,6 +67,6 @@ arquiva, exclui a foto e confirma que o arquivo saiu do Storage.
 
 ## Fora desta etapa
 
-- Vídeos: upload no painel em `docs/videos.md` (links e exibição no site em andamento). Tours 360°: o banco já aceita, mas o painel e o site ainda não.
+- Vídeos: upload de arquivo no painel e exibição na galeria do imóvel (`docs/videos.md`). Tours 360°: o banco já aceita, mas o painel e o site ainda não.
 - Escolher a localização num mapa: junto com o mapa público.
 - Excluir imóvel definitivamente: não implementado; use "Arquivar".
