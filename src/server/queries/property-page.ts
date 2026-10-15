@@ -18,7 +18,8 @@ export const getPublicProperty = cache(async (slug: string) => {
        distance_to_beach_m, offers_seasonal, offers_monthly, offers_sale, nightly_price, monthly_price,
        min_nights, max_nights, sale_price, condo_fee, iptu_yearly, check_in_time, check_out_time, house_rules,
        published_at,
-       property_media(id, kind, storage_path, width, height, alt_text, is_cover, is_demo, position),
+       property_media(id, kind, storage_path, width, height, alt_text, is_cover, is_demo, position,
+         video_source, caption, poster_path, duration_seconds),
        property_amenities(amenities(slug, label))`,
     )
     .eq("slug", slug)
@@ -41,11 +42,28 @@ export const getPublicProperty = cache(async (slug: string) => {
       isDemo: m.is_demo,
     }));
 
+  // Vídeos enviados, na ordem definida no painel (sempre depois das fotos).
+  const videos = media
+    .filter(
+      (m) => m.kind === "video" && m.video_source === "file" && m.storage_path && m.poster_path,
+    )
+    .sort((a, b) => a.position - b.position)
+    .map((m) => ({
+      id: m.id,
+      path: m.storage_path!,
+      posterPath: m.poster_path!,
+      caption: m.caption,
+      alt: m.alt_text,
+      duration: m.duration_seconds,
+      width: m.width,
+      height: m.height,
+    }));
+
   const amenities = amenityRows
     .flatMap((row) => (row.amenities ? [row.amenities] : []))
     .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 
-  return { ...property, images, amenities };
+  return { ...property, images, videos, amenities };
 });
 
 export type PublicProperty = NonNullable<Awaited<ReturnType<typeof getPublicProperty>>>;

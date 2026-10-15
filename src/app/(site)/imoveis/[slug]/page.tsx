@@ -287,7 +287,11 @@ export default async function ImovelPage({ params, searchParams }: Props) {
           />
         </div>
 
-        <PropertyGallery photos={property.images} supabaseUrl={supabaseUrl} />
+        <PropertyGallery
+          photos={property.images}
+          videos={property.videos}
+          supabaseUrl={supabaseUrl}
+        />
 
         <div className="grid gap-12 lg:grid-cols-[1fr_380px] lg:items-start">
           <div className="grid min-w-0 gap-12">

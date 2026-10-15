@@ -9,8 +9,25 @@ Implementação em partes, cada uma aprovada antes da seguinte:
 | D     | Galeria e visualizador na página pública do imóvel | A fazer                  |
 | E     | Revisão final e testes completos                   | A fazer                  |
 
-Até a parte D, os vídeos ficam só no painel: **a página pública do imóvel
-ainda não os mostra**.
+## Na página do imóvel (parte D)
+
+- **Galeria (computador e tablet)**: o último quadro do mosaico vira a
+  miniatura do primeiro vídeo — foto do quadro, botão de play e o selo
+  "Vídeo · 0:42" (com "+1", "+2"… quando há mais vídeos).
+- **Celular**: o vídeo é o 2º item do carrossel de fotos.
+- **Botão "Vídeos (n)"** ao lado de "Ver todas as fotos".
+- **Visualizador em tela cheia** (fotos e vídeos juntos; clicar numa foto
+  também abre): contador ("Vídeo 1 de 2"), setas, teclado (← →), deslizar
+  no celular, faixa de miniaturas com o ícone de play nos vídeos, título e
+  duração do vídeo, Esc ou ✕ para fechar e voltar à galeria.
+- **Carregamento sob demanda**: abrir a página ou o visualizador não baixa
+  nenhum vídeo — só a miniatura. O player é criado quando o visitante clica
+  em reproduzir e removido ao trocar de item ou fechar (o vídeo para).
+  **Nada toca sozinho**; o som só existe depois do clique do visitante.
+- O player respeita a proporção do vídeo (vertical ou horizontal), sem
+  distorcer e sem passar da altura da tela.
+- Anúncios sem vídeos ficam exatamente como antes. A janela "Ver todas as
+  fotos" continua só com as fotos.
 
 ## Como cadastrar um vídeo (painel)
 
@@ -67,8 +84,7 @@ Feita sobre o upload (partes A + C). Problemas encontrados e corrigidos:
   prévia agora dá um play sem som, fora da tela, e pausa. **Não foi possível
   testar num iPhone real aqui** — confira enviando um vídeo pelo celular.
 
-Pendente (fora do que existe hoje): links do YouTube/Vimeo (parte B) e a
-exibição na página pública (parte D).
+Pendente: links do YouTube/Vimeo (parte B).
 
 ## Segurança
 
@@ -136,6 +152,17 @@ dados**. As regras novas valem para o que for gravado a partir dela.
   - envio interrompido sem sobras; registro repetido sem apagar o vídeo;
   - limite de vídeos por imóvel; visitante não envia ao bucket;
   - acessibilidade (WCAG 2.1 AA) e sem rolagem lateral.
+- **Página pública** `tests/e2e/galeria-videos.spec.ts` (3 tamanhos):
+  - miniatura com play e selo; no celular, 2º item do carrossel;
+  - **nenhum arquivo de vídeo pedido** ao abrir a página nem o
+    visualizador — só depois do clique em reproduzir;
+  - o vídeo toca de fato (o tempo avança), na proporção certa;
+  - trocar de item para o vídeo; setas, teclado, miniaturas, deslizar
+    (celular), Esc e ✕;
+  - "Vídeos (n)", fotos ampliadas no mesmo visualizador e "Ver todas as
+    fotos" inalterado;
+  - anúncio sem vídeos igual ao de antes;
+  - acessibilidade com o visualizador aberto e sem rolagem lateral.
 
 O Chromium dos testes é a versão aberta, sem H.264; por isso o MP4 de teste
 (`tests/e2e/fixtures/`) usa VP9 dentro do contêiner MP4. Chrome, Edge,

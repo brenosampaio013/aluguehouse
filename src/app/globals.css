@@ -104,6 +104,16 @@
   }
 }
 
+/* Entrada suave de fotos e vídeos no visualizador (só sem movimento reduzido). */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Texto corrido das páginas legais. */
 @layer components {
   .legal-text ul {

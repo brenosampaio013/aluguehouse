@@ -71,7 +71,6 @@ pronto; a aparência dos mapas reais precisa ser conferida no seu navegador.
 
 ## Pendências
 
-- **Vídeos e tours**: o banco aceita, mas o painel e o site ainda não. O
-  documento do painel indicava "Etapa 9" por engano; precisa de uma etapa
-  definida.
+- **Vídeos**: na galeria e no visualizador (veja `docs/videos.md`). Tours
+  360°: o banco aceita, mas o painel e o site ainda não.
 - Favoritar imóvel: Etapa 13.
