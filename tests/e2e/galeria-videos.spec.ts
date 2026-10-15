@@ -205,6 +205,9 @@ test.describe("vídeos na galeria do imóvel", () => {
 
   test("botão Vídeos e fotos ampliadas no mesmo visualizador", async ({ page }) => {
     await page.goto(`/imoveis/${slug}`);
+    // Fechado, o visualizador não tem imagens: nenhuma foto grande é baixada
+    // ao abrir a página (disputaria banda com a primeira foto).
+    await expect(page.locator('dialog[aria-label="Fotos e vídeos do imóvel"] img')).toHaveCount(0);
     await page.getByRole("button", { name: "Vídeos (2)" }).click();
     await expect(counter(viewer(page))).toHaveText("Vídeo 1 de 2");
     await page.keyboard.press("Escape");

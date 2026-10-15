@@ -124,11 +124,15 @@ export function MediaViewerProvider({
   const stripRef = useRef<HTMLOListElement>(null);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  // O conteúdo só existe com o visualizador aberto: fechado, nenhuma foto
+  // grande é baixada (não disputa banda com a primeira foto da página).
+  const [isOpen, setIsOpen] = useState(false);
   const touchStart = useRef<number | null>(null);
 
   const open = useCallback((target: number) => {
     setIndex(target);
     setPlaying(false);
+    setIsOpen(true);
     dialogRef.current?.showModal();
   }, []);
 
@@ -150,7 +154,7 @@ export function MediaViewerProvider({
       left: thumb.offsetLeft - strip.clientWidth / 2 + thumb.clientWidth / 2,
       behavior: "smooth",
     });
-  }, [index]);
+  }, [index, isOpen]);
 
   const current = items[index];
   const total = items.length;
@@ -161,7 +165,10 @@ export function MediaViewerProvider({
       <dialog
         ref={dialogRef}
         aria-label="Fotos e vídeos do imóvel"
-        onClose={() => setPlaying(false)}
+        onClose={() => {
+          setPlaying(false);
+          setIsOpen(false);
+        }}
         onKeyDown={(event) => {
           // Setas dentro do player controlam o vídeo, não a galeria.
           if ((event.target as HTMLElement).closest("video")) return;
@@ -170,7 +177,7 @@ export function MediaViewerProvider({
         }}
         className="sobre-escuro m-0 size-full max-h-none max-w-none bg-abismo p-0 text-marfim backdrop:bg-abismo/80"
       >
-        {current ? (
+        {isOpen && current ? (
           <div className="grid h-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
             <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-8">
               <p
