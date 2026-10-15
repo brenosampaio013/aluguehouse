@@ -63,6 +63,41 @@ must(
   }),
 );
 
+// Um vídeo enviado (arquivo no bucket de vídeos e miniatura no de fotos).
+const videoId = randomUUID();
+const videoPath = `${property.id}/${videoId}/video.webm`;
+const posterPath = `${property.id}/${videoId}/poster.webp`;
+must(
+  await supabase.storage
+    .from("property-videos")
+    .upload(videoPath, await readFile("tests/e2e/fixtures/video-vertical.webm"), {
+      contentType: "video/webm",
+    }),
+);
+must(
+  await supabase.storage
+    .from("property-media")
+    .upload(posterPath, await readFile("media/recebidas/imovel-01/sala-jantar.jpg"), {
+      contentType: "image/jpeg",
+    }),
+);
+must(
+  await supabase.from("property_media").insert({
+    id: videoId,
+    property_id: property.id,
+    kind: "video",
+    video_source: "file",
+    storage_path: videoPath,
+    poster_path: posterPath,
+    caption: "Área da piscina",
+    alt_text: "Vídeo: Área da piscina",
+    width: 360,
+    height: 640,
+    duration_seconds: 2,
+    position: 0,
+  }),
+);
+
 const booking = must(
   await supabase
     .from("booking_requests")

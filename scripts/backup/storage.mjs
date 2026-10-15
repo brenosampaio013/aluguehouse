@@ -1,4 +1,4 @@
-// Fotos do Storage no backup: baixa, envia de volta e confere.
+// Fotos e vídeos do Storage no backup: baixa, envia de volta e confere.
 // Uso: node scripts/backup/storage.mjs <download|upload|verify> <pasta>
 // Variáveis: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 import { createHash } from "node:crypto";
@@ -7,7 +7,7 @@ import path from "node:path";
 
 import { createClient } from "@supabase/supabase-js";
 
-const BUCKETS = ["property-media"];
+const BUCKETS = ["property-media", "property-videos"];
 const [command, dir] = process.argv.slice(2);
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
 if (!["download", "upload", "verify"].includes(command) || !dir) {
@@ -75,8 +75,15 @@ for (const bucket of BUCKETS) {
     await writeFile(indexFile, JSON.stringify(index, null, 2));
   }
 
+  // Backups feitos antes de existir o bucket de vídeos não têm o índice dele.
+  const index =
+    command === "download" ? null : await readFile(indexFile, "utf8").then(JSON.parse, () => null);
+  if (command !== "download" && !index) {
+    console.log(`Storage: ${bucket} ausente neste backup (anterior a ele); ignorado.`);
+    continue;
+  }
+
   if (command === "upload") {
-    const index = JSON.parse(await readFile(indexFile, "utf8"));
     for (const file of await walk(bucketDir)) {
       const key = file.split(path.sep).join("/");
       const { error } = await supabase.storage
@@ -91,7 +98,6 @@ for (const bucket of BUCKETS) {
   }
 
   if (command === "verify") {
-    const index = JSON.parse(await readFile(indexFile, "utf8"));
     const remote = new Set((await listAll(bucket)).map((file) => file.path));
     for (const [key, info] of Object.entries(index)) {
       if (!remote.has(key)) throw new Error(`Faltando no Storage: ${bucket}/${key}`);

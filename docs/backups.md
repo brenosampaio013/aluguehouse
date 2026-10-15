@@ -109,7 +109,7 @@ uso previsto. Mantém o orçamento de até R$ 100/mês.
 | `scripts/backup/backup.sh`                           | Gera o backup criptografado                    |
 | `scripts/backup/restore.sh`                          | Restaura e confere                             |
 | `scripts/backup/manifest.sql`                        | Linhas e assinatura de cada tabela             |
-| `scripts/backup/storage.mjs`                         | Baixa, envia e confere as fotos                |
+| `scripts/backup/storage.mjs`                         | Baixa, envia e confere as fotos e os vídeos    |
 | `scripts/backup/verify.mjs`                          | Compara manifestos                             |
 | `scripts/backup/r2.sh`                               | Envia, baixa o último e apaga os antigos no R2 |
 | `scripts/backup/roundtrip-test.sh` e `seed-test.mjs` | Teste de ida e volta                           |

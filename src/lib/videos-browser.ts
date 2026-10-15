@@ -45,7 +45,14 @@ export async function readVideoFile(file: File): Promise<VideoInfo> {
   try {
     const loaded = once(video, "loadeddata");
     video.src = url;
+    // Safari do iPhone só carrega os quadros depois de um play; sem som e
+    // fora da tela, é permitido. Pausa logo em seguida.
+    video
+      .play()
+      .then(() => video.pause())
+      .catch(() => {});
     await loaded;
+    video.pause();
     if (!video.videoWidth || !video.videoHeight) throw new Error("video_unreadable");
 
     const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : null;

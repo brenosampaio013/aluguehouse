@@ -19,6 +19,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { moveMedia } from "@/server/actions/media";
 import {
   deleteVideo,
+  discardVideoUpload,
   prepareVideoUpload,
   registerVideo,
   updateVideoCaption,
@@ -122,6 +123,7 @@ function UploadForm({ propertyId, maxBytes }: { propertyId: string; maxBytes: nu
 
     const { file, info } = selected;
     setStatus({ kind: "uploading", progress: 0 });
+    let started: { mediaId: string; extension: "mp4" | "webm" } | null = null;
     try {
       const prepared = await prepareVideoUpload({
         propertyId,
@@ -134,6 +136,7 @@ function UploadForm({ propertyId, maxBytes }: { propertyId: string; maxBytes: nu
         return;
       }
 
+      started = { mediaId: prepared.mediaId, extension: prepared.extension };
       const supabase = createSupabaseBrowserClient();
       const poster = await supabase.storage
         .from(MEDIA_BUCKET)
@@ -168,6 +171,8 @@ function UploadForm({ propertyId, maxBytes }: { propertyId: string; maxBytes: nu
       clear();
       setStatus({ kind: "done" });
     } catch {
+      // Envio interrompido: apaga a miniatura ou o vídeo parcial que ficaram.
+      if (started) await discardVideoUpload({ propertyId, ...started }).catch(() => {});
       setStatus({
         kind: "error",
         text: "Não foi possível enviar o vídeo. Verifique a conexão e tente de novo.",

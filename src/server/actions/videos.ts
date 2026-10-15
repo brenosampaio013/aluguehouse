@@ -130,15 +130,49 @@ const registerSchema = z.object({
   height: z.number().int().min(1).max(8192).nullable(),
 });
 
-/** Lê os primeiros bytes do arquivo enviado para conferir o tipo real. */
+/**
+ * Lê só os primeiros bytes do arquivo enviado para conferir o tipo real.
+ * Pede um trecho (Range) e, se o servidor mandar o arquivo inteiro mesmo
+ * assim, para de ler no primeiro pedaço (não carrega o vídeo na memória).
+ */
 async function readHead(path: string) {
   const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl } = getPublicEnv();
-  const response = await fetch(publicVideoUrl(supabaseUrl, path), {
-    headers: { Range: "bytes=0-31" },
-    cache: "no-store",
-  });
-  if (!response.ok) return null;
-  return new Uint8Array(await response.arrayBuffer()).subarray(0, 32);
+  // Interrompe a conexão assim que tiver os bytes (ou em 10 s, no máximo).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  const head = new Uint8Array(32);
+  let filled = 0;
+  try {
+    const response = await fetch(publicVideoUrl(supabaseUrl, path), {
+      headers: { Range: "bytes=0-31" },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok || !response.body) return null;
+    const reader = response.body.getReader();
+    while (filled < head.length) {
+      const { value, done } = await reader.read();
+      if (done || !value) break;
+      const take = value.subarray(0, head.length - filled);
+      head.set(take, filled);
+      filled += take.length;
+    }
+  } catch {
+    if (filled === 0) return null;
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
+  return head.subarray(0, filled);
+}
+
+async function isRegistered(supabase: Admin, mediaId: string) {
+  const { data } = await supabase
+    .from("property_media")
+    .select("id")
+    .eq("id", mediaId)
+    .maybeSingle();
+  return Boolean(data);
 }
 
 /**
@@ -162,7 +196,14 @@ export async function registerVideo(input: z.input<typeof registerSchema>): Prom
   const paths = videoPaths(propertyId, mediaId, extension);
   const folder = `${propertyId}/${mediaId}`;
 
+  // Segunda chamada para o mesmo vídeo (ex.: nova tentativa da rede): já
+  // está salvo; nada a fazer — e nunca apagar os arquivos dele.
+  if (await isRegistered(supabase, mediaId)) {
+    return { status: "success", message: "Vídeo adicionado." };
+  }
+
   async function discard(message: string): Promise<FormState> {
+    if (await isRegistered(supabase, mediaId)) return { status: "error", message };
     await Promise.all([
       supabase.storage.from(VIDEO_BUCKET).remove([paths.video]),
       supabase.storage.from(MEDIA_BUCKET).remove([paths.poster]),
@@ -227,6 +268,29 @@ export async function registerVideo(input: z.input<typeof registerSchema>): Prom
 
   revalidatePath(`/admin/imoveis/${propertyId}`);
   return { status: "success", message: "Vídeo adicionado." };
+}
+
+const discardSchema = z.object({
+  propertyId: z.uuid(),
+  mediaId: z.uuid(),
+  extension: z.enum(["mp4", "webm"]),
+});
+
+/**
+ * Apaga o que um envio interrompido deixou no Storage (miniatura ou vídeo
+ * parcial). Não faz nada se o vídeo já estiver registrado.
+ */
+export async function discardVideoUpload(input: z.input<typeof discardSchema>) {
+  const parsed = discardSchema.safeParse(input);
+  if (!parsed.success) return;
+  const { propertyId, mediaId, extension } = parsed.data;
+  const { supabase } = await requireAdmin();
+  if (await isRegistered(supabase, mediaId)) return;
+  const paths = videoPaths(propertyId, mediaId, extension);
+  await Promise.all([
+    supabase.storage.from(VIDEO_BUCKET).remove([paths.video]),
+    supabase.storage.from(MEDIA_BUCKET).remove([paths.poster]),
+  ]);
 }
 
 const refSchema = z.object({ propertyId: z.uuid(), mediaId: z.uuid() });

@@ -206,6 +206,53 @@ test.describe("vídeos do imóvel no painel", () => {
     expect(leftovers ?? []).toHaveLength(0);
   });
 
+  test("envio interrompido não deixa arquivos; registro repetido não apaga o vídeo", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await loginAsAdmin(page, await createAdminWithTotp());
+    await openVideos(page, propertyId);
+    const section = videoSection(page);
+
+    // A conexão cai no envio do vídeo (a miniatura já tinha ido).
+    await page.route("**/storage/v1/object/upload/sign/property-videos/**", (route) =>
+      route.abort("connectionreset"),
+    );
+    await section.getByLabel("Arquivo de vídeo").setInputFiles(MP4);
+    await expect(section.getByLabel("Prévia do vídeo antes de salvar")).toBeVisible();
+    await section.getByRole("button", { name: "Salvar vídeo" }).click();
+    await expect(
+      section.getByRole("alert").filter({ hasText: "Não foi possível enviar o vídeo." }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect
+      .poll(async () => (await adminApi().storage.from("property-media").list(propertyId)).data)
+      .toEqual([]);
+    expect(await videosInDb(propertyId)).toHaveLength(0);
+    await page.unroute("**/storage/v1/object/upload/sign/property-videos/**");
+
+    // Envio normal, guardando a chamada de registro para repeti-la.
+    const register = page.waitForRequest(
+      (request) =>
+        request.method() === "POST" &&
+        Boolean(request.headers()["next-action"]) &&
+        (request.postData() ?? "").includes('"extension"'),
+    );
+    await uploadVideo(page, MP4, "Varanda");
+    const request = await register;
+    const [saved] = await videosInDb(propertyId);
+
+    const replay = await page.request.post(request.url(), {
+      headers: request.headers(),
+      data: request.postData() ?? "",
+    });
+    expect(replay.ok()).toBe(true);
+    expect(await videosInDb(propertyId)).toHaveLength(1);
+    const files = await adminApi()
+      .storage.from("property-videos")
+      .list(`${propertyId}/${saved!.id}`);
+    expect(files.data?.map((file) => file.name)).toEqual(["video.mp4"]);
+  });
+
   test("respeita o limite de vídeos por imóvel", async ({ page }) => {
     // 6 vídeos já cadastrados (limite padrão)
     const { error } = await adminApi()

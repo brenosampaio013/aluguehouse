@@ -49,6 +49,27 @@ abrir o vídeo na prévia, o painel avisa e não deixa salvar.
   (assinatura MP4/WebM, não a extensão). Se algo falhar, os arquivos são
   apagados e nada é gravado.
 
+## Revisão final (parte E)
+
+Feita sobre o upload (partes A + C). Problemas encontrados e corrigidos:
+
+- **Backup sem vídeos**: o backup diário só copiava o bucket de fotos.
+  Agora inclui `property-videos` (e restaura backups antigos, sem ele).
+- **Registro repetido apagava o vídeo**: se o registro fosse chamado duas
+  vezes (nova tentativa da rede), a segunda chamada apagava os arquivos do
+  vídeo já salvo. Agora a repetição é inofensiva.
+- **Conferência do tipo**: lê só os primeiros bytes e interrompe a conexão
+  (no máximo 10 s), mesmo que o Storage ignore o pedido parcial — nunca
+  carrega o vídeo inteiro na memória do servidor.
+- **Envio interrompido**: se a conexão cai no meio, a miniatura e o vídeo
+  parcial são apagados.
+- **iPhone**: o Safari só carrega quadros após um "play"; a leitura da
+  prévia agora dá um play sem som, fora da tela, e pausa. **Não foi possível
+  testar num iPhone real aqui** — confira enviando um vídeo pelo celular.
+
+Pendente (fora do que existe hoje): links do YouTube/Vimeo (parte B) e a
+exibição na página pública (parte D).
+
 ## Segurança
 
 - Só o administrador com verificação em duas etapas envia, edita ou remove
@@ -96,6 +117,8 @@ dados**. As regras novas valem para o que for gravado a partir dela.
 
 ## Testes
 
+- **Backup**: os dados de exemplo do teste de restauração
+  (`scripts/backup/roundtrip-test.sh`, roda no CI) incluem um vídeo.
 - **Banco (pgTAP)** `supabase/tests/database/14_videos.test.sql`: bucket,
   regras dos campos, teto de 20 vídeos e permissões.
 - **Unitários** `tests/unit/videos.test.ts`: formatos, extensão, tamanho,
@@ -110,6 +133,7 @@ dados**. As regras novas valem para o que for gravado a partir dela.
   - formato não aceito e arquivo falso recusados no navegador; envio
     adulterado (HTML no lugar do vídeo) recusado **pelo servidor**, sem
     sobrar arquivo;
+  - envio interrompido sem sobras; registro repetido sem apagar o vídeo;
   - limite de vídeos por imóvel; visitante não envia ao bucket;
   - acessibilidade (WCAG 2.1 AA) e sem rolagem lateral.
 
