@@ -9,7 +9,7 @@ import { modeLinks } from "./nav-links";
 export function SiteFooter() {
   const { contact, responsible } = siteConfig;
   return (
-    <footer className="bg-abismo pt-14 pb-24 text-areia md:pb-14">
+    <footer className="sobre-escuro bg-abismo pt-14 pb-24 text-areia md:pb-14">
       <Container className="grid gap-10 md:grid-cols-[2fr_1fr_1fr]">
         <div className="grid content-start gap-3">
           <Wordmark className="text-[1.5rem] text-branco" />

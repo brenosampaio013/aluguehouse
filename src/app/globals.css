@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 /*
- * Design tokens aprovados na Etapa 2 (docs/direcao-visual.md).
- * Contraste verificado: não troque cores de texto sem conferir WCAG AA.
+ * Design tokens do redesign (Etapa 2 do redesign, docs/redesign.md).
+ * Os nomes antigos foram mantidos e apontam para a nova paleta; assim todo o
+ * site e o painel mudam juntos. Contraste verificado: não troque cores de
+ * texto sem conferir WCAG AA.
  */
 @theme {
   --color-*: initial;
-  --color-abismo: #0d3b45; /* texto principal e títulos */
-  --color-petroleo: #13606e; /* ações, links, foco */
-  --color-nevoa: #dcebec; /* seleção de datas e filtros */
-  --color-areia: #efe6d6; /* faixas e painel de reserva */
+  --color-abismo: #142b3a; /* azul-marinho: texto principal, títulos, rodapé */
+  --color-petroleo: #103b40; /* azul-petróleo: ações, links, foco */
+  --color-nevoa: #dce6e3; /* seleção de datas e filtros */
+  --color-areia: #eae0d0; /* faixas, chips e painel de reserva */
+  --color-marfim: #f8f6f1; /* off-white: fundo das páginas */
   --color-junco: #8a7856; /* bordas de campos (≥ 3:1) */
-  --color-duna: #cdb894; /* somente decoração */
+  --color-dourado: #b79a69; /* dourado discreto: detalhes; texto só sobre fundo escuro */
   --color-rocha: #52666a; /* texto secundário */
   --color-branco: #ffffff;
   --color-erro: #a8321f;
@@ -19,7 +22,7 @@
   --color-current: currentColor;
 
   --font-serif: var(--font-newsreader), Georgia, serif;
-  --font-sans: var(--font-hanken), system-ui, sans-serif;
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
 
   /* Escala tipográfica 1,25 sobre 16 px */
   --text-small: 0.8125rem;
@@ -38,7 +41,7 @@
   --radius-control: 0.5rem;
   --radius-photo: 0.875rem;
 
-  --shadow-flutuante: 0 6px 24px rgb(13 59 69 / 0.12);
+  --shadow-flutuante: 0 6px 24px rgb(20 43 58 / 0.12);
 
   --container-site: 77.5rem; /* 1240 px */
 }
@@ -49,7 +52,7 @@
   }
 
   body {
-    background-color: var(--color-branco);
+    background-color: var(--color-marfim);
     color: var(--color-abismo);
     font-family: var(--font-sans);
     font-size: var(--text-body);
@@ -60,6 +63,11 @@
   :focus-visible {
     outline: 2px solid var(--color-petroleo);
     outline-offset: 2px;
+  }
+
+  /* Sobre fundo escuro (rodapé) o foco fica dourado para continuar visível. */
+  .sobre-escuro :focus-visible {
+    outline-color: var(--color-dourado);
   }
 
   @media (prefers-reduced-motion: reduce) {

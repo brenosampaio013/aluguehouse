@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Hanken_Grotesk, Newsreader } from "next/font/google";
+import { Manrope, Newsreader } from "next/font/google";
 import { connection } from "next/server";
 
 import { SkipLink } from "@/components/ui/skip-link";
@@ -18,8 +18,8 @@ const newsreader = Newsreader({
   display: "swap",
 });
 
-const hanken = Hanken_Grotesk({
-  variable: "--font-hanken",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
 });
@@ -45,14 +45,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#13606e",
+  themeColor: "#103b40",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Renderização a cada requisição: o nonce da CSP (proxy.ts) muda sempre.
   await connection();
   return (
-    <html lang="pt-BR" className={`${newsreader.variable} ${hanken.variable}`}>
+    <html lang="pt-BR" className={`${newsreader.variable} ${manrope.variable}`}>
       <body className="flex min-h-dvh flex-col">
         <SkipLink />
         {children}

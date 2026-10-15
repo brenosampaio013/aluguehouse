@@ -1,6 +1,7 @@
 # Alugue Houses — Direção visual (Etapa 2)
 
-> Status: **aprovado**. Prancha visual de referência:
+> Status: **aprovado**. Cores e fonte de interface substituídas pelo
+> redesign (`docs/redesign.md`). Prancha visual de referência:
 > `docs/direcao-visual/prancha.html` (HTML estático, não faz parte do site),
 > com capturas em `prancha-desktop.png` e `prancha-celular.png`.
 > Toda imagem da prancha é **ilustrativa** e será substituída por fotos reais.

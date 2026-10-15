@@ -3,24 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useFavorites } from "@/components/favorites/favorites-provider";
 import { HeartIcon, SearchIcon, UserIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
-const tabs = [
-  { href: "/", label: "Explorar", Icon: SearchIcon },
-  { href: "/favoritos", label: "Favoritos", Icon: HeartIcon },
-  { href: "/entrar", label: "Entrar", Icon: UserIcon },
-];
-
-/** Barra inferior fixa do celular (aprovada na Etapa 2). */
+/** Barra inferior fixa do celular. */
 export function MobileTabBar() {
   const pathname = usePathname();
+  const { signedIn } = useFavorites();
+  const tabs = [
+    { href: "/", label: "Explorar", Icon: SearchIcon },
+    { href: "/favoritos", label: "Favoritos", Icon: HeartIcon },
+    { href: "/entrar", label: signedIn ? "Conta" : "Entrar", Icon: UserIcon },
+  ];
   // Na página do imóvel, a barra inferior mostra preço e contato no lugar dos atalhos.
   if (pathname.startsWith("/imoveis/")) return null;
   return (
     <nav
       aria-label="Atalhos"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-areia bg-branco pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-areia bg-marfim pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="grid grid-cols-3">
         {tabs.map(({ href, label, Icon }) => {

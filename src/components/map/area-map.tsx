@@ -16,7 +16,7 @@ export type MapArea = {
 
 type Status = "waiting" | "loading" | "ready" | "error";
 
-const PETROLEO = "#13606e";
+const PETROLEO = "#103b40";
 
 /**
  * Mapa com áreas aproximadas (círculos), nunca pontos exatos.
