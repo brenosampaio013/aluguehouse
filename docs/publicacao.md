@@ -80,7 +80,7 @@ reviewers).
 ## Pré-lançamento (endereço provisório)
 
 Decisão de 15/10/2026: publicar primeiro em
-`https://alugue-houses.<subdominio>.workers.dev`, **fora do Google**
+`https://aluguehouse.<subdominio>.workers.dev`, **fora do Google**
 (`SITE_INDEXING` vazio), para testar com o imóvel real. O lançamento oficial
 (domínio, CRECI, LGPD, revisão jurídica, `SITE_INDEXING=on`) vem depois.
 
@@ -94,7 +94,7 @@ Mínimo para o pré-lançamento (itens das seções 3, 4 e 6 abaixo):
    administrador criado e promovido.
 2. **Cloudflare**: subdomínio `workers.dev` da conta (Workers & Pages),
    API Token "Edit Cloudflare Workers" e Account ID; **Turnstile**
-   (recomendado) com o hostname `alugue-houses.<subdominio>.workers.dev`.
+   (recomendado) com o hostname `aluguehouse.<subdominio>.workers.dev`.
 3. **GitHub**: variáveis `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
    `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` e, por
    último, `DEPLOY_ENABLED=true`; segredos `CLOUDFLARE_API_TOKEN`,
@@ -113,7 +113,7 @@ Alternativa ao workflow "Publicar" do GitHub: a Cloudflare faz o build e o
 deploy a cada push na `main`. **Use só um dos dois caminhos** (com o painel,
 deixe `DEPLOY_ENABLED` desligado no GitHub, senão os dois publicam).
 
-Workers & Pages → `alugue-houses` → Settings → Build:
+Workers & Pages → `aluguehouse` → Settings → Build:
 
 | Campo                                | Valor                                                                               |
 | ------------------------------------ | ----------------------------------------------------------------------------------- |
@@ -130,8 +130,10 @@ Workers & Pages → `alugue-houses` → Settings → Build:
   deploy falha com "Could not find compiled Open Next config, did you run
   the build command?". `cf:build` roda o build do Next (com a cópia do
   MapLibre) e o empacotamento do OpenNext.
-- **O nome do Worker no painel precisa ser `alugue-houses`** (o mesmo do
-  `wrangler.jsonc`, usado também em `WORKER_SELF_REFERENCE`).
+- **O nome do Worker no painel precisa ser `aluguehouse`** — o mesmo do
+  `wrangler.jsonc` (`name` e o `service` de `WORKER_SELF_REFERENCE`). O
+  Worker foi criado no painel com esse nome (o do repositório) e o
+  `wrangler.jsonc` foi alinhado a ele; se um dia mudar, mude os dois.
 - **Plano Workers Paid**: o Worker comprimido tem cerca de 3,1 MB; o plano
   Free aceita até 3 MB.
 - Node 22 vem do `.nvmrc`; o pnpm 10, do `packageManager` do `package.json`.
@@ -179,7 +181,7 @@ primeiro deploy; depois ele roda sozinho quando chegarem migrations novas.
 
 - [ ] Registrar o domínio (ex.: no Registro.br) e apontar os servidores de
       nome para a Cloudflare (a Cloudflare mostra os dois endereços ao adicionar
-      o site). Até lá, dá para testar no endereço `alugue-houses.<conta>.workers.dev`.
+      o site). Até lá, dá para testar no endereço `aluguehouse.<conta>.workers.dev`.
 
 ### 3. Supabase de produção (plano Free)
 
@@ -206,7 +208,7 @@ primeiro deploy; depois ele roda sozinho quando chegarem migrations novas.
 - [ ] Turnstile: criar o widget para o domínio (chave do site e secreta).
 - [ ] R2: bucket privado para backups e token só desse bucket
       (`docs/backups.md`).
-- [ ] Depois da primeira publicação: Workers → alugue-houses → Settings →
+- [ ] Depois da primeira publicação: Workers → aluguehouse → Settings →
       Domains & Routes → adicionar o domínio.
 
 ### 5. Resend
