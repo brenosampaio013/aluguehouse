@@ -1,0 +1,60 @@
+name: Backup diário
+
+# Backup criptografado do banco e das fotos para o Cloudflare R2.
+# Desligado até a variável BACKUP_ENABLED=true (docs/backups.md).
+on:
+  schedule:
+    # 03:47 em Brasília, depois da limpeza LGPD das 03:17.
+    - cron: "47 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Backup para o R2
+    if: vars.BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS || '30' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Ferramentas (age e psql)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age postgresql-client
+
+      - name: Backup criptografado
+        run: scripts/backup/backup.sh
+
+      - name: Enviar ao R2
+        run: scripts/backup/r2.sh enviar "$(cat backups/LATEST)"
+
+      - name: Apagar backups antigos
+        run: scripts/backup/r2.sh limpar

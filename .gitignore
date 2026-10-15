@@ -59,3 +59,6 @@ supabase/.temp
 
 # worker do MapLibre copiado no build
 /public/vendor/
+
+# Backups gerados localmente (criptografados, mas nunca versionados)
+/backups/

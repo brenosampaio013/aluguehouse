@@ -1,6 +1,6 @@
 # Alugue Houses — Privacidade e LGPD (Etapa 18)
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ![Política de privacidade, desktop](privacidade-desktop.png)
 

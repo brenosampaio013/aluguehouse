@@ -1,0 +1,75 @@
+name: Simulado de restauração
+
+# Toda semana: baixa o backup mais recente do R2, restaura num Supabase
+# temporário dentro do próprio GitHub Actions e confere tabela por tabela.
+# Precisa de BACKUP_ENABLED=true e do segredo BACKUP_AGE_IDENTITY.
+on:
+  schedule:
+    # Segunda-feira, 05:13 em Brasília.
+    - cron: "13 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drill:
+    name: Restaurar e conferir o último backup
+    if: vars.BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      BACKUP_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_IDENTITY }}
+    steps:
+      - name: Chave de restauração configurada?
+        id: key
+        run: |
+          if [ -z "$BACKUP_AGE_IDENTITY" ]; then
+            echo "::notice::Sem o segredo BACKUP_AGE_IDENTITY: simulado não executado (docs/backups.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.ok == 'true'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.key.outputs.ok == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.key.outputs.ok == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - if: steps.key.outputs.ok == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        if: steps.key.outputs.ok == 'true'
+        with:
+          version: 2.120.0
+
+      - name: Ferramentas (age e psql)
+        if: steps.key.outputs.ok == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age postgresql-client
+
+      - name: Supabase temporário com as migrations
+        if: steps.key.outputs.ok == 'true'
+        run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+
+      - name: Restaurar e conferir
+        if: steps.key.outputs.ok == 'true'
+        run: |
+          umask 077
+          printf '%s\n' "$BACKUP_AGE_IDENTITY" > "$RUNNER_TEMP/age-key.txt"
+          file="$(scripts/backup/r2.sh baixar-ultimo "$RUNNER_TEMP/backup")"
+          eval "$(supabase status -o env | grep -E '^(API_URL|SERVICE_ROLE_KEY|DB_URL)=')"
+          DB_URL="$DB_URL" SUPABASE_URL="$API_URL" SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+            BACKUP_AGE_IDENTITY_FILE="$RUNNER_TEMP/age-key.txt" CONFIRM_RESTORE=sim \
+            scripts/backup/restore.sh "$file"

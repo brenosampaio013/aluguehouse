@@ -107,6 +107,35 @@ jobs:
       - name: Testes pgTAP (RLS, calendário, preços, avaliações, storage)
         run: supabase test db
 
+  backup:
+    name: Backup e restauração (ida e volta)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Ferramentas (age e psql)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age postgresql-client
+
+      - name: Subir Supabase local
+        run: supabase start -x studio,realtime,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+
+      - name: Dados de exemplo → backup → banco zerado → restauração → conferência
+        run: scripts/backup/roundtrip-test.sh
+
   segredos:
     name: Busca de segredos
     runs-on: ubuntu-latest
