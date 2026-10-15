@@ -59,7 +59,7 @@ No rodapé (fundo marinho) o contorno de foco é dourado (`.sobre-escuro`).
 
 ## Etapa 3 — Topo da página inicial
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado** (foto pendente).
 
 - Título "Seu próximo capítulo começa aqui.", subtítulo e as chamadas
   **Explorar imóveis** (`/temporada`) e **Conheça a Riviera**
@@ -92,3 +92,40 @@ caso): um véu marinho mais forte à esquerda (computador) e embaixo (celular)
 mantém o texto acima do contraste mínimo — pior caso medido 5,5:1 no texto
 pequeno e 5,6:1 no título — sem violações de acessibilidade e sem rolagem
 lateral. A foto é carregada com prioridade (é o maior elemento da tela).
+
+## Etapa 4 — Barra de busca
+
+> Status: **aguardando aprovação**.
+
+Substitui a busca da página inicial (`src/components/home/hero-search.tsx`).
+Lógica pura e testada em `src/lib/search/home-search.ts`; calendário em
+`src/components/search/range-calendar.tsx`.
+
+| Campo                    | Como funciona                                                                                                                                                                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Onde?**                | Campo com sugestões (padrão _combobox_ acessível): filtra os 5 destinos pelo nome ou pela cidade de referência ("Bertioga" → Riviera), sem diferenciar acentos. Setas e Enter.                                                                                |
+| **Check-in / Check-out** | Calendário de período: 2 meses a partir de 768 px, 1 no celular; navegação entre meses; dias passados bloqueados; período destacado (com prévia ao passar o mouse); limpar e concluir; datas em português; teclado (setas, Home/End, PageUp/PageDown, Enter). |
+| **Quem?**                | Adultos (13 anos ou mais) e crianças (até 12 anos), sem negativos; criança inclui um adulto; o total vai para a busca como `hospedes`.                                                                                                                        |
+| **Buscar**               | Valida e envia para `/temporada`, `/mensal` ou `/venda` com os parâmetros que as listagens já entendem (`regiao`, `chegada`, `saida`, `hospedes`, `tipo`, `preco_max`).                                                                                       |
+
+- **Modalidades**: Temporada aceita de 1 a 29 noites e Mensal a partir de 30
+  (as outras datas ficam bloqueadas no calendário). Venda troca datas e
+  hóspedes por tipo e preço máximo — sem calendário de hospedagem.
+- **Capacidade**: o limite de hóspedes é a maior capacidade entre os imóveis
+  publicados para aluguel (consulta ao banco), até 50.
+- **Painéis**: abrem ao clicar, fecham ao clicar fora, com Esc (o foco volta
+  ao campo) ou em Concluir; os valores ficam guardados. No computador
+  flutuam sob a barra; no celular aparecem logo abaixo do campo, sem cortes.
+
+### Limites do sistema (não simulados)
+
+- **Destinos**: só as 5 regiões cadastradas. Não há busca por cidade, bairro
+  ou condomínio no banco; texto que não corresponde a uma região pede para
+  escolher da lista.
+- **Crianças**: o banco guarda apenas o **total** de hóspedes. Adultos e
+  crianças são somados; a divisão não chega à listagem nem à solicitação.
+- **Bebês**: não incluídos — o sistema não tem regra para bebês (se contam
+  ou não na capacidade). Precisa de decisão de negócio e de mudança no banco.
+- **Disponibilidade na busca**: as datas filtram os imóveis livres na
+  listagem (função `search_rentals`, já existente); o calendário da busca
+  não mostra datas ocupadas, pois cada imóvel tem as suas.

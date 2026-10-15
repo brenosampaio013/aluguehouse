@@ -11,7 +11,12 @@ import { getPublicEnv } from "@/lib/env";
 import { heroPhoto } from "@/lib/home/hero-photo";
 import { organizationJsonLd } from "@/lib/seo/json-ld";
 import { siteConfig } from "@/lib/site-config";
-import { getFeaturedProperties, type PropertyCardData } from "@/server/queries/public-properties";
+import { MAX_SEARCH_GUESTS } from "@/lib/search/home-search";
+import {
+  getFeaturedProperties,
+  getMaxGuestCapacity,
+  type PropertyCardData,
+} from "@/server/queries/public-properties";
 
 export const metadata: Metadata = {
   title: { absolute: `${siteConfig.name} | Riviera de São Lourenço e Litoral Norte` },
@@ -43,11 +48,25 @@ async function loadFeatured(): Promise<PropertyCardData[]> {
   }
 }
 
+async function loadCapacity(): Promise<number> {
+  try {
+    return (await getMaxGuestCapacity()) ?? MAX_SEARCH_GUESTS;
+  } catch (error) {
+    console.error("Falha ao carregar a capacidade máxima", error);
+    return MAX_SEARCH_GUESTS;
+  }
+}
+
+/** Hoje no fuso de São Paulo (AAAA-MM-DD), como no calendário do imóvel. */
+function todaySP() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+}
+
 export default async function HomePage() {
   // Gera a página a cada visita para os destaques refletirem o que está
   // publicado agora. Cache com revalidação entra na etapa de otimização.
   await connection();
-  const featured = await loadFeatured();
+  const [featured, maxGuests] = await Promise.all([loadFeatured(), loadCapacity()]);
   const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl } = getPublicEnv();
 
   return (
@@ -55,9 +74,9 @@ export default async function HomePage() {
       <JsonLd data={organizationJsonLd(getPublicEnv().NEXT_PUBLIC_SITE_URL)} />
       <HomeHero photo={heroPhoto} />
       {/* A busca sobe sobre a borda inferior do topo. */}
-      <Container className="relative z-10 -mt-20 sm:-mt-24">
+      <Container className="relative z-20 -mt-20 sm:-mt-24">
         <div className="max-w-[60rem]">
-          <HeroSearch />
+          <HeroSearch today={todaySP()} maxGuests={Math.min(maxGuests, MAX_SEARCH_GUESTS)} />
         </div>
       </Container>
 

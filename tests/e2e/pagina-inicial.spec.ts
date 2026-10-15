@@ -11,12 +11,6 @@ import { adminApi } from "./support/users";
 
 const FOTO = path.join(process.cwd(), "media/recebidas/imovel-01/sala-jantar.jpg");
 
-function isoInDays(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
 /** No celular, a busca fica recolhida até tocar em "Onde e quando?". */
 async function openSearch(page: Page, isMobile: boolean) {
   if (isMobile) await page.getByRole("button", { name: /Onde e quando/ }).click();
@@ -138,37 +132,6 @@ test.describe("página inicial", () => {
       .toBeGreaterThan(0);
   });
 
-  test("busca de temporada leva aos resultados com os filtros", async ({ page, isMobile }) => {
-    await page.goto("/");
-    await openSearch(page, isMobile);
-    await page.getByLabel("Onde").selectOption("ilhabela");
-    await page.getByLabel("Chegada").fill(isoInDays(30));
-    await page.getByLabel("Saída").fill(isoInDays(34));
-    await page.getByLabel("Hóspedes").fill("4");
-    await page.getByRole("button", { name: "Buscar" }).click();
-    await expect(page).toHaveURL(
-      `/temporada?regiao=ilhabela&chegada=${isoInDays(30)}&saida=${isoInDays(34)}&hospedes=4`,
-    );
-  });
-
-  test("busca avisa quando as datas não combinam com a modalidade", async ({ page, isMobile }) => {
-    await page.goto("/");
-    await openSearch(page, isMobile);
-    await page.getByLabel("Chegada").fill(isoInDays(10));
-    await page.getByLabel("Saída").fill(isoInDays(8));
-    await page.getByRole("button", { name: "Buscar" }).click();
-    await expect(
-      page.getByRole("alert").filter({ hasText: "A saída precisa ser depois da chegada." }),
-    ).toBeVisible();
-
-    await page.getByLabel("Saída").fill(isoInDays(45));
-    await page.getByRole("button", { name: "Buscar" }).click();
-    await expect(
-      page.getByRole("alert").filter({ hasText: "Temporada vai até 29 noites" }),
-    ).toBeVisible();
-    await expect(page).toHaveURL("/");
-  });
-
   test("busca de venda troca os campos", async ({ page, isMobile }) => {
     await page.goto("/");
     await openSearch(page, isMobile);
@@ -176,7 +139,8 @@ test.describe("página inicial", () => {
     const venda = page.getByRole("radio", { name: "Venda" });
     await page.locator("label", { has: venda }).click();
     await expect(venda).toBeChecked();
-    await expect(page.getByLabel("Chegada")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Check-in/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Quem/ })).toHaveCount(0);
     await page.getByLabel("Tipo").selectOption("casa");
     await page.getByLabel("Preço máximo").selectOption("2000000");
     await page.getByRole("button", { name: "Buscar" }).click();

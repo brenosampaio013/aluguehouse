@@ -105,3 +105,21 @@ export async function getFeaturedProperties(limit = 6): Promise<PropertyCardData
   if (error) throw error;
   return (data as CardRow[]).map(toCard);
 }
+
+/**
+ * Maior capacidade entre os imóveis publicados para aluguel: limite de
+ * hóspedes da busca. `null` quando não há nenhum.
+ */
+export async function getMaxGuestCapacity(): Promise<number | null> {
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("max_guests")
+    .eq("status", "published")
+    .or("offers_seasonal.eq.true,offers_monthly.eq.true")
+    .order("max_guests", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.max_guests ?? null;
+}
