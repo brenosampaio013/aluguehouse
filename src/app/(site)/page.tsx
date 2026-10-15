@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { Destinations } from "@/components/home/destinations";
 import { HeroSearch } from "@/components/home/hero-search";
 import { PersonalService } from "@/components/home/personal-service";
+import { RevealOnScroll } from "@/components/home/reveal-on-scroll";
 import { RivieraExperience } from "@/components/home/riviera-experience";
 import { HomeHero } from "@/components/home/home-hero";
 import { PropertyCard } from "@/components/property/property-card";
@@ -80,7 +81,7 @@ export default async function HomePage() {
       <HomeHero photo={heroPhoto} />
       {/* A busca sobe sobre a borda inferior do topo. */}
       <Container className="relative z-20 -mt-20 sm:-mt-24">
-        <div className="max-w-[60rem]">
+        <div className="entrada max-w-[60rem] [--atraso:380ms]">
           <HeroSearch today={todaySP()} maxGuests={Math.min(maxGuests, MAX_SEARCH_GUESTS)} />
         </div>
       </Container>
@@ -88,7 +89,7 @@ export default async function HomePage() {
       <Container className="grid gap-20 pt-14 pb-16 sm:gap-24 sm:pt-16 sm:pb-24">
         {featured.length > 0 ? (
           <section aria-labelledby="titulo-destaques" className="grid gap-8">
-            <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+            <div className="revelar flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
               <div className="grid gap-3">
                 <p className="flex items-center gap-3 text-small font-semibold tracking-[0.18em] text-rocha uppercase">
                   <span aria-hidden="true" className="h-px w-10 bg-dourado" />
@@ -100,15 +101,19 @@ export default async function HomePage() {
               </div>
               <Link
                 href="/temporada"
-                className="inline-flex min-h-11 items-center gap-2 font-semibold text-petroleo underline-offset-4 hover:underline"
+                className="group/seta inline-flex min-h-11 items-center gap-2 font-semibold text-petroleo underline-offset-4 hover:underline"
               >
                 Ver todos os imóveis
-                <ArrowRightIcon width={16} height={16} />
+                <ArrowRightIcon
+                  width={16}
+                  height={16}
+                  className="transition-transform duration-300 group-hover/seta:translate-x-1"
+                />
               </Link>
             </div>
             <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((property) => (
-                <li key={property.slug}>
+                <li key={property.slug} className="revelar">
                   <PropertyCard
                     property={property}
                     supabaseUrl={supabaseUrl}
@@ -126,6 +131,7 @@ export default async function HomePage() {
 
       <RivieraExperience count={regionCounts["riviera-de-sao-lourenco"] ?? 0} />
       <PersonalService />
+      <RevealOnScroll />
     </main>
   );
 }

@@ -28,7 +28,7 @@ export function PersonalService() {
   return (
     <section aria-labelledby="titulo-atendimento" className="bg-areia py-20 sm:py-24">
       <Container className="grid gap-12">
-        <div className="grid gap-3">
+        <div className="revelar grid gap-3">
           <p className="flex items-center gap-3 text-small font-semibold tracking-[0.18em] text-rocha uppercase">
             <span aria-hidden="true" className="h-px w-10 bg-dourado" />
             Atendimento personalizado
@@ -51,7 +51,7 @@ export function PersonalService() {
               {steps.map((step, index) => (
                 <li
                   key={step.title}
-                  className="grid content-start gap-3 border-t border-dourado pt-5"
+                  className="revelar grid content-start gap-3 border-t border-dourado pt-5"
                 >
                   <span
                     aria-hidden="true"
@@ -66,7 +66,7 @@ export function PersonalService() {
             </ol>
           </div>
 
-          <div className="grid content-start gap-5 rounded-photo bg-branco p-6 shadow-[0_18px_40px_-24px_rgb(20_43_58/0.35)] sm:p-8">
+          <div className="revelar grid content-start gap-5 rounded-photo bg-branco p-6 shadow-[0_18px_40px_-24px_rgb(20_43_58/0.35)] sm:p-8">
             <h3 className="font-serif text-[1.5rem] leading-tight font-normal">
               Prefere conversar antes?
             </h3>
@@ -78,7 +78,7 @@ export function PersonalService() {
               href={`https://wa.me/${contact.whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-petroleo px-6 font-semibold text-marfim transition-colors hover:bg-abismo"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-petroleo px-6 font-semibold text-marfim transition-[background-color,transform] duration-200 hover:bg-abismo active:scale-[0.98]"
             >
               <ChatIcon width={20} height={20} />
               Fale no WhatsApp

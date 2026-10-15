@@ -8,6 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { regions } from "@/lib/regions";
 
 import { adminApi } from "./support/users";
+import { waitForAnimations } from "./support/motion";
 
 const FOTO = path.join(process.cwd(), "media/recebidas/imovel-01/sala-jantar.jpg");
 
@@ -123,6 +124,37 @@ test.describe("página inicial", () => {
     await expect(riviera).toContainText(/\d+ imóve(l|is) para temporada/);
   });
 
+  test("animações discretas: título sempre visível, revelação ao rolar e movimento reduzido", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const titulo = page.getByRole("heading", { level: 1 });
+    await expect(titulo).toHaveCSS("animation-name", "entrada-titulo");
+    // O título só se desloca; nunca fica transparente (não atrasa o LCP).
+    expect(await titulo.evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+
+    // Cada destino chega à opacidade total quando entra na tela.
+    const destinos = page.getByRole("region", { name: "Da Riviera a Ubatuba" });
+    const ultimo = destinos.getByRole("listitem").last();
+    await ultimo.scrollIntoViewIfNeeded();
+    await page.mouse.wheel(0, 400);
+    await expect.poll(() => ultimo.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1);
+    const largura = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(largura).toBeLessThanOrEqual(page.viewportSize()!.width);
+
+    // Com "reduzir movimento", nada anima.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("animation-name", "none");
+    for (const seletor of [".entrada", ".revelar", ".ondas-mar path"]) {
+      const nomes = await page
+        .locator(seletor)
+        .evaluateAll((els) => [...new Set(els.map((el) => getComputedStyle(el).animationName))]);
+      expect(nomes, seletor).toEqual(["none"]);
+    }
+  });
+
   test("rodapé com imóveis, destinos, atendimento e páginas legais", async ({ page }) => {
     await page.goto("/");
     const rodape = page.getByRole("contentinfo");
@@ -228,6 +260,7 @@ test.describe("página inicial", () => {
   test("sem violações WCAG 2.1 AA com destaques e busca aberta", async ({ page, isMobile }) => {
     await page.goto("/");
     await openSearch(page, isMobile);
+    await waitForAnimations(page);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();

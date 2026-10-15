@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { waitForAnimations } from "./support/motion";
 
 test.describe("fundação", () => {
   test("página inicial carrega em português com marca e contato", async ({ page }) => {
@@ -32,6 +33,7 @@ test.describe("fundação", () => {
 
   test("sem violações de acessibilidade (WCAG 2.1 AA)", async ({ page }) => {
     await page.goto("/");
+    await waitForAnimations(page);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();

@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 import { loginAsGuest, uniqueEmail } from "./support/users";
+import { waitForAnimations } from "./support/motion";
 
 test.describe("cabeçalho", () => {
   test("marca a modalidade da página atual", async ({ page, isMobile }) => {
@@ -37,6 +38,7 @@ test.describe("cabeçalho", () => {
   test("sem violações WCAG 2.1 AA e sem rolagem lateral", async ({ page, isMobile }) => {
     await page.goto("/temporada");
     if (isMobile) await page.getByRole("button", { name: "Abrir menu" }).click();
+    await waitForAnimations(page);
     const results = await new AxeBuilder({ page })
       .include("header")
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

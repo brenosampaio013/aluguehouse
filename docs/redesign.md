@@ -179,7 +179,7 @@ traz esse dado (ele aparece na página do imóvel).
 
 ## Etapa 6 — Restante da página
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 Ordem da página inicial: topo, busca, **Em destaque**, **Destinos**,
 **A experiência Riviera**, **Atendimento personalizado** e rodapé. Nenhuma
@@ -208,3 +208,30 @@ parte do atendimento.
   ou certificações da praia), envie a informação para conferirmos.
 - Sem depoimentos de clientes: só entram quando houver avaliações reais
   publicadas.
+
+## Etapa 7 — Animações e microinterações
+
+> Status: **aguardando aprovação**.
+
+Animações em CSS, sem biblioteca (decisão: sem GSAP). Só `transform` e
+`opacity`, que não deslocam o layout (CLS medido: 0). Tudo fica desligado
+para quem ativou **"reduzir movimento"** no sistema — o site aparece pronto.
+
+| Onde                     | O quê                                                                                                                                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Topo da página inicial   | Selo, título, subtítulo, botões e busca sobem em sequência (até ~1,2 s). O título só se desloca e nunca fica transparente, para não atrasar a medição de carregamento (LCP).                              |
+| Ondas do topo            | As três linhas douradas oscilam devagar (9 a 15 s), como o mar ao longe.                                                                                                                                  |
+| Seções da página inicial | Títulos, cards, destinos, itens da Riviera, passos e quadro de contato surgem ao entrar na tela, **uma vez** (0,7 s). O que já está visível ao abrir a página não anima; sem JavaScript, nada se esconde. |
+| Cards                    | Imóveis: zoom leve da foto e sombra (já existia). Destinos: sobem 4 px com sombra.                                                                                                                        |
+| Botões                   | Leve "afundar" ao clicar em todos os botões; setas de "Ver todos os imóveis" e "Ver imóveis na Riviera" deslizam ao passar o mouse.                                                                       |
+| Galeria do imóvel        | Zoom leve (3%) da foto ao passar o mouse.                                                                                                                                                                 |
+
+- Revelação: `src/components/home/reveal-on-scroll.tsx` observa os
+  elementos `.revelar` e marca quando entram na tela; a animação é CSS
+  (`src/app/globals.css`). A primeira tentativa, ligada diretamente à
+  rolagem, deixava texto meio transparente parado na borda da tela (o teste
+  de contraste pegou) e foi trocada.
+- Testes: título sempre visível, revelação chega à opacidade total ao rolar,
+  sem rolagem lateral, e **nenhuma animação** com "reduzir movimento". Os
+  testes de acessibilidade esperam as animações curtas terminarem antes de
+  medir o contraste (`tests/e2e/support/motion.ts`).

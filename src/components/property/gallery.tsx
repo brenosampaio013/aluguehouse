@@ -125,6 +125,7 @@ export function PropertyGallery({
                     photo={item.photo}
                     supabaseUrl={supabaseUrl}
                     sizes="88vw"
+                    imageClassName="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                     priority={item.index === 0}
                     className="aspect-[4/3] rounded-photo"
                   />
@@ -155,6 +156,7 @@ export function PropertyGallery({
                 photo={first}
                 supabaseUrl={supabaseUrl}
                 sizes="(min-width: 1024px) 620px, 50vw"
+                imageClassName="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 priority
                 className="size-full"
               />
@@ -173,6 +175,7 @@ export function PropertyGallery({
                 photo={photo}
                 supabaseUrl={supabaseUrl}
                 sizes="(min-width: 1024px) 310px, 25vw"
+                imageClassName="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 className="size-full"
               />
             </OpenMediaButton>

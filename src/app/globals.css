@@ -141,3 +141,88 @@
     text-underline-offset: 3px;
   }
 }
+
+/*
+ * Animações discretas (Etapa 7 do redesign). Animações em CSS, só com
+ * transform e opacity, e só para quem não pediu menos movimento.
+ */
+@layer components {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Entrada do topo, em sequência (--atraso em cada elemento). */
+    .entrada {
+      animation: entrada 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: var(--atraso, 0ms);
+    }
+    /* O título só se desloca: nunca fica invisível (não atrasa o LCP). */
+    .entrada-titulo {
+      animation: entrada-titulo 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: var(--atraso, 0ms);
+    }
+
+    /* Ondas do topo: oscilação lenta, como o mar ao longe. */
+    .ondas-mar path {
+      animation: ondas-mar 9s ease-in-out infinite alternate;
+    }
+    .ondas-mar path:nth-child(2) {
+      animation-duration: 12s;
+      animation-delay: -3s;
+    }
+    .ondas-mar path:nth-child(3) {
+      animation-duration: 15s;
+      animation-delay: -6s;
+    }
+
+    /*
+     * Revelação ao entrar na tela: RevealOnScroll marca a página
+     * (revelar-ativo) e cada elemento quando ele aparece (revelando).
+     * Uma vez revelado, fica revelado; sem JavaScript, nada se esconde.
+     */
+    :root.revelar-ativo .revelar:not(.revelado) {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    :root.revelar-ativo .revelar.revelando {
+      animation: revelar 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+  }
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes entrada-titulo {
+  from {
+    transform: translateY(14px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes ondas-mar {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

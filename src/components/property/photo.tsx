@@ -10,12 +10,14 @@ export function Photo({
   sizes,
   priority = false,
   className,
+  imageClassName,
 }: {
   photo: PhotoData;
   supabaseUrl: string;
   sizes: string;
   priority?: boolean;
   className?: string;
+  imageClassName?: string;
 }) {
   const widths = variantWidths(photo.width);
   return (
@@ -32,7 +34,7 @@ export function Photo({
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}
         decoding="async"
-        className="size-full object-cover"
+        className={cn("size-full object-cover", imageClassName)}
       />
       {photo.isDemo ? (
         <span className="absolute bottom-3 left-3 rounded-full bg-branco/95 px-2.5 py-1 text-small font-semibold text-abismo">

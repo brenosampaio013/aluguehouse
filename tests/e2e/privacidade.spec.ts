@@ -5,6 +5,7 @@ import { expect, test } from "@playwright/test";
 
 import { loginAsAdmin } from "./support/admin";
 import { adminApi, createAdminWithTotp, loginAsGuest, uniqueEmail } from "./support/users";
+import { waitForAnimations } from "./support/motion";
 
 const run = randomUUID().slice(0, 6);
 const slug = `casa-lgpd-${run}`;
@@ -154,6 +155,7 @@ test("administrador não vê a exclusão de conta", async ({ page }) => {
 test("páginas legais e Entrar sem violações WCAG 2.1 AA", async ({ page }) => {
   for (const url of ["/privacidade", "/termos"]) {
     await page.goto(url);
+    await waitForAnimations(page);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();
@@ -163,6 +165,7 @@ test("páginas legais e Entrar sem violações WCAG 2.1 AA", async ({ page }) =>
   }
   await loginAsGuest(page, uniqueEmail("a11y-lgpd"));
   await page.goto("/entrar");
+  await waitForAnimations(page);
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();

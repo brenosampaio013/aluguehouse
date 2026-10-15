@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { waitForAnimations } from "./support/motion";
 
 /** Data daqui a N dias no fuso de São Paulo (o mesmo do servidor). */
 function isoInDays(days: number) {
@@ -259,6 +260,7 @@ test.describe("busca da página inicial", () => {
         return points;
       });
       expect(covered).toEqual([]);
+      await waitForAnimations(page);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
         .analyze();

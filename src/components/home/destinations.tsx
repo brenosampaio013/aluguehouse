@@ -88,7 +88,7 @@ function DestinationCard({
     <Link
       href={destinationHref(destination.slug)}
       className={
-        "group relative isolate flex h-full flex-col justify-end overflow-hidden rounded-photo bg-abismo p-5 text-marfim sm:p-6 " +
+        "group relative isolate flex h-full flex-col justify-end overflow-hidden rounded-photo bg-abismo p-5 text-marfim transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_20px_40px_-20px_rgb(20_43_58/0.55)] sm:p-6 " +
         (featured ? "sm:min-h-[22rem] lg:min-h-[36rem]" : "sm:min-h-[18rem]")
       }
     >
@@ -176,7 +176,7 @@ function DestinationCard({
 export function Destinations({ counts }: { counts: Partial<Record<RegionSlug, number>> }) {
   return (
     <section aria-labelledby="titulo-destinos" className="grid gap-8">
-      <div className="grid gap-3">
+      <div className="revelar grid gap-3">
         <p className="flex items-center gap-3 text-small font-semibold tracking-[0.18em] text-rocha uppercase">
           <span aria-hidden="true" className="h-px w-10 bg-dourado" />
           Destinos
@@ -192,7 +192,7 @@ export function Destinations({ counts }: { counts: Partial<Record<RegionSlug, nu
         {destinations.map((destination, index) => (
           <li
             key={destination.slug}
-            className={index === 0 ? "sm:col-span-2 lg:row-span-2" : undefined}
+            className={index === 0 ? "revelar sm:col-span-2 lg:row-span-2" : "revelar"}
           >
             <DestinationCard
               destination={destination}

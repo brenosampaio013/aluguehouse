@@ -36,7 +36,7 @@ export function RivieraExperience({ count }: { count: number }) {
     >
       <div aria-hidden="true" className="riviera-faixa absolute inset-0 -z-10" />
       <Container className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-20">
-        <div className="grid content-start gap-5">
+        <div className="revelar grid content-start gap-5">
           <p className="flex items-center gap-3 text-small font-semibold tracking-[0.18em] text-dourado uppercase">
             <span aria-hidden="true" className="h-px w-10 bg-dourado" />A experiência Riviera
           </p>
@@ -54,10 +54,14 @@ export function RivieraExperience({ count }: { count: number }) {
           <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link
               href={destinationHref("riviera-de-sao-lourenco")}
-              className="inline-flex min-h-12 items-center gap-2 rounded-full bg-marfim px-6 font-semibold text-petroleo transition-colors hover:bg-areia"
+              className="group/seta inline-flex min-h-12 items-center gap-2 rounded-full bg-marfim px-6 font-semibold text-petroleo transition-[background-color,transform] duration-200 hover:bg-areia active:scale-[0.98]"
             >
               Ver imóveis na Riviera
-              <ArrowRightIcon width={16} height={16} />
+              <ArrowRightIcon
+                width={16}
+                height={16}
+                className="transition-transform duration-300 group-hover/seta:translate-x-1"
+              />
             </Link>
             {countLabel ? <p className="text-small text-areia">{countLabel}</p> : null}
           </div>
@@ -67,7 +71,7 @@ export function RivieraExperience({ count }: { count: number }) {
           {highlights.map(({ icon: HighlightIcon, title, text }) => (
             <li
               key={title}
-              className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 border-t border-dourado/35 py-6 first:border-t-0 first:pt-0 lg:first:border-t lg:first:pt-6"
+              className="revelar grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 border-t border-dourado/35 py-6 first:border-t-0 first:pt-0 lg:first:border-t lg:first:pt-6"
             >
               <span
                 aria-hidden="true"
