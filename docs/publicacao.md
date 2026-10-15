@@ -77,6 +77,36 @@ O ambiente `production` do GitHub permite exigir sua aprovação manual antes
 de cada publicação (Settings → Environments → production → Required
 reviewers).
 
+## Pré-lançamento (endereço provisório)
+
+Decisão de 15/10/2026: publicar primeiro em
+`https://alugue-houses.<subdominio>.workers.dev`, **fora do Google**
+(`SITE_INDEXING` vazio), para testar com o imóvel real. O lançamento oficial
+(domínio, CRECI, LGPD, revisão jurídica, `SITE_INDEXING=on`) vem depois.
+
+A branch `main` foi criada nesse dia com a versão aprovada; a publicação
+automática parte dela. Mudanças seguintes chegam à `main` por pull request.
+
+Mínimo para o pré-lançamento (itens das seções 3, 4 e 6 abaixo):
+
+1. **Supabase**: projeto em São Paulo; URL Configuration com o endereço
+   `workers.dev` (Site URL e `…/auth/callback`); MFA TOTP ligado; usuário
+   administrador criado e promovido.
+2. **Cloudflare**: subdomínio `workers.dev` da conta (Workers & Pages),
+   API Token "Edit Cloudflare Workers" e Account ID; **Turnstile**
+   (recomendado) com o hostname `alugue-houses.<subdominio>.workers.dev`.
+3. **GitHub**: variáveis `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` e, por
+   último, `DEPLOY_ENABLED=true`; segredos `CLOUDFLARE_API_TOKEN`,
+   `CLOUDFLARE_ACCOUNT_ID`, `SUPABASE_DB_URL`, `SUPABASE_URL`,
+   `SUPABASE_SERVICE_ROLE_KEY` e `TURNSTILE_SECRET_KEY`.
+4. Actions → **Publicar** → Run workflow (na `main`).
+5. Antes de cadastrar dados reais: **backups** no R2 (`docs/backups.md`).
+
+Pode esperar o lançamento oficial: domínio, Resend (sem ele, o login de
+hóspedes usa o e-mail embutido do Supabase, limitado a poucos por hora, e os
+avisos ao administrador ficam desligados), `SITE_INDEXING=on`.
+
 ## O que falta — em ordem
 
 ### 1. Decisões e pendências legais (antes de anunciar)
