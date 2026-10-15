@@ -211,7 +211,7 @@ parte do atendimento.
 
 ## Etapa 7 — Animações e microinterações
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 Animações em CSS, sem biblioteca (decisão: sem GSAP). Só `transform` e
 `opacity`, que não deslocam o layout (CLS medido: 0). Tudo fica desligado
@@ -235,3 +235,23 @@ para quem ativou **"reduzir movimento"** no sistema — o site aparece pronto.
   sem rolagem lateral, e **nenhuma animação** com "reduzir movimento". Os
   testes de acessibilidade esperam as animações curtas terminarem antes de
   medir o contraste (`tests/e2e/support/motion.ts`).
+
+## Etapa 8 — Auditoria e finalização
+
+> Status: **aguardando aprovação**.
+
+Resultados completos em `docs/publicacao.md` ("Resultado dos testes
+finais"). Problemas encontrados e corrigidos:
+
+- **Visualizador baixava uma foto grande invisível** na página do imóvel
+  (celular: Lighthouse 84–86, abaixo da faixa de antes do redesign). Agora
+  o conteúdo do visualizador só existe quando ele está aberto (87–95). Teste
+  novo impede a volta do problema.
+- **Build registrava "Falha ao carregar favoritos"** em todas as páginas: os
+  `try/catch` do layout e da página inicial capturavam o sinal interno do
+  Next de "página dinâmica". Agora `unstable_rethrow` repassa esses sinais e
+  só falhas reais são registradas; a build sai sem avisos.
+
+Sem problemas: rotas e páginas 404, busca e filtros, calendário e hóspedes,
+favoritos, imagens, vídeos, responsividade nos 3 tamanhos, acessibilidade
+(WCAG 2.1 AA), console, dependências e segredos.

@@ -6,33 +6,41 @@ O site está pronto e testado. A publicação depende de contas e decisões que
 só você pode providenciar — nenhuma credencial foi criada ou inventada.
 Esta página reúne **tudo o que falta, em ordem**.
 
-## Resultado dos testes finais (15/10/2026)
+## Resultado dos testes finais (auditoria do redesign, 15/10/2026)
 
-| Verificação                                     | Resultado                                                                  |
-| ----------------------------------------------- | -------------------------------------------------------------------------- |
-| Lint, tipos, formatação                         | sem erros                                                                  |
-| Testes unitários                                | 96 aprovados                                                               |
-| Testes do banco (pgTAP)                         | 163 aprovados                                                              |
-| Ponta a ponta (desktop, tablet e celular)       | 287 aprovados, 16 ignorados de propósito (testes de um só tamanho de tela) |
-| Backup → restauração → conferência              | aprovado (CI a cada push)                                                  |
-| Build para Cloudflare Workers                   | aprovado                                                                   |
-| Auditoria de dependências (`pnpm audit --prod`) | nenhuma vulnerabilidade conhecida                                          |
-| Segredos no código do navegador                 | nenhum (verificação automática no CI e na publicação)                      |
+| Verificação                                     | Resultado                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------ |
+| Lint, tipos, formatação, lint do banco          | sem erros                                                                      |
+| Build de produção e build para Cloudflare       | aprovadas, sem avisos do site (só o aviso conhecido do `proxy.ts`, abaixo)     |
+| Testes unitários                                | 128 aprovados                                                                  |
+| Testes do banco (pgTAP)                         | 176 aprovados                                                                  |
+| Ponta a ponta (desktop, tablet e celular)       | 356 aprovados, 19 ignorados de propósito (testes de um só tamanho de tela)     |
+| Varredura de 27 páginas × 3 tamanhos            | sem erros no console, imagens quebradas, rolagem lateral ou falhas WCAG 2.1 AA |
+| Backup → restauração → conferência              | aprovado (CI a cada push; agora inclui os vídeos)                              |
+| Auditoria de dependências (`pnpm audit --prod`) | nenhuma vulnerabilidade conhecida                                              |
+| Segredos no código do navegador                 | nenhum                                                                         |
+
+A varredura cobriu: início, temporada (com e sem filtros e datas), mensal,
+venda, imóvel (com e sem datas), contato (geral e de um imóvel), entrar,
+favoritos, minhas estadias, privacidade, termos, páginas inexistentes (404)
+e, logado, as páginas de hóspede e todas as do painel.
 
 ### Lighthouse (build de produção, fotos WebP reais do imóvel 01)
 
-| Página    | Computador                                              | Celular                      |
-| --------- | ------------------------------------------------------- | ---------------------------- |
-| Início    | Desempenho 100 · Acessibilidade 100 · Boas práticas 100 | Desempenho 92–96 · 100 · 100 |
-| Temporada | 100 · 100 · 100                                         | 88–95 · 100 · 100            |
-| Imóvel    | 99 · 100 · 100                                          | 91–96 · 100 · 100            |
-| Contato   | 100 · 100 · 100                                         | 99 · 100 · 100               |
+| Página    | Computador                                              | Celular                   |
+| --------- | ------------------------------------------------------- | ------------------------- |
+| Início    | Desempenho 100 · Acessibilidade 100 · Boas práticas 100 | Desempenho 98 · 100 · 100 |
+| Temporada | 100 · 100 · 96¹                                         | 97 · 100 · 100            |
+| Imóvel    | 97 · 100 · 100                                          | 88–95² · 100 · 100        |
+| Contato   | 100 · 100 · 100                                         | 98 · 100 · 100            |
 
-- Deslocamento de layout (CLS): **0** em todas as páginas.
+- Deslocamento de layout (CLS): **0** em todas as páginas, com as animações.
 - SEO aparece como 66–69 só porque a **indexação está desligada de
   propósito** (`noindex`); com `SITE_INDEXING=on` esse item passa.
-- No celular, o Lighthouse simula 4G lento; as notas variaram até 8 pontos
-  entre rodadas iguais nesta máquina. Repetir as medições no site publicado.
+- ¹ O mapa não alcança o OpenFreeMap neste ambiente (rede bloqueada) e o
+  Lighthouse registra o erro no console; publicado, não acontece.
+- ² No celular, o Lighthouse simula 4G lento e as notas variam até 8
+  pontos entre rodadas iguais nesta máquina. Repetir no site publicado.
 
 ### Otimizações feitas nesta etapa
 
@@ -82,6 +90,8 @@ reviewers).
       (pontos em `docs/privacidade.md`).
 - [x] **Vídeos**: upload no painel e galeria do imóvel (`docs/videos.md`).
       Tours 360°: decidir se entram (o banco já suporta).
+- [ ] **Conferir num iPhone**: enviar um vídeo pelo painel e assistir a um
+      MP4 (H.264) no Safari (`docs/videos.md`).
 - [ ] **Foto real da Riviera** em alta resolução para o topo da página
       inicial (hoje é um fundo gráfico).
 
