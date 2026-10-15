@@ -132,7 +132,7 @@ Lógica pura e testada em `src/lib/search/home-search.ts`; calendário em
 
 ## Etapa 5 — Cards de imóveis e destinos
 
-> Status: **aguardando aprovação**.
+> Status: **aprovado**.
 
 ### Cartão de imóvel
 
@@ -176,3 +176,35 @@ ilustrativa").
 Nenhum imóvel, preço, avaliação ou disponibilidade fictícios: tudo vem do
 banco. Os cartões não mostram nota de avaliação porque a listagem ainda não
 traz esse dado (ele aparece na página do imóvel).
+
+## Etapa 6 — Restante da página
+
+> Status: **aguardando aprovação**.
+
+Ordem da página inicial: topo, busca, **Em destaque**, **Destinos**,
+**A experiência Riviera**, **Atendimento personalizado** e rodapé. Nenhuma
+seção nova só para ocupar espaço: "Como funciona a reserva" passou a fazer
+parte do atendimento.
+
+- **A experiência Riviera** (`src/components/home/riviera-experience.tsx`):
+  faixa escura com o que vale para o bairro todo — praia extensa, comércio e
+  serviços no bairro, ciclovias e áreas verdes — sem números, prêmios ou
+  promessas. Chamada "Ver imóveis na Riviera" com a contagem real de imóveis
+  para temporada (some quando não há).
+- **Atendimento personalizado** (`src/components/home/personal-service.tsx`):
+  os 3 passos da reserva (agora citando fotos e vídeos) e um quadro de
+  contato com os canais reais: WhatsApp, formulário e e-mail, mencionando a
+  visita a imóveis à venda, que já existe na página do imóvel.
+- **Rodapé** (`src/components/site/site-footer.tsx`): filete dourado, marca
+  com "Riviera · Litoral Norte", colunas **Imóveis** (com Favoritos),
+  **Destinos** (as 5 regiões) e **Atendimento**; políticas e termos
+  mantidos; CRECI aparece quando for preenchido. No celular, Imóveis e
+  Destinos lado a lado.
+
+### Conteúdo que depende de você
+
+- Os textos da Riviera descrevem só a geografia e a estrutura do bairro.
+  Se quiser destacar algo específico (por exemplo, a distância de São Paulo
+  ou certificações da praia), envie a informação para conferirmos.
+- Sem depoimentos de clientes: só entram quando houver avaliações reais
+  publicadas.

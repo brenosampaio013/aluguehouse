@@ -97,3 +97,30 @@ export const ArrowRightIcon = (p: IconProps) => (
     <path d="M5 12h14M13 6l6 6-6 6" />
   </Icon>
 );
+
+export const WavesIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 9c1.5 0 1.5-1.5 3-1.5S7.5 9 9 9s1.5-1.5 3-1.5S13.5 9 15 9s1.5-1.5 3-1.5S19.5 9 21 9M3 14c1.5 0 1.5-1.5 3-1.5s1.5 1.5 3 1.5 1.5-1.5 3-1.5 1.5 1.5 3 1.5 1.5-1.5 3-1.5 1.5 1.5 3 1.5M3 19c1.5 0 1.5-1.5 3-1.5s1.5 1.5 3 1.5 1.5-1.5 3-1.5 1.5 1.5 3 1.5 1.5-1.5 3-1.5 1.5 1.5 3 1.5" />
+  </Icon>
+);
+
+export const StoreIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 9.5 5.5 4h13L20 9.5M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12v8h13v-8M10 20v-4.5h4V20" />
+  </Icon>
+);
+
+export const BikeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="5.5" cy="16.5" r="3.5" />
+    <circle cx="18.5" cy="16.5" r="3.5" />
+    <path d="M5.5 16.5 9 9h6l3.5 7.5M9 9 12 16.5h-1M14 5.5h2.5L15 9" />
+  </Icon>
+);
+
+export const MailIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+    <path d="m4 7 8 6 8-6" />
+  </Icon>
+);

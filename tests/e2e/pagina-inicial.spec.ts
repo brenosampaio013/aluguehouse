@@ -90,10 +90,54 @@ test.describe("página inicial", () => {
     // Sem foto dos destinos, nenhum cartão simula uma: o desenho é decorativo.
     await expect(destinos.getByRole("img")).toHaveCount(0);
 
-    const passos = page
-      .getByRole("region", { name: "Como funciona a reserva" })
+    const atendimento = page.getByRole("region", { name: /Cada pedido é conferido/ });
+    const passos = atendimento
+      .getByRole("list", { name: "Como funciona a reserva" })
       .getByRole("listitem");
     await expect(passos).toHaveCount(3);
+    await expect(atendimento.getByRole("link", { name: /Fale no WhatsApp/ })).toHaveAttribute(
+      "href",
+      /^https:\/\/wa\.me\/\d+$/,
+    );
+    await expect(atendimento.getByRole("link", { name: "Formulário de contato" })).toHaveAttribute(
+      "href",
+      "/contato",
+    );
+  });
+
+  test("experiência Riviera leva aos imóveis da região, com a contagem real", async ({ page }) => {
+    await page.goto("/");
+    const riviera = page.getByRole("region", {
+      name: "O litoral no ritmo de quem está de férias.",
+    });
+    await expect(riviera.getByRole("heading", { level: 3 })).toHaveText([
+      "Praia extensa",
+      "Tudo no bairro",
+      "Ciclovias e áreas verdes",
+    ]);
+    await expect(riviera.getByRole("link", { name: "Ver imóveis na Riviera" })).toHaveAttribute(
+      "href",
+      "/temporada?regiao=riviera-de-sao-lourenco",
+    );
+    // A casa deste teste está na Riviera: a contagem aparece.
+    await expect(riviera).toContainText(/\d+ imóve(l|is) para temporada/);
+  });
+
+  test("rodapé com imóveis, destinos, atendimento e páginas legais", async ({ page }) => {
+    await page.goto("/");
+    const rodape = page.getByRole("contentinfo");
+    const nav = rodape.getByRole("navigation", { name: "Rodapé" });
+    for (const name of ["Temporada", "Mensal", "Venda", "Favoritos", "Formulário de contato"]) {
+      await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
+    }
+    for (const region of regions) {
+      await expect(nav.getByRole("link", { name: region.name })).toHaveAttribute(
+        "href",
+        `/temporada?regiao=${region.slug}`,
+      );
+    }
+    await expect(rodape.getByRole("link", { name: "Política de privacidade" })).toBeVisible();
+    await expect(rodape.getByRole("link", { name: "Termos de uso" })).toBeVisible();
   });
 
   test("topo com subtítulo e chamadas para os imóveis e a Riviera", async ({ page }) => {

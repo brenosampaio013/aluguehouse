@@ -4,6 +4,8 @@ import { connection } from "next/server";
 
 import { Destinations } from "@/components/home/destinations";
 import { HeroSearch } from "@/components/home/hero-search";
+import { PersonalService } from "@/components/home/personal-service";
+import { RivieraExperience } from "@/components/home/riviera-experience";
 import { HomeHero } from "@/components/home/home-hero";
 import { PropertyCard } from "@/components/property/property-card";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -26,21 +28,6 @@ export const metadata: Metadata = {
   title: { absolute: `${siteConfig.name} | Riviera de São Lourenço e Litoral Norte` },
   alternates: { canonical: "/" },
 };
-
-const steps = [
-  {
-    title: "Escolha a casa e as datas",
-    text: "Veja fotos, comodidades e as datas livres de cada imóvel.",
-  },
-  {
-    title: "Envie a solicitação",
-    text: "Sem pagamento nesta etapa e sem precisar criar conta: só nome, e-mail e telefone.",
-  },
-  {
-    title: "Receba a confirmação",
-    text: "Conferimos a disponibilidade e respondemos por e-mail ou WhatsApp com os próximos passos.",
-  },
-];
 
 async function loadFeatured(): Promise<PropertyCardData[]> {
   try {
@@ -137,36 +124,8 @@ export default async function HomePage() {
         <Destinations counts={regionCounts} />
       </Container>
 
-      <section aria-labelledby="titulo-como-funciona" className="bg-areia py-16 sm:py-20">
-        <Container className="grid gap-10">
-          <h2 id="titulo-como-funciona" className="font-serif text-h2 font-normal">
-            Como funciona a reserva
-          </h2>
-          <ol className="grid gap-8 md:grid-cols-3">
-            {steps.map((step, index) => (
-              <li key={step.title} className="grid content-start gap-2">
-                <span aria-hidden="true" className="font-serif text-h1 leading-none text-petroleo">
-                  {index + 1}
-                </span>
-                <h3 className="text-h3 font-semibold">{step.title}</h3>
-                <p className="max-w-[36ch] text-abismo">{step.text}</p>
-              </li>
-            ))}
-          </ol>
-          <p>
-            Prefere conversar antes?{" "}
-            <a
-              href={`https://wa.me/${siteConfig.contact.whatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-petroleo underline underline-offset-3"
-            >
-              Fale no WhatsApp {siteConfig.contact.whatsappDisplay}
-              <span className="sr-only"> (abre em nova aba)</span>
-            </a>
-          </p>
-        </Container>
-      </section>
+      <RivieraExperience count={regionCounts["riviera-de-sao-lourenco"] ?? 0} />
+      <PersonalService />
     </main>
   );
 }
