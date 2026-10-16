@@ -7,6 +7,8 @@ import { formatPrice } from "@/lib/format";
 import { mediaSrcSet, publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import type { PropertyCardData } from "@/server/queries/public-properties";
 
+import { ListingBadge } from "./listing-badge";
+
 export type CardStay = { nights: number; total: number };
 
 const priceSuffix = { night: "por noite", month: "por mês", sale: "à venda" } as const;
@@ -96,6 +98,7 @@ export function PropertyCard({
             className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-linear-to-b from-abismo/25 to-transparent"
           />
         ) : null}
+        <ListingBadge status={property.listing} />
         <FavoriteButton
           propertyId={property.id}
           title={property.title}

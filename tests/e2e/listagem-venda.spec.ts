@@ -103,10 +103,24 @@ test.describe("listagem de venda", () => {
     await adminApi().from("properties").delete().in("id", ids);
   });
 
+  test("selo CASA À VENDA no canto superior esquerdo da foto do cartão", async ({ page }) => {
+    await page.goto("/venda");
+    const badge = card(page, A).getByText("CASA À VENDA", { exact: true });
+    await expect(badge).toBeVisible();
+    // No canto superior esquerdo da área da foto.
+    const photo = card(page, A).locator("div.relative").first();
+    const [b, p] = [(await badge.boundingBox())!, (await photo.boundingBox())!];
+    expect(b.x - p.x).toBeLessThan(20);
+    expect(b.y - p.y).toBeLessThan(20);
+    expect(b.width).toBeLessThan(p.width / 2);
+  });
+
   test("lista só publicados à venda, com preço e área", async ({ page }) => {
     await page.goto("/venda");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Imóveis à venda");
     await expect(card(page, A)).toContainText("R$ 1.800.000 à venda");
+    // Selo sobre a foto, no canto superior esquerdo.
+    await expect(card(page, A).getByText("CASA À VENDA", { exact: true })).toBeVisible();
     // Quartos, suítes (só quando há) e área; venda não mostra hóspedes.
     await expect(card(page, A).getByRole("listitem")).toHaveText(["4 quartos", "320 m²"]);
     await expect(card(page, B).getByRole("listitem")).toHaveText([

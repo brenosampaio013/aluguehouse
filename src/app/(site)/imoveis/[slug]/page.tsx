@@ -21,6 +21,7 @@ import { getPublicEnv } from "@/lib/env";
 import { addDaysISO, formatBRL, formatDateISO, formatPrice } from "@/lib/format";
 import { publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import { propertyTypeLabels } from "@/lib/properties/labels";
+import { listingStatus } from "@/lib/properties/listing";
 import { averageRating } from "@/lib/reviews";
 import { breadcrumbJsonLd, listingJsonLd } from "@/lib/seo/json-ld";
 import { first, int, isRealDate } from "@/lib/search/shared";
@@ -291,6 +292,7 @@ export default async function ImovelPage({ params, searchParams }: Props) {
           photos={property.images}
           videos={property.videos}
           supabaseUrl={supabaseUrl}
+          listing={listingStatus(property)}
         />
 
         <div className="grid gap-12 lg:grid-cols-[1fr_380px] lg:items-start">

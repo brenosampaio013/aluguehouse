@@ -16,7 +16,12 @@ const FIXTURES = path.join(process.cwd(), "tests/e2e/fixtures");
 
 const storage = { media: [] as string[], videos: [] as string[] };
 
-async function createProperty(propertySlug: string, title: string, withVideos: boolean) {
+async function createProperty(
+  propertySlug: string,
+  title: string,
+  withVideos: boolean,
+  forSale = false,
+) {
   const api = adminApi();
   const { data, error } = await api
     .from("properties")
@@ -28,6 +33,8 @@ async function createProperty(propertySlug: string, title: string, withVideos: b
       neighborhood: "Riviera de São Lourenço",
       offers_seasonal: true,
       nightly_price: 1500,
+      offers_sale: forSale,
+      sale_price: forSale ? 2500000 : null,
       max_guests: 8,
       status: "published",
       published_at: new Date().toISOString(),
@@ -120,7 +127,7 @@ function viewer(page: Page) {
 test.describe("vídeos na galeria do imóvel", () => {
   test.beforeAll(async () => {
     await createProperty(slug, `Casa com vídeos ${run}`, true);
-    await createProperty(plainSlug, `Casa sem vídeos ${run}`, false);
+    await createProperty(plainSlug, `Casa sem vídeos ${run}`, false, true);
   });
 
   test.afterAll(async () => {
@@ -252,6 +259,27 @@ test.describe("vídeos na galeria do imóvel", () => {
     await expect(page.getByRole("button", { name: /^Vídeos/ })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Assistir ao vídeo/ })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Ver todas as fotos (3)" })).toBeVisible();
+  });
+
+  test("imóvel à venda: selo CASA À VENDA sobre a primeira foto", async ({ page }) => {
+    await page.goto(`/imoveis/${plainSlug}`);
+    const badge = page.getByText("CASA À VENDA", { exact: true });
+    await expect(badge).toBeVisible();
+    const photo = page
+      .getByRole("button", { name: "Ampliar foto 1: Foto 1: sala jantar" })
+      .filter({ visible: true });
+    const [b, p] = [(await badge.boundingBox())!, (await photo.boundingBox())!];
+    // Canto superior esquerdo, sem cobrir a foto e sem bloquear o clique nela.
+    expect(b.x - p.x).toBeGreaterThanOrEqual(0);
+    expect(b.x - p.x).toBeLessThan(24);
+    expect(b.y - p.y).toBeLessThan(24);
+    expect(b.width).toBeLessThan(p.width / 2);
+    await expect(badge).toHaveCSS("pointer-events", "none");
+
+    // Anúncio só de aluguel não tem selo.
+    await page.goto(`/imoveis/${slug}`);
+    await expect(page.locator("main")).toBeVisible();
+    await expect(page.getByText("CASA À VENDA")).toHaveCount(0);
   });
 
   test("sem violações WCAG 2.1 AA e sem rolagem lateral, com o vídeo aberto", async ({ page }) => {
