@@ -153,6 +153,8 @@ test.describe("página do imóvel", () => {
     await expect(dialog.getByText("Foto ilustrativa")).toHaveCount(1);
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
+    // Só aluguel: sem o selo de venda.
+    await expect(page.getByText("CASA À VENDA")).toHaveCount(0);
   });
 
   test("a coordenada exata e o endereço nunca chegam ao navegador", async ({ page, request }) => {

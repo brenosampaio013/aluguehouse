@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { listingStatus } from "@/lib/properties/listing";
 import { PAGE_SIZE, sortToDb, type RentalFilters, type RentalMode } from "@/lib/search/params";
 import type { SaleFilters } from "@/lib/search/sale-params";
 
@@ -47,7 +48,7 @@ export async function searchRentals(
 
   const rows = data ?? [];
   const ids = rows.map((row) => row.id);
-  const [covers, locations] = await Promise.all([loadCovers(ids), loadLocations(ids)]);
+  const [covers, details] = await Promise.all([loadCovers(ids), loadDetails(ids)]);
 
   const items = rows.map((row): RentalResult => ({
     id: row.id,
@@ -63,7 +64,8 @@ export async function searchRentals(
         ? null
         : { kind: mode === "seasonal" ? "night" : "month", amount: row.base_price },
     cover: covers.get(row.id) ?? null,
-    location: locations.get(row.id) ?? null,
+    location: details.get(row.id)?.location ?? null,
+    listing: details.get(row.id)?.listing ?? null,
     stay:
       row.nights && row.quote_total !== null
         ? { nights: row.nights, total: row.quote_total }
@@ -100,21 +102,30 @@ async function loadCovers(
   return covers;
 }
 
-/** Localização aproximada (pública) de cada imóvel, para o mapa da listagem. */
-async function loadLocations(ids: string[]): Promise<Map<string, { lat: number; lng: number }>> {
-  const locations = new Map<string, { lat: number; lng: number }>();
-  if (ids.length === 0) return locations;
+type CardDetails = Pick<PropertyCardData, "location" | "listing">;
+
+/**
+ * Localização aproximada (pública), para o mapa da listagem, e selo sobre a
+ * foto (imóvel de aluguel que também está à venda) de cada imóvel.
+ */
+async function loadDetails(ids: string[]): Promise<Map<string, CardDetails>> {
+  const details = new Map<string, CardDetails>();
+  if (ids.length === 0) return details;
   const { data, error } = await createSupabasePublicClient()
     .from("properties")
-    .select("id, approx_lat, approx_lng")
+    .select("id, approx_lat, approx_lng, offers_sale")
     .in("id", ids);
   if (error) throw error;
   for (const row of data) {
-    if (row.approx_lat !== null && row.approx_lng !== null) {
-      locations.set(row.id, { lat: row.approx_lat, lng: row.approx_lng });
-    }
+    details.set(row.id, {
+      location:
+        row.approx_lat !== null && row.approx_lng !== null
+          ? { lat: row.approx_lat, lng: row.approx_lng }
+          : null,
+      listing: listingStatus(row),
+    });
   }
-  return locations;
+  return details;
 }
 
 export type SaleSearch = { items: PropertyCardData[]; total: number };
@@ -135,7 +146,7 @@ export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
   if (error) throw error;
 
   const ids = data.map((row) => row.id);
-  const [covers, locations] = await Promise.all([loadCovers(ids), loadLocations(ids)]);
+  const [covers, details] = await Promise.all([loadCovers(ids), loadDetails(ids)]);
   const items = data.map((row): PropertyCardData => ({
     id: row.id,
     slug: row.slug,
@@ -148,7 +159,8 @@ export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
     areaM2: row.area_m2,
     price: { kind: "sale", amount: row.sale_price },
     cover: covers.get(row.id) ?? null,
-    location: locations.get(row.id) ?? null,
+    location: details.get(row.id)?.location ?? null,
+    listing: "sale",
   }));
   return { items, total: data[0]?.total_count ?? 0 };
 }

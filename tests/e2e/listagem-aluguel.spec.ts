@@ -126,6 +126,8 @@ test.describe("listagens de aluguel", () => {
     await expect(card(page, C)).toHaveCount(0);
     await expect(card(page, D)).toHaveCount(0);
     await expect(card(page, A)).toContainText("R$ 800 por noite");
+    // Imóvel só de aluguel não recebe o selo de venda.
+    await expect(card(page, A).getByText("CASA À VENDA")).toHaveCount(0);
   });
 
   test("mensal lista os que oferecem aluguel mensal", async ({ page }) => {

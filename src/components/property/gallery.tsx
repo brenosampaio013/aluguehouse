@@ -1,8 +1,10 @@
 import { buttonClasses } from "@/components/ui/button";
 import { publicMediaUrl } from "@/lib/media";
+import type { ListingStatus } from "@/lib/properties/listing";
 import { formatDuration } from "@/lib/videos";
 
 import { AllPhotosDialog } from "./all-photos-dialog";
+import { ListingBadge } from "./listing-badge";
 import { MediaViewerProvider, OpenMediaButton, PlayIcon, type VideoData } from "./media-viewer";
 import { Photo, type PhotoData } from "./photo";
 
@@ -70,10 +72,13 @@ export function PropertyGallery({
   photos,
   videos = [],
   supabaseUrl,
+  listing = null,
 }: {
   photos: PhotoData[];
   videos?: VideoData[];
   supabaseUrl: string;
+  /** Selo no canto superior esquerdo da primeira foto. */
+  listing?: ListingStatus | null;
 }) {
   if (photos.length === 0 && videos.length === 0) return null;
   const firstVideo = videos[0];
@@ -106,6 +111,7 @@ export function PropertyGallery({
   return (
     <MediaViewerProvider photos={photos} videos={videos} supabaseUrl={supabaseUrl}>
       <div className="relative">
+        <ListingBadge status={listing} className="sm:top-4 sm:left-4" />
         {/* Celular: rolagem horizontal com encaixe */}
         {/* tabIndex: a área rolável precisa ser alcançável pelo teclado. */}
         <ul

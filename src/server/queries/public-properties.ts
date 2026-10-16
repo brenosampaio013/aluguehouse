@@ -1,5 +1,6 @@
 import "server-only";
 
+import { listingStatus, type ListingStatus } from "@/lib/properties/listing";
 import type { RegionSlug } from "@/lib/regions";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 
@@ -17,6 +18,8 @@ export type PropertyCardData = {
   location?: { lat: number; lng: number } | null;
   price: { kind: "night" | "month" | "sale"; amount: number } | null;
   cover: { path: string; width: number; alt: string; isDemo: boolean } | null;
+  /** Selo sobre a foto (ex.: "CASA À VENDA"). */
+  listing?: ListingStatus | null;
 };
 
 export type CardRow = {
@@ -80,6 +83,7 @@ export function toCard(row: CardRow): PropertyCardData {
     suites: row.suites,
     maxGuests: row.max_guests,
     price: cardPrice(row),
+    listing: listingStatus(row),
     cover: cover
       ? {
           path: cover.storage_path!,
