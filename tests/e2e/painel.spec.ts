@@ -255,7 +255,6 @@ test("painel sem violações WCAG 2.1 AA", async ({ page }) => {
 });
 
 test("exporta mais de 1.000 registros completos (sem o corte do PostgREST)", async ({
-  request,
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "dados pesados: basta um tamanho de tela");
