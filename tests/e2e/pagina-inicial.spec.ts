@@ -147,12 +147,38 @@ test.describe("página inicial", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("animation-name", "none");
-    for (const seletor of [".entrada", ".revelar", ".ondas-mar path"]) {
+    for (const seletor of [".entrada", ".revelar", ".mar-deriva", ".mar-brilho"]) {
       const nomes = await page
         .locator(seletor)
         .evaluateAll((els) => [...new Set(els.map((el) => getComputedStyle(el).animationName))]);
       expect(nomes, seletor).toEqual(["none"]);
     }
+    // Nada se move, então não há o que pausar.
+    await expect(page.getByRole("button", { name: /movimento do mar/ })).toBeHidden();
+  });
+
+  test("mar em movimento no topo, com botão para pausar e retomar", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const topo = page.getByRole("region", { name: "Seu próximo capítulo começa aqui." });
+    const onda = topo.locator(".mar-deriva").first();
+    await expect(onda).toHaveCSS("animation-name", "mar-deriva");
+    await expect(onda).toHaveCSS("animation-play-state", "running");
+    // O cenário é decoração: fica fora da árvore de acessibilidade.
+    await expect(topo.locator(".hero-sem-foto")).toHaveAttribute("aria-hidden", "true");
+
+    await topo.getByRole("button", { name: "Pausar o movimento do mar" }).click();
+    await expect(onda).toHaveCSS("animation-play-state", "paused");
+    await expect(topo.locator(".mar-brilho").first()).toHaveCSS("animation-play-state", "paused");
+
+    // A escolha vale para as próximas visitas.
+    await page.reload();
+    const retomar = topo.getByRole("button", { name: "Retomar o movimento do mar" });
+    await expect(retomar).toBeVisible();
+    await expect(onda).toHaveCSS("animation-play-state", "paused");
+    await retomar.click();
+    await expect(onda).toHaveCSS("animation-play-state", "running");
+    await expect(topo.getByRole("button", { name: "Pausar o movimento do mar" })).toBeFocused();
   });
 
   test("rodapé com imóveis, destinos, atendimento e páginas legais", async ({ page }) => {
