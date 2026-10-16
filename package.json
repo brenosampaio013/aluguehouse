@@ -25,7 +25,8 @@
     "db:test": "supabase test db",
     "db:lint": "supabase db lint --level warning --fail-on warning",
     "demo:seed": "node scripts/demo-seed.mjs",
-    "hero:photo": "node scripts/hero-photo.mjs"
+    "hero:photo": "node scripts/hero-photo.mjs",
+    "hero:video": "node scripts/hero-video.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

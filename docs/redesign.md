@@ -69,29 +69,84 @@ No rodapé (fundo marinho) o contorno de foco é dourado (`.sobre-escuro`).
   refeita na Etapa 4.
 - Sem animações.
 
-### Foto
+### Cenário, foto e vídeo do mar
 
-**Ainda não há foto.** Não recebemos uma foto da casa e a rede do ambiente
-de desenvolvimento bloqueia bancos de imagem (Unsplash, Pexels, Wikimedia).
-Enquanto isso o topo usa um **fundo desenhado** (petróleo e marinho com
-ondas douradas finas), sem simular uma foto.
+O topo tem três modos, escolhidos em `heroMedia`
+(`src/lib/home/hero-photo.ts`). Os três mantêm a paleta, o título, as
+chamadas e a busca:
 
-Para colocar a foto:
+1. **Sem mídia (atual): cenário desenhado** (`coast-scene.tsx`). Fim de
+   tarde no litoral norte, nas cores do site: a Serra do Mar descendo até a
+   água com o contorno em dourado, uma ilha no horizonte, o reflexo do sol
+   cintilando e ondas finas que deslizam devagar (46 a 90 s por volta, sem
+   emenda visível). Só decoração (`aria-hidden`), sem imitar uma foto. No
+   celular e no tablet o horizonte sobe para 40% da altura, para ficar acima
+   do subtítulo.
+2. **Foto**: a foto em tela cheia, com um movimento lento de aproximação
+   (6% em 32 s).
+3. **Foto + vídeo**: a foto é a capa e o fallback; o vídeo do mar entra por
+   cima, com um esmaecer, quando começa de fato a tocar.
 
-1. Foto horizontal com pelo menos 1600 px de largura (ideal 2400 px ou mais),
-   com direito de uso.
-2. `pnpm hero:photo caminho/da/foto.jpg` — gera `public/inicio/capa-*.webp`
-   (960, 1600 e 2400 px, sem metadados de localização).
-3. Preencher `heroPhoto` em `src/lib/home/hero-photo.ts`:
-   `{ basePath: "/inicio/capa", widths: [960, 1600, 2400], alt: "…",
-illustrative: true }`. `illustrative: true` mostra o aviso "Foto
-   ilustrativa" (obrigatório se a casa não for um imóvel anunciado).
+Por que ainda não há foto nem vídeo: não recebemos uma foto ou um vídeo
+externo das casas (as fotos do `imovel-01` são internas e têm 1280 px), e a
+rede do ambiente de desenvolvimento bloqueia bancos de imagem e vídeo
+(Pexels, Unsplash, Pixabay, Wikimedia). Nada foi inventado: sem arquivo, o
+topo usa o cenário desenhado.
 
-O modo com foto foi testado com uma imagem sintética **bem clara** (pior
-caso): um véu marinho mais forte à esquerda (computador) e embaixo (celular)
-mantém o texto acima do contraste mínimo — pior caso medido 5,5:1 no texto
-pequeno e 5,6:1 no título — sem violações de acessibilidade e sem rolagem
-lateral. A foto é carregada com prioridade (é o maior elemento da tela).
+**Vídeo** (`hero-motion.tsx`):
+
+- `muted`, `loop`, `playsInline`, sem áudio (o script remove a faixa) e
+  `preload="none"`. Só começa a baixar **depois que a página terminou de
+  carregar**: não disputa banda com a foto, que continua sendo o maior
+  elemento da tela (LCP).
+- Telas de até 767 px recebem o arquivo de 960 px; as demais, o de 1920 px.
+  WebM (VP9) primeiro e MP4 (H.264) para Safari.
+- Não baixa com "reduzir movimento", "economia de dados" ou conexão 2G;
+  pausa fora da tela e com a aba em segundo plano. Se o arquivo falhar,
+  fica a foto.
+- Hospedagem: os arquivos ficam em `public/inicio/` e são servidos como
+  arquivos estáticos pelo Cloudflare (limite de 25 MiB por arquivo; o
+  script avisa acima de 6 MB). O CSP já permite mídia do próprio site
+  (`media-src 'self'`).
+
+**Pausar o movimento** (WCAG 2.2.2): um botão discreto no canto do topo
+pausa e retoma o vídeo, as ondas e a aproximação da foto. A escolha fica
+guardada no navegador do visitante. Com "reduzir movimento" nada se move e
+o botão não aparece.
+
+Para colocar a mídia (fotos e vídeos com direito de uso):
+
+- Só foto: `pnpm hero:photo caminho/da/foto.jpg` (pelo menos 1600 px de
+  largura, ideal 2400 px) e preencher `heroMedia` com
+  `{ photo: { basePath: "/inicio/capa", widths: [960, 1600, 2400], alt: "…", illustrative: true }, video: null }`.
+- Vídeo: `pnpm hero:video caminho/do/video.mp4 [nome] [--inicio=0] [--duracao=12]`
+  (precisa do ffmpeg; pelo menos 1280 px de largura, ideal 1920 px ou 4K).
+  Gera `public/inicio/mar-960|1920.webm|mp4` (30 fps, sem áudio e sem
+  metadados), com o fim do trecho emendado no começo por um esmaecer de 1 s,
+  para o loop não "pular". Gera também a capa `mar-capa-*.webp`, que é o
+  primeiro quadro do loop, para o vídeo entrar sem salto. Ao final, o script
+  imprime o `heroMedia` pronto para colar.
+- `illustrative: true` mostra o aviso "Foto ilustrativa" (com vídeo:
+  "Imagens ilustrativas"). É obrigatório se as casas não forem imóveis
+  anunciados.
+
+Contraste, medido pixel a pixel atrás de cada texto (título, selo e
+subtítulo), em computador, tablet e celular:
+
+- Pior caso com foto (imagem **toda branca**): o véu em petróleo e marinho,
+  mais forte embaixo (celular) e à esquerda (computador), mantém tudo acima
+  de 5:1. No pior ponto, o título fica em 5,0:1 e o texto pequeno em 5,0:1.
+- Cenário desenhado em movimento: no pior ponto, o título fica em 5,2:1 e o
+  texto pequeno em 8,6:1.
+
+O modo com vídeo foi testado com um vídeo sintético (gradiente, gerado pelo
+próprio script; não publicado), em computador, tablet e celular:
+
+- o vídeo é pedido só depois do `load` da página;
+- o celular recebe o arquivo de 960 px;
+- o botão de pausa pausa o vídeo e a escolha é lembrada;
+- com "reduzir movimento" nenhum vídeo é baixado;
+- com o vídeo bloqueado, a foto continua visível.
 
 ## Etapa 4 — Barra de busca
 
@@ -220,7 +275,7 @@ para quem ativou **"reduzir movimento"** no sistema — o site aparece pronto.
 | Onde                     | O quê                                                                                                                                                                                                     |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Topo da página inicial   | Selo, título, subtítulo, botões e busca sobem em sequência (até ~1,2 s). O título só se desloca e nunca fica transparente, para não atrasar a medição de carregamento (LCP).                              |
-| Ondas do topo            | As três linhas douradas oscilam devagar (9 a 15 s), como o mar ao longe.                                                                                                                                  |
+| Mar do topo              | Ondas finas deslizam devagar (46 a 90 s por volta) e o reflexo do sol cintila; com foto, aproximação lenta. Botão para pausar no canto do topo.                                                           |
 | Seções da página inicial | Títulos, cards, destinos, itens da Riviera, passos e quadro de contato surgem ao entrar na tela, **uma vez** (0,7 s). O que já está visível ao abrir a página não anima; sem JavaScript, nada se esconde. |
 | Cards                    | Imóveis: zoom leve da foto e sombra (já existia). Destinos: sobem 4 px com sombra.                                                                                                                        |
 | Botões                   | Leve "afundar" ao clicar em todos os botões; setas de "Ver todos os imóveis" e "Ver imóveis na Riviera" deslizam ao passar o mouse.                                                                       |

@@ -14,7 +14,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { getPublicEnv } from "@/lib/env";
-import { heroPhoto } from "@/lib/home/hero-photo";
+import { heroMedia } from "@/lib/home/hero-photo";
 import { organizationJsonLd } from "@/lib/seo/json-ld";
 import type { RegionSlug } from "@/lib/regions";
 import { MAX_SEARCH_GUESTS } from "@/lib/search/home-search";
@@ -81,7 +81,7 @@ export default async function HomePage() {
   return (
     <main id="conteudo" className="flex-1">
       <JsonLd data={organizationJsonLd(getPublicEnv().NEXT_PUBLIC_SITE_URL)} />
-      <HomeHero photo={heroPhoto} />
+      <HomeHero media={heroMedia} />
       {/* A busca sobe sobre a borda inferior do topo. */}
       <Container className="relative z-20 -mt-20 sm:-mt-24">
         <div className="entrada max-w-[60rem] [--atraso:380ms]">

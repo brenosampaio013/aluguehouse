@@ -83,15 +83,25 @@
 }
 
 /*
- * Fundo do topo da página inicial enquanto não há foto: mar fundo em
- * petróleo e marinho, com um brilho de fim de tarde no horizonte.
+ * Fundo do topo da página inicial enquanto não há foto (cenário desenhado em
+ * coast-scene.tsx): céu de petróleo a marinho, o brilho de fim de tarde no
+ * horizonte (58% da altura) e o mar escurecendo até a praia.
  */
 @layer components {
   .hero-sem-foto {
+    /* Altura do horizonte: igual à do desenho em coast-scene.tsx. */
+    --horizonte: 40%;
     background:
-      radial-gradient(110% 75% at 80% 115%, rgb(183 154 105 / 0.38), transparent 62%),
+      radial-gradient(42% 30% at 78% var(--horizonte), rgb(183 154 105 / 0.42), transparent 72%),
+      radial-gradient(90% 24% at 78% var(--horizonte), rgb(183 154 105 / 0.16), transparent 75%),
+      linear-gradient(180deg, transparent var(--horizonte), rgb(14 31 42 / 0.55) 100%),
       radial-gradient(80% 60% at 0% 0%, rgb(16 59 64 / 0.95), transparent 70%),
-      linear-gradient(165deg, var(--color-petroleo) 0%, var(--color-abismo) 72%);
+      linear-gradient(170deg, var(--color-petroleo) 0%, var(--color-abismo) 72%);
+  }
+  @media (min-width: 64rem) {
+    .hero-sem-foto {
+      --horizonte: 58%;
+    }
   }
 }
 
@@ -159,17 +169,23 @@
       animation-delay: var(--atraso, 0ms);
     }
 
-    /* Ondas do topo: oscilação lenta, como o mar ao longe. */
-    .ondas-mar path {
-      animation: ondas-mar 9s ease-in-out infinite alternate;
+    /*
+     * Mar do topo: as faixas de ondas deslizam devagar (meia largura por
+     * volta, sem emenda), o reflexo do sol cintila e a foto, sem vídeo,
+     * se aproxima lentamente. Tudo pausa com o botão do topo.
+     */
+    .mar-deriva {
+      animation: mar-deriva 60s linear infinite;
+      will-change: transform;
     }
-    .ondas-mar path:nth-child(2) {
-      animation-duration: 12s;
-      animation-delay: -3s;
+    .mar-brilho {
+      animation: mar-brilho 5s ease-in-out infinite alternate;
     }
-    .ondas-mar path:nth-child(3) {
-      animation-duration: 15s;
-      animation-delay: -6s;
+    .foto-viva {
+      animation: foto-viva 32s ease-in-out infinite alternate;
+    }
+    [data-movimento="pausado"] :is(.mar-deriva, .mar-brilho, .foto-viva) {
+      animation-play-state: paused;
     }
 
     /*
@@ -207,12 +223,30 @@
   }
 }
 
-@keyframes ondas-mar {
+@keyframes mar-deriva {
   from {
-    transform: translateY(0);
+    transform: translateX(0);
   }
   to {
-    transform: translateY(-6px);
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes mar-brilho {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes foto-viva {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06) translateX(-1%);
   }
 }
 
