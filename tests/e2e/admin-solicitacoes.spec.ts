@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-import { loginAsAdmin } from "./support/admin";
+import { answerConfirm, loginAsAdmin, openAdminNav } from "./support/admin";
 import { adminApi, anonApi, createAdminWithTotp } from "./support/users";
 
 function isoInDays(days: number) {
@@ -91,7 +91,7 @@ test("aprovar bloqueia as datas; o pedido sobreposto não pode ser aprovado", as
     await loginAsAdmin(page, admin);
 
     // Lista e contador no menu
-    const nav = page.getByRole("navigation", { name: "Painel" });
+    const nav = await openAdminNav(page);
     await expect(nav.getByRole("link", { name: /Solicitações \d+ pendentes/ })).toBeVisible();
     await nav.getByRole("link", { name: /Solicitações/ }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Solicitações de reserva");
@@ -110,6 +110,7 @@ test("aprovar bloqueia as datas; o pedido sobreposto não pode ser aprovado", as
 
     // Aprovar
     await page.getByRole("button", { name: "Aprovar reserva" }).click();
+    await answerConfirm(page, "Aprovar reserva", "bloqueadas no calendário");
     await expect(status(page, "Reserva aprovada")).toBeVisible();
     await expect(page.getByText("Aprovada", { exact: true })).toBeVisible();
     expect(await unavailable(property.id)).toEqual([
@@ -122,15 +123,22 @@ test("aprovar bloqueia as datas; o pedido sobreposto não pode ser aprovado", as
       "Datas ocupadas: reserva",
     );
     await page.getByRole("button", { name: "Aprovar reserva" }).click();
+    await answerConfirm(page, "Aprovar reserva");
     await expect(alert(page, "Essas datas já estão ocupadas")).toBeVisible();
     await page.getByLabel("Motivo (opcional, uso interno)").fill("Datas já reservadas.");
     await page.getByRole("button", { name: "Recusar solicitação" }).click();
+    await answerConfirm(page, "Recusar solicitação");
     await expect(status(page, "Solicitação recusada.")).toBeVisible();
     await expect(page.getByLabel("Anotações internas")).toHaveValue("Datas já reservadas.");
 
     // Cancelar a reserva aprovada libera as datas
     await page.goto(`/admin/solicitacoes/${first}`);
+    // Desistir no diálogo não cancela nada.
     await page.getByRole("button", { name: "Cancelar reserva" }).click();
+    await answerConfirm(page, "Voltar");
+    expect(await unavailable(property.id)).toHaveLength(1);
+    await page.getByRole("button", { name: "Cancelar reserva" }).click();
+    await answerConfirm(page, "Cancelar reserva", "voltam a ficar livres");
     await expect(status(page, "Reserva cancelada")).toBeVisible();
     await expect(page.getByText("Cancelada", { exact: true })).toBeVisible();
     expect(await unavailable(property.id)).toEqual([]);

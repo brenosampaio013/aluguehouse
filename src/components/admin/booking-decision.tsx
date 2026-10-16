@@ -6,6 +6,7 @@ import type { BookingStatus } from "@/lib/booking/labels";
 import { decideBooking } from "@/server/actions/booking-admin";
 
 import { FormFeedback } from "./form-feedback";
+import { useConfirmSubmit } from "./ui/confirm-dialog";
 import { useFormAction } from "./use-form-action";
 
 type Props = {
@@ -21,6 +22,26 @@ export function BookingDecision({ bookingId, status, checkInPassed, hasConflicts
   const approve = useFormAction(decideBooking);
   const decline = useFormAction(decideBooking);
   const cancel = useFormAction(decideBooking);
+  const confirmApprove = useConfirmSubmit(() => ({
+    title: "Aprovar esta reserva?",
+    description:
+      "As datas serão bloqueadas no calendário na mesma hora e deixam de aceitar outros pedidos.",
+    confirmLabel: "Aprovar reserva",
+  }));
+  const confirmDecline = useConfirmSubmit(() => ({
+    title: "Recusar esta solicitação?",
+    description: "A solicitação é encerrada e não poderá ser aprovada depois.",
+    confirmLabel: "Recusar solicitação",
+    tone: "danger",
+  }));
+  const confirmCancel = useConfirmSubmit(() => ({
+    title: "Cancelar esta reserva?",
+    description:
+      "A reserva é encerrada e as datas voltam a ficar livres no site. Não é possível desfazer.",
+    confirmLabel: "Cancelar reserva",
+    cancelLabel: "Voltar",
+    tone: "danger",
+  }));
   // Depois de decidir, a página recarrega e o formulário usado some; a
   // confirmação fica aqui em cima. Ordem: cancelar só vem depois de aprovar.
   const done = [cancel.state, decline.state, approve.state].find((s) => s.status === "success");
@@ -42,7 +63,12 @@ export function BookingDecision({ bookingId, status, checkInPassed, hasConflicts
     <div className="grid gap-6">
       {feedback}
       {status === "pending" ? (
-        <form {...approve.formProps} className="grid gap-3">
+        <form
+          {...approve.formProps}
+          onSubmit={(event) => confirmApprove.intercept(event) || approve.formProps.onSubmit(event)}
+          className="grid gap-3"
+        >
+          {confirmApprove.dialog}
           <input type="hidden" name="id" value={bookingId} />
           <input type="hidden" name="decision" value="approve" />
           {checkInPassed ? (
@@ -63,7 +89,12 @@ export function BookingDecision({ bookingId, status, checkInPassed, hasConflicts
       ) : null}
 
       {status === "pending" ? (
-        <form {...decline.formProps} className="grid gap-3 rounded-photo bg-branco p-5">
+        <form
+          {...decline.formProps}
+          onSubmit={(event) => confirmDecline.intercept(event) || decline.formProps.onSubmit(event)}
+          className="grid gap-3 rounded-photo bg-marfim p-5"
+        >
+          {confirmDecline.dialog}
           <h3 className="font-semibold">Recusar</h3>
           <input type="hidden" name="id" value={bookingId} />
           <input type="hidden" name="decision" value="decline" />
@@ -82,7 +113,12 @@ export function BookingDecision({ bookingId, status, checkInPassed, hasConflicts
           </div>
         </form>
       ) : (
-        <form {...cancel.formProps} className="grid gap-3 rounded-photo bg-branco p-5">
+        <form
+          {...cancel.formProps}
+          onSubmit={(event) => confirmCancel.intercept(event) || cancel.formProps.onSubmit(event)}
+          className="grid gap-3 rounded-photo bg-marfim p-5"
+        >
+          {confirmCancel.dialog}
           <h3 className="font-semibold">Cancelar reserva</h3>
           <p className="text-small text-rocha">As datas voltam a ficar livres no site.</p>
           <input type="hidden" name="id" value={bookingId} />

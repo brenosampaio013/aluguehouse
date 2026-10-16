@@ -2,12 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
-import { Container } from "@/components/ui/container";
+import { Badge } from "@/components/admin/ui/badge";
+import { Card } from "@/components/admin/ui/card";
+import { DataTable, SortTh, Td, Th } from "@/components/admin/ui/data-table";
+import { EmptyState } from "@/components/admin/ui/empty-state";
+import { ListToolbar } from "@/components/admin/ui/list-toolbar";
+import { AdminPage, PageHeader } from "@/components/admin/ui/page";
+import { ListPagination } from "@/components/admin/ui/pagination";
+import { StatusTabs } from "@/components/admin/ui/status-tabs";
+import { buttonClasses } from "@/components/ui/button";
+import { CalendarIcon, DownloadIcon } from "@/components/ui/icons";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { bookingTabs, parseBookingTab, rentalModeLabels } from "@/lib/booking/labels";
-import { cn } from "@/lib/cn";
-import { formatBRL, formatDateISO } from "@/lib/format";
-import { listBookingRequests } from "@/server/queries/admin-bookings";
+import { parseBookingFilters, type BookingFilters } from "@/lib/admin/filters";
+import { buildHref, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
+import { bookingTabs, rentalModeLabels } from "@/lib/booking/labels";
+import { formatBRL, formatDateISO, todayInSaoPaulo } from "@/lib/format";
+import { listPropertyOptions } from "@/server/queries/admin-dashboard";
+import { countBookingsByStatus, searchBookingRequests } from "@/server/queries/admin-bookings";
 
 export const metadata: Metadata = { title: "Solicitações de reserva" };
 
@@ -22,119 +33,215 @@ function nights(checkIn: string, checkOut: string) {
   return `${n} ${n === 1 ? "noite" : "noites"}`;
 }
 
+function listParams(filters: BookingFilters) {
+  const defaultDir = filters.tab.status === "pending" ? "asc" : "desc";
+  const isDefault = filters.sort.key === "recebida" && filters.sort.dir === defaultDir;
+  return {
+    situacao: filters.tab.slug,
+    q: filters.q,
+    imovel: filters.propertyId,
+    modalidade: filters.mode,
+    de: filters.from,
+    ate: filters.to,
+    ordem: isDefault ? null : filters.sort.key,
+    dir: isDefault ? null : filters.sort.dir,
+  };
+}
+
 export default async function SolicitacoesPage({ searchParams }: PageProps<"/admin/solicitacoes">) {
-  const tab = parseBookingTab((await searchParams).situacao);
+  const filters = parseBookingFilters(await searchParams);
   const { supabase } = await requireAdmin();
-  const requests = await listBookingRequests(supabase, tab.status);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(),
+  const [{ rows, count }, counts, properties] = await Promise.all([
+    searchBookingRequests(supabase, filters, pageRange(filters.page)),
+    countBookingsByStatus(supabase),
+    listPropertyOptions(supabase),
+  ]);
+  const today = todayInSaoPaulo();
+  const base = listParams(filters);
+  const href = (extra: Record<string, string | number | null>) =>
+    buildHref("/admin/solicitacoes", { ...base, ...extra });
+  const sortHref = (s: { key: string; dir: string }) =>
+    href({ ordem: s.key, dir: s.dir, pagina: null });
+  const filtered = Boolean(
+    filters.q || filters.propertyId || filters.mode || filters.from || filters.to,
   );
+  const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
   return (
-    <main id="conteudo" className="flex-1 py-12">
-      <Container className="grid gap-8">
-        <div className="grid gap-2">
-          <h1 className="font-serif text-h1 font-normal">Solicitações de reserva</h1>
-          <p className="max-w-[68ch] text-rocha">
-            Pedidos feitos pelo site. Nada é confirmado até você aprovar; ao aprovar, as datas são
-            bloqueadas no calendário.
-          </p>
-        </div>
+    <AdminPage>
+      <PageHeader
+        title="Solicitações de reserva"
+        description="Pedidos feitos pelo site. Nada é confirmado até você aprovar; ao aprovar, as datas são bloqueadas no calendário."
+        actions={
+          <Link
+            href={buildHref("/admin/exportar/solicitacoes", { ...base, ordem: null, dir: null })}
+            prefetch={false}
+            className={buttonClasses("secondary", "min-h-10 px-4")}
+          >
+            <DownloadIcon width={18} height={18} />
+            Exportar CSV
+          </Link>
+        }
+      />
 
-        <nav aria-label="Situação das solicitações">
-          <ul className="flex flex-wrap gap-2">
-            {bookingTabs.map((item) => (
-              <li key={item.slug}>
-                <Link
-                  href={`/admin/solicitacoes?situacao=${item.slug}`}
-                  aria-current={item.slug === tab.slug ? "page" : undefined}
-                  className={cn(
-                    "inline-flex min-h-11 items-center rounded-full border px-4 font-semibold",
-                    item.slug === tab.slug
-                      ? "border-petroleo bg-petroleo text-branco"
-                      : "border-junco text-petroleo hover:bg-areia",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <StatusTabs
+        label="Situação das solicitações"
+        current={filters.tab.slug}
+        tabs={bookingTabs.map((tab) => ({
+          slug: tab.slug,
+          label: tab.label,
+          // Trocar de aba mantém busca e filtros, mas volta à ordenação padrão.
+          href: buildHref("/admin/solicitacoes", {
+            ...base,
+            situacao: tab.slug,
+            ordem: null,
+            dir: null,
+          }),
+          count: tab.status ? counts[tab.status] : total,
+        }))}
+      />
 
-        {requests.length === 0 ? (
-          <p className="text-rocha">
-            {tab.status === "pending"
-              ? "Nenhuma solicitação pendente."
-              : "Nenhuma solicitação nesta situação."}
-          </p>
+      <Card as="div">
+        <ListToolbar
+          action="/admin/solicitacoes"
+          search={filters.q}
+          searchLabel="Buscar por nome, e-mail ou telefone"
+          hidden={{ situacao: filters.tab.slug, ordem: base.ordem, dir: base.dir }}
+          selects={[
+            {
+              name: "imovel",
+              label: "Imóvel",
+              value: filters.propertyId,
+              allLabel: "Todos",
+              options: properties,
+            },
+            {
+              name: "modalidade",
+              label: "Modalidade",
+              value: filters.mode,
+              allLabel: "Todas",
+              options: Object.entries(rentalModeLabels).map(([value, label]) => ({ value, label })),
+            },
+          ]}
+          extra={
+            <>
+              <label className="grid min-w-0 flex-[1_1_9rem] gap-1">
+                <span className="text-small font-semibold">Recebida de</span>
+                <input
+                  type="date"
+                  name="de"
+                  defaultValue={filters.from ?? ""}
+                  className="min-h-11 w-full min-w-0 rounded-control border border-junco bg-branco px-3"
+                />
+              </label>
+              <label className="grid min-w-0 flex-[1_1_9rem] gap-1">
+                <span className="text-small font-semibold">Recebida até</span>
+                <input
+                  type="date"
+                  name="ate"
+                  defaultValue={filters.to ?? ""}
+                  className="min-h-11 w-full min-w-0 rounded-control border border-junco bg-branco px-3"
+                />
+              </label>
+            </>
+          }
+          active={filtered}
+          clearHref={buildHref("/admin/solicitacoes", { situacao: filters.tab.slug })}
+        />
+
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={<CalendarIcon />}
+            title={
+              filtered
+                ? "Nenhuma solicitação encontrada"
+                : filters.tab.status === "pending"
+                  ? "Nenhuma solicitação pendente"
+                  : "Nenhuma solicitação nesta situação"
+            }
+            description={
+              filtered
+                ? "Nenhum pedido corresponde à busca e aos filtros escolhidos."
+                : "Os pedidos feitos pelo site aparecem aqui assim que chegam."
+            }
+          />
         ) : (
-          <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left">
-              <caption className="sr-only">Solicitações: {tab.label.toLowerCase()}</caption>
-              <thead className="text-small text-rocha">
-                <tr>
-                  <th scope="col" className="py-2 pr-4 font-semibold">
-                    Hóspede
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-semibold">
-                    Imóvel
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-semibold">
-                    Datas
-                  </th>
-                  <th scope="col" className="py-2 pr-4 text-right font-semibold">
-                    Total estimado
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-semibold">
-                    Situação
-                  </th>
-                  <th scope="col" className="py-2 font-semibold">
-                    Recebida
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((request) => (
-                  <tr key={request.id} className="border-t border-areia align-top">
-                    <td className="py-3 pr-4">
-                      <Link
-                        href={`/admin/solicitacoes/${request.id}`}
-                        className="font-semibold text-petroleo underline underline-offset-3"
-                      >
-                        {request.guest_name}
-                      </Link>
-                      <span className="block text-small text-rocha">
-                        {request.guests_count} {request.guests_count === 1 ? "hóspede" : "hóspedes"}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4">{request.properties?.title ?? "—"}</td>
-                    <td className="py-3 pr-4 tabular-nums">
-                      {formatDateISO(request.checkIn)} a {formatDateISO(request.checkOut)}
-                      <span className="block text-small text-rocha">
-                        {nights(request.checkIn, request.checkOut)} ·{" "}
-                        {rentalModeLabels[request.rental_mode]}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
-                      {formatBRL(request.quoted_total)}
-                    </td>
-                    <td className="py-3 pr-4">
-                      <BookingStatusBadge status={request.status} />
-                      {request.status === "pending" && request.checkIn < today ? (
-                        <span className="block pt-1 text-small text-erro">Chegada já passou</span>
-                      ) : null}
-                    </td>
-                    <td className="py-3 text-rocha tabular-nums">
-                      {dateTime.format(new Date(request.created_at))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            caption={`Solicitações: ${filters.tab.label.toLowerCase()}`}
+            minWidth={880}
+            head={
+              <>
+                <SortTh
+                  label="Hóspede"
+                  sortKey="hospede"
+                  current={filters.sort}
+                  hrefFor={sortHref}
+                />
+                <Th>Imóvel</Th>
+                <SortTh label="Datas" sortKey="chegada" current={filters.sort} hrefFor={sortHref} />
+                <SortTh
+                  label="Total estimado"
+                  sortKey="total"
+                  current={filters.sort}
+                  hrefFor={sortHref}
+                  align="right"
+                />
+                <Th>Situação</Th>
+                <SortTh
+                  label="Recebida"
+                  sortKey="recebida"
+                  current={filters.sort}
+                  hrefFor={sortHref}
+                />
+              </>
+            }
+          >
+            {rows.map((request) => (
+              <tr key={request.id} className="hover:bg-marfim/50">
+                <Td>
+                  <Link
+                    href={`/admin/solicitacoes/${request.id}`}
+                    className="font-semibold text-petroleo hover:underline"
+                  >
+                    {request.guest_name}
+                  </Link>
+                  <span className="block text-small text-rocha">
+                    {request.guests_count} {request.guests_count === 1 ? "hóspede" : "hóspedes"}
+                  </span>
+                </Td>
+                <Td>{request.properties?.title ?? "—"}</Td>
+                <Td className="tabular-nums">
+                  {formatDateISO(request.checkIn)} a {formatDateISO(request.checkOut)}
+                  <span className="block text-small text-rocha">
+                    {nights(request.checkIn, request.checkOut)} ·{" "}
+                    {rentalModeLabels[request.rental_mode]}
+                  </span>
+                </Td>
+                <Td align="right" className="tabular-nums">
+                  {formatBRL(request.quoted_total)}
+                </Td>
+                <Td>
+                  <div className="grid justify-items-start gap-1">
+                    <BookingStatusBadge status={request.status} />
+                    {request.status === "pending" && request.checkIn < today ? (
+                      <Badge tone="danger">Chegada já passou</Badge>
+                    ) : null}
+                  </div>
+                </Td>
+                <Td className="text-small text-rocha tabular-nums">
+                  {dateTime.format(new Date(request.created_at))}
+                </Td>
+              </tr>
+            ))}
+          </DataTable>
         )}
-      </Container>
-    </main>
+        <ListPagination
+          page={filters.page}
+          pageSize={PAGE_SIZE}
+          count={count}
+          hrefFor={(page) => href({ pagina: page })}
+        />
+      </Card>
+    </AdminPage>
   );
 }

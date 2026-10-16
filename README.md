@@ -8,6 +8,7 @@ Lourenço e no Litoral Norte de São Paulo.
 - Fundação do projeto: [`docs/fundacao.md`](docs/fundacao.md)
 - Banco de dados e segurança: [`docs/banco.md`](docs/banco.md)
 - Login e acesso ao painel: [`docs/autenticacao.md`](docs/autenticacao.md)
+- Painel administrativo (visão geral, listas, exportação): [`docs/painel-admin.md`](docs/painel-admin.md)
 - Cadastro de imóveis no painel: [`docs/painel-imoveis.md`](docs/painel-imoveis.md)
 - Página inicial: [`docs/pagina-inicial.md`](docs/pagina-inicial.md)
 - Listagens de temporada e mensal: [`docs/listagens-aluguel.md`](docs/listagens-aluguel.md)

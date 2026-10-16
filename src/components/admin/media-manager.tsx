@@ -16,6 +16,7 @@ import {
   setCover,
   updateAltText,
 } from "@/server/actions/media";
+import { useConfirmSubmit } from "./ui/confirm-dialog";
 import { useFormAction } from "./use-form-action";
 
 export type MediaItem = {
@@ -215,13 +216,19 @@ export function RefForm({
   confirmMessage?: string;
   extra?: Record<string, string>;
 }) {
+  const confirm = useConfirmSubmit(() => ({
+    title: confirmMessage ?? "",
+    confirmLabel: "Excluir",
+    tone: "danger",
+  }));
   return (
     <form
       action={action}
       onSubmit={(event) => {
-        if (confirmMessage && !window.confirm(confirmMessage)) event.preventDefault();
+        if (confirmMessage) confirm.intercept(event);
       }}
     >
+      {confirmMessage ? confirm.dialog : null}
       <input type="hidden" name="propertyId" value={propertyId} />
       <input type="hidden" name="mediaId" value={mediaId} />
       {extra

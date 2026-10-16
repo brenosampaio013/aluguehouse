@@ -72,3 +72,8 @@ export function parseDateRange(range: string): { start: string; endExclusive: st
   const match = range.match(/^\[(\d{4}-\d{2}-\d{2}),(\d{4}-\d{2}-\d{2})\)$/);
   return match ? { start: match[1]!, endExclusive: match[2]! } : null;
 }
+
+/** Data de hoje ("AAAA-MM-DD") no fuso de São Paulo. */
+export function todayInSaoPaulo(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(now);
+}

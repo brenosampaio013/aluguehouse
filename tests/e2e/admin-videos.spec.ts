@@ -4,7 +4,7 @@ import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-import { loginAsAdmin } from "./support/admin";
+import { answerConfirm, loginAsAdmin } from "./support/admin";
 import { adminApi, anonApi, createAdminWithTotp } from "./support/users";
 
 const FIXTURES = path.join(process.cwd(), "tests/e2e/fixtures");
@@ -155,8 +155,8 @@ test.describe("vídeos do imóvel no painel", () => {
 
     // 6. Remover o 2º: some do banco e do armazenamento
     const removed = (await videosInDb(propertyId))[1]!;
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Remover (vídeo 2)" }).click();
+    await answerConfirm(page, "Excluir", "Remover o vídeo 2?");
     await expect(savedList(page)).toHaveCount(1);
     rows = await videosInDb(propertyId);
     expect(rows.map((row) => row.caption)).toEqual(["Fachada ao entardecer"]);

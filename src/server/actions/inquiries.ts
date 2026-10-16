@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "@/lib/zod";
 
+import { safeReturnPath } from "@/lib/admin/return-to";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { formatVisit, inquiryKindLabels, parseInquiryTab, visitDateTime } from "@/lib/inquiries";
+import { formatVisit, inquiryKindLabels, visitDateTime } from "@/lib/inquiries";
 import { inquirySchema } from "@/lib/inquiry-schema";
 import { notifyAdmin } from "@/server/email/notify-admin";
 import { guardPublicForm } from "@/server/security/public-form";
@@ -104,7 +105,7 @@ export async function submitInquiry(
     replyTo: data.email,
   });
 
-  revalidatePath("/admin/contatos");
+  revalidatePath("/admin", "layout");
   return { status: "success", message: sent };
 }
 
@@ -113,20 +114,49 @@ const statusSchema = z.object({
   status: z.enum(["new", "in_progress", "closed"]),
 });
 
-/** Admin: muda a situação de uma mensagem e volta para a aba em que estava. */
+/** Volta para a mesma lista de contatos (aba, busca e página) com um aviso. */
+function backToList(formData: FormData, notice: Record<string, string>): never {
+  redirect(
+    safeReturnPath(formData.get("returnTo"), "/admin/contatos", notice, [
+      "movido",
+      "aviso",
+      "pagina",
+    ]),
+  );
+}
+
+/** Admin: muda a situação de uma mensagem e volta para a lista em que estava. */
 export async function setInquiryStatus(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = statusSchema.safeParse({ id: formData.get("id"), status: formData.get("status") });
   if (!parsed.success) return { status: "error", message: "Ação inválida." };
 
   const { supabase } = await requireAdmin();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("inquiries")
     .update({ status: parsed.data.status })
-    .eq("id", parsed.data.id);
+    .eq("id", parsed.data.id)
+    .select("id");
   if (error) return { status: "error", message: "Não foi possível salvar. Tente de novo." };
+  if (!data?.length) return { status: "error", message: "Mensagem não encontrada." };
 
-  revalidatePath("/admin/contatos", "layout");
-  // A mensagem sai da aba atual; o aviso aparece no topo da página.
-  const tab = parseInquiryTab(String(formData.get("tab") ?? "")).slug;
-  redirect(`/admin/contatos?situacao=${tab}&movido=${parsed.data.status}`);
+  revalidatePath("/admin", "layout");
+  // A mensagem pode sair da aba atual; o aviso aparece no topo da página.
+  backToList(formData, { movido: parsed.data.status });
+}
+
+/**
+ * Admin: apaga uma mensagem de contato (por exemplo, a pedido do titular,
+ * LGPD). Irreversível: a tela pede confirmação explícita antes.
+ */
+export async function deleteInquiry(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = z.uuid().safeParse(formData.get("id"));
+  if (!id.success) return { status: "error", message: "Mensagem inválida." };
+
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase.from("inquiries").delete().eq("id", id.data).select("id");
+  if (error) return { status: "error", message: "Não foi possível excluir. Tente de novo." };
+  if (!data?.length) return { status: "error", message: "Mensagem não encontrada." };
+
+  revalidatePath("/admin", "layout");
+  backToList(formData, { aviso: "excluido" });
 }

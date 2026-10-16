@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-import { loginAsAdmin } from "./support/admin";
+import { loginAsAdmin, openAdminNav } from "./support/admin";
 import { adminApi, createAdminWithTotp, loginAsGuest, uniqueEmail } from "./support/users";
 
 function isoInDays(days: number) {
@@ -104,7 +104,7 @@ test("hóspede avalia estadia concluída; admin publica com resposta", async ({ 
     // Admin publica com resposta
     await loginAsAdmin(page, await createAdminWithTotp());
     await expect(
-      page.getByRole("navigation", { name: "Painel" }).getByRole("link", { name: /Avaliações/ }),
+      (await openAdminNav(page)).getByRole("link", { name: /Avaliações/ }),
     ).toBeVisible();
     await page.goto("/admin/avaliacoes");
     const card = page.getByRole("article").filter({ hasText: property.title });
