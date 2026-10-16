@@ -100,14 +100,20 @@ export async function getPendingWork(supabase: Client) {
       .limit(3),
   ]);
   for (const result of [bookings, inquiries, drafts]) if (result.error) throw result.error;
+  const { booking_requests: requestCounts, inquiries: inquiryCounts } = counts;
+  const { reviews: reviewCounts, properties: propertyCounts } = counts;
+  // Sem alguma contagem, a seção mostra o próprio aviso em vez de números falsos.
+  if (!requestCounts || !inquiryCounts || !reviewCounts || !propertyCounts) {
+    throw new Error("Contagens por situação indisponíveis");
+  }
   return {
     bookings: (bookings.data ?? []).map((row) => ({ ...row, ...stayOf(row.stay) })),
-    bookingsCount: counts.booking_requests.pending,
+    bookingsCount: requestCounts.pending,
     inquiries: inquiries.data ?? [],
-    inquiriesCount: counts.inquiries.new,
-    reviewsCount: counts.reviews.pending,
+    inquiriesCount: inquiryCounts.new,
+    reviewsCount: reviewCounts.pending,
     drafts: drafts.data ?? [],
-    draftsCount: counts.properties.draft,
+    draftsCount: propertyCounts.draft,
   };
 }
 
@@ -117,7 +123,8 @@ export async function getPendingWork(supabase: Client) {
  * ocupam as vagas da lista.
  */
 export async function getUpcomingArrivals(supabase: Client, today: string, days = 14, limit = 8) {
-  const until = addDaysISO(today, days + 1);
+  // Janela [hoje, hoje + days): exatamente `days` dias, contando hoje.
+  const until = addDaysISO(today, days);
   const { data, error } = await supabase
     .from("booking_requests")
     .select("id, guest_name, guests_count, stay, rental_mode, properties(title)")

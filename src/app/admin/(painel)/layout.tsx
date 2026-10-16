@@ -15,8 +15,8 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
   const session = await getSessionState();
   if (session.status === "admin_needs_mfa") redirect("/admin/mfa");
   if (session.status !== "admin") redirect("/admin/entrar");
-  // Mesma consulta das abas das listas (memorizada por requisição). Se
-  // falhar, o menu só fica sem os contadores.
+  // Mesma consulta das abas das listas (memorizada por requisição). Cada
+  // tabela é contada à parte no banco: se uma falhar, só o contador dela some.
   const [counts, cookieStore] = await Promise.all([
     settle(getStatusCounts(), "pendências do menu"),
     cookies(),
@@ -27,9 +27,9 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
       email={session.email}
       initialCollapsed={cookieStore.get(MENU_COOKIE)?.value === "recolhido"}
       pending={{
-        "/admin/solicitacoes": counts.ok ? counts.data.booking_requests.pending : 0,
-        "/admin/avaliacoes": counts.ok ? counts.data.reviews.pending : 0,
-        "/admin/contatos": counts.ok ? counts.data.inquiries.new : 0,
+        "/admin/solicitacoes": counts.ok ? (counts.data.booking_requests?.pending ?? 0) : 0,
+        "/admin/avaliacoes": counts.ok ? (counts.data.reviews?.pending ?? 0) : 0,
+        "/admin/contatos": counts.ok ? (counts.data.inquiries?.new ?? 0) : 0,
       }}
     >
       {children}

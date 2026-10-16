@@ -15,7 +15,7 @@ end $$;
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000a7', 'contagens@teste.local');
 
-select plan(7);
+select plan(10);
 
 select pg_temp.entrar(false, 'aal1');
 select throws_ok($$ select public.admin_status_counts() $$, '42501', null, 'hóspede não lê as contagens');
@@ -49,6 +49,19 @@ select is((select coalesce((j->'inquiries'->>'new')::bigint, 0) from c), (select
   'contatos novos (inclui o recém-criado)');
 select is((select coalesce((j->'reviews'->>'pending')::bigint, 0) from c), (select avaliacoes from esperado),
   'avaliações pendentes (zero quando não há)');
+reset role;
+
+-- Falha só numa tabela (sem permissão de leitura em reviews): ela volta null
+-- e as demais continuam contadas.
+revoke select on public.reviews from authenticated;
+select pg_temp.entrar(true, 'aal2');
+create temporary table c2 as select public.admin_status_counts() as j;
+select ok((select j ? 'reviews' and j->'reviews' = 'null'::jsonb from c2),
+  'tabela que falhou volta null');
+select is((select coalesce((j->'inquiries'->>'new')::bigint, 0) from c2), (select novos from esperado),
+  'falha em reviews não zera os contatos');
+select is((select coalesce((j->'booking_requests'->>'pending')::bigint, 0) from c2),
+  (select pendentes from esperado), 'falha em reviews não zera as solicitações');
 reset role;
 
 select * from finish();

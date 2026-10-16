@@ -7,7 +7,7 @@ import { orIlike } from "@/lib/admin/list-params";
 import { addDaysISO, parseDateRange } from "@/lib/format";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
-import { pagedRows } from "./paged";
+import { pagedRows, withCount, type Paging } from "./paged";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -87,13 +87,13 @@ function endOfDaySP(date: string) {
 export async function searchBookingRequests(
   supabase: Client,
   filters: BookingFilters,
-  range: { from: number; to: number },
+  paging: Paging,
 ) {
   let query = supabase
     .from("booking_requests")
     .select(
       "id, status, rental_mode, guest_name, guest_email, guest_phone, stay, guests_count, quoted_total, created_at, decided_at, properties(id, title)",
-      { count: "exact" },
+      { count: withCount(paging) },
     );
   if (filters.tab.status) query = query.eq("status", filters.tab.status);
   if (filters.q) {
@@ -109,10 +109,16 @@ export async function searchBookingRequests(
   if (filters.mode) query = query.eq("rental_mode", filters.mode);
   if (filters.from) query = query.gte("created_at", `${filters.from}T00:00:00-03:00`);
   if (filters.to) query = query.lt("created_at", endOfDaySP(filters.to));
-  query = query
-    .order(bookingSortColumns[filters.sort.key], { ascending: filters.sort.dir === "asc" })
-    .order("id");
-  query = query.range(range.from, range.to);
-  const { rows, count } = pagedRows(await query);
+  let result;
+  if (paging.kind === "after") {
+    if (paging.afterId) query = query.gt("id", paging.afterId);
+    result = pagedRows(await query.order("id").limit(paging.size));
+  } else {
+    query = query
+      .order(bookingSortColumns[filters.sort.key], { ascending: filters.sort.dir === "asc" })
+      .order("id");
+    result = pagedRows(await query.range(paging.from, paging.to));
+  }
+  const { rows, count } = result;
   return { rows: rows.map((row) => ({ ...row, ...stayOf(row.stay) })), count };
 }

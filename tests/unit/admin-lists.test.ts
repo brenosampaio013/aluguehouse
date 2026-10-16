@@ -50,8 +50,8 @@ describe("parâmetros das listas do painel", () => {
   });
 
   it("paginação: faixa do banco e total de páginas", () => {
-    expect(pageRange(1, 20)).toEqual({ from: 0, to: 19 });
-    expect(pageRange(3, 20)).toEqual({ from: 40, to: 59 });
+    expect(pageRange(1, 20)).toEqual({ kind: "range", from: 0, to: 19 });
+    expect(pageRange(3, 20)).toEqual({ kind: "range", from: 40, to: 59 });
     expect(totalPages(0)).toBe(1);
     expect(totalPages(41, 20)).toBe(3);
     expect(visiblePages(1, 1)).toEqual([1]);
@@ -178,9 +178,21 @@ describe("contagens por situação", () => {
       reviews: {},
     });
     expect(counts.properties).toEqual({ draft: 0, published: 2, archived: 0 });
-    expect(counts.booking_requests.pending).toBe(3);
-    expect(counts.booking_requests.expired).toBe(0);
+    expect(counts.booking_requests?.pending).toBe(3);
+    expect(counts.booking_requests?.expired).toBe(0);
     expect(counts.inquiries).toEqual({ new: 0, in_progress: 0, closed: 0 });
-    expect(counts.reviews.pending).toBe(0);
+    expect(counts.reviews?.pending).toBe(0);
+  });
+
+  it("tabela que falhou no banco fica null, sem zerar as outras", () => {
+    const counts = normalizeStatusCounts({
+      properties: { draft: 1 },
+      booking_requests: { pending: 4 },
+      inquiries: { new: 2 },
+      reviews: null,
+    });
+    expect(counts.reviews).toBeNull();
+    expect(counts.booking_requests?.pending).toBe(4);
+    expect(counts.inquiries?.new).toBe(2);
   });
 });

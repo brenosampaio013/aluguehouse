@@ -18,6 +18,7 @@ import { buildHref, first, outOfRangeHref, PAGE_SIZE, pageRange } from "@/lib/ad
 import { reviewTabs } from "@/lib/reviews";
 import { listPropertyOptions } from "@/server/queries/admin-dashboard";
 import { searchReviewsForAdmin } from "@/server/queries/reviews";
+import { settle } from "@/server/queries/settle";
 import { getStatusCounts } from "@/server/queries/status-counts";
 
 export const metadata: Metadata = { title: "Avaliações" };
@@ -42,11 +43,13 @@ export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin
         ? "Avaliação não será publicada."
         : null;
   const { supabase } = await requireAdmin();
-  const [{ rows, count }, counts, properties] = await Promise.all([
+  const [{ rows, count }, countsResult, properties] = await Promise.all([
     searchReviewsForAdmin(supabase, filters, pageRange(filters.page)),
-    getStatusCounts().then((all) => all.reviews),
+    // Sem as contagens a lista continua útil: só as abas ficam sem números.
+    settle(getStatusCounts(), "contagens das abas"),
     listPropertyOptions(supabase),
   ]);
+  const counts = countsResult.ok ? countsResult.data.reviews : null;
   // Página além da última (ex.: excluiu o último item dela): vai para a última válida.
   const validPage = outOfRangeHref("/admin/avaliacoes", params, filters.page, count);
   if (validPage) redirect(validPage);
@@ -69,7 +72,7 @@ export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin
           slug: tab.slug,
           label: tab.label,
           href: buildHref("/admin/avaliacoes", { ...base, situacao: tab.slug }),
-          count: counts[tab.status],
+          count: counts?.[tab.status] ?? null,
         }))}
       />
 

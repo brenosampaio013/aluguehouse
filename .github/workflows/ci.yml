@@ -97,6 +97,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # O deploy (`supabase db push`) recusa migration com timestamp anterior
+      # à última aplicada em produção: barra isso já no PR.
+      - name: Ordem das migrations novas
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+          scripts/check-migration-order.sh FETCH_HEAD
+
       - uses: supabase/setup-cli@v1
         with:
           version: 2.120.0

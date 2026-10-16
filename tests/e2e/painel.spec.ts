@@ -337,7 +337,7 @@ test("próximas chegadas aparecem mesmo com 30+ estadias em andamento", async ({
   const { data } = await api
     .from("properties")
     .insert(
-      Array.from({ length: 32 }, (_, i) => ({
+      Array.from({ length: 34 }, (_, i) => ({
         slug: `${marker}-${i}`,
         title: `Chegadas ${marker} ${i}`,
         property_type: "casa" as const,
@@ -367,12 +367,17 @@ test("próximas chegadas aparecem mesmo com 30+ estadias em andamento", async ({
       .insert([
         ...ids.slice(0, 31).map((id, i) => booking(id, -5, 30, `Em andamento ${marker} ${i}`)),
         booking(ids[31]!, 1, 31, `Chega amanhã ${marker}`),
+        // Janela de 14 dias contando hoje: hoje+13 entra, hoje+14 não.
+        booking(ids[32]!, 13, 43, `Chega no 14º dia ${marker}`),
+        booking(ids[33]!, 14, 44, `Chega no 15º dia ${marker}`),
       ])
       .throwOnError();
     await loginAsAdmin(page, await createAdminWithTotp());
     const arrivals = page.getByRole("region", { name: "Próximas chegadas" });
     await expect(arrivals).toContainText(`Chega amanhã ${marker}`);
     await expect(arrivals).not.toContainText(`Em andamento ${marker}`);
+    await expect(arrivals).toContainText(`Chega no 14º dia ${marker}`);
+    await expect(arrivals).not.toContainText(`Chega no 15º dia ${marker}`);
   } finally {
     await api.from("booking_requests").delete().in("property_id", ids);
     await api.from("properties").delete().in("id", ids);
@@ -402,8 +407,14 @@ test("filtro de imóvel da visão geral: válido, inválido e inexistente", asyn
     await expect(warning).toContainText("inválido e foi ignorado");
     await expect(page.getByText(/^Últimos 30 dias: .* · todos os imóveis$/)).toBeVisible();
 
-    await page.goto(`/admin?imovel=${randomUUID()}`);
+    const missing = randomUUID();
+    await page.goto(`/admin?imovel=${missing}`);
     await expect(warning).toContainText("não existe");
+    // O seletor mostra o filtro atual, não "Todos os imóveis".
+    await expect(page.getByLabel("Imóvel")).toHaveValue(missing);
+    await expect(page.getByLabel("Imóvel").locator("option:checked")).toHaveText(
+      "Imóvel não encontrado (filtro atual)",
+    );
     await expect(
       page
         .getByRole("region", { name: "Indicadores do período" })
@@ -412,5 +423,115 @@ test("filtro de imóvel da visão geral: válido, inválido e inexistente", asyn
     ).toHaveText("0");
   } finally {
     await cleanup(property.id);
+  }
+});
+
+test("exportação só aceita recursos conhecidos (nem chaves do protótipo)", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "basta um tamanho de tela");
+  await loginAsAdmin(page, await createAdminWithTotp());
+  for (const recurso of ["constructor", "toString", "__proto__", "hasOwnProperty", "senhas"]) {
+    const response = await page.request.get(`/admin/exportar/${recurso}`);
+    expect(response.status(), recurso).toBe(404);
+  }
+});
+
+test("tarifas e taxas: remover pede confirmação e grava no banco", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "fluxo de dados: basta um tamanho de tela");
+  test.setTimeout(90_000);
+  const { property } = await seed();
+  const api = adminApi();
+  await api
+    .from("seasonal_rates")
+    .insert({
+      property_id: property.id,
+      label: "Réveillon teste",
+      period: `[${isoInDays(70)},${isoInDays(75)})`,
+      nightly_price: 2000,
+    })
+    .throwOnError();
+  await api
+    .from("property_fees")
+    .insert({ property_id: property.id, label: "Limpeza teste", calc: "fixed", amount: 300 })
+    .throwOnError();
+  try {
+    await loginAsAdmin(page, await createAdminWithTotp());
+    await page.goto(`/admin/imoveis/${property.id}`);
+
+    const rate = page.getByRole("button", { name: "Remover tarifa Réveillon teste" });
+    await rate.click();
+    await answerConfirm(page, "Cancelar");
+    await expect(rate).toBeVisible();
+    await rate.click();
+    await answerConfirm(page, "Remover", "Réveillon teste");
+    await expect(rate).toHaveCount(0);
+    // O botão vira "Removendo…" durante o envio: confere o banco até gravar.
+    await expect
+      .poll(
+        async () =>
+          (await api.from("seasonal_rates").select("id").eq("property_id", property.id)).data,
+      )
+      .toEqual([]);
+    await expect(page.getByText("Réveillon teste")).toHaveCount(0);
+
+    const fee = page.getByRole("button", { name: "Remover taxa Limpeza teste" });
+    await fee.click();
+    await answerConfirm(page, "Remover", "Limpeza teste");
+    await expect(fee).toHaveCount(0);
+    await expect
+      .poll(
+        async () =>
+          (await api.from("property_fees").select("id").eq("property_id", property.id)).data,
+      )
+      .toEqual([]);
+    await expect(page.getByText("Limpeza teste")).toHaveCount(0);
+  } finally {
+    await cleanup(property.id);
+  }
+});
+
+test("salvar ou arquivar imóvel excluído em outra aba avisa em vez de dizer que salvou", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "fluxo de dados: basta um tamanho de tela");
+  test.setTimeout(90_000);
+  const api = adminApi();
+  const { data } = await api
+    .from("properties")
+    .insert({
+      slug: `excluido-${randomUUID().slice(0, 6)}`,
+      title: "Casa que será excluída",
+      property_type: "casa",
+      city: "Bertioga",
+    })
+    .select("id")
+    .single()
+    .throwOnError();
+  const id = data!.id;
+  try {
+    await loginAsAdmin(page, await createAdminWithTotp());
+    await page.goto(`/admin/imoveis/${id}`);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Casa que será excluída" }),
+    ).toBeVisible();
+
+    // Outra aba (ou outro admin) exclui o imóvel.
+    await api.from("properties").delete().eq("id", id).throwOnError();
+
+    await page.getByRole("button", { name: "Salvar dados gerais" }).click();
+    await expect(
+      page.getByRole("alert").filter({ hasText: "Imóvel não encontrado" }),
+    ).toBeVisible();
+    await expect(page.getByText("Dados gerais salvos.")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Arquivar" }).first().click();
+    // Agora há dois avisos: o do formulário e o do painel de publicação.
+    await expect(page.getByRole("alert").filter({ hasText: "Imóvel não encontrado" })).toHaveCount(
+      2,
+    );
+    await expect(page.getByText("Imóvel arquivado e fora do site.")).toHaveCount(0);
+  } finally {
+    await api.from("properties").delete().eq("id", id);
   }
 });

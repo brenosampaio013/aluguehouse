@@ -103,9 +103,18 @@ export default async function VisaoGeralPage({ searchParams }: PageProps<"/admin
 
   const selectedTitle = selected?.ok ? selected.data : null;
   const propertyOptions = options.ok ? options.data : [];
-  // O imóvel escolhido sempre aparece no seletor, mesmo fora da lista.
-  if (propertyId && selectedTitle && !propertyOptions.some((o) => o.value === propertyId)) {
-    propertyOptions.unshift({ value: propertyId, label: selectedTitle });
+  // O imóvel do filtro sempre aparece selecionado no seletor, mesmo fora da
+  // lista, inexistente ou sem título confirmado: a tela nunca mostra "Todos"
+  // enquanto os números estão filtrados (e "Aplicar" não perde o filtro).
+  if (propertyId && !propertyOptions.some((o) => o.value === propertyId)) {
+    propertyOptions.unshift({
+      value: propertyId,
+      label:
+        selectedTitle ??
+        (selected?.ok
+          ? "Imóvel não encontrado (filtro atual)"
+          : "Imóvel selecionado (filtro atual)"),
+    });
   }
   const filterWarning = invalidFilter
     ? "O filtro de imóvel da URL é inválido e foi ignorado: os números abaixo são de todos os imóveis."
