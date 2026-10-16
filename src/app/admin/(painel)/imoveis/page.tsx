@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { PropertyDeleteButton } from "@/components/admin/property-delete-button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -60,8 +61,11 @@ export default async function ImoveisPage() {
                   <th scope="col" className="py-2 pr-4 font-semibold">
                     Situação
                   </th>
-                  <th scope="col" className="py-2 font-semibold">
+                  <th scope="col" className="py-2 pr-4 font-semibold">
                     Atualizado
+                  </th>
+                  <th scope="col" className="py-2 font-semibold">
+                    <span className="sr-only">Ações</span>
                   </th>
                 </tr>
               </thead>
@@ -83,8 +87,11 @@ export default async function ImoveisPage() {
                     <td className="py-3 pr-4">
                       <StatusBadge status={property.status} />
                     </td>
-                    <td className="py-3 text-rocha tabular-nums">
+                    <td className="py-3 pr-4 text-rocha tabular-nums">
                       {dateTime.format(new Date(property.updated_at))}
+                    </td>
+                    <td className="py-3 text-right">
+                      <PropertyDeleteButton id={property.id} title={property.title} />
                     </td>
                   </tr>
                 ))}

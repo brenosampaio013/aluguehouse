@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
 import { loginAsAdmin } from "./support/admin";
-import { anonApi, createAdminWithTotp } from "./support/users";
+import { adminApi, anonApi, createAdminWithTotp } from "./support/users";
 
 const FOTO_REAL = path.join(process.cwd(), "media/recebidas/imovel-01/sala-jantar.jpg");
 
@@ -163,4 +165,108 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
   const linha = page.getByRole("row").filter({ hasText: title });
   await expect(linha.getByText("Arquivado")).toBeVisible();
   await expectNoHorizontalScroll(page);
+});
+
+test("admin exclui anúncio da lista, com fotos; com reserva, não exclui", async ({ page }) => {
+  test.setTimeout(90_000);
+  const run = randomUUID().slice(0, 6);
+  const api = adminApi();
+  const insert = async (title: string, extra: Record<string, unknown> = {}) => {
+    const { data, error } = await api
+      .from("properties")
+      .insert({
+        slug: `excluir-${run}-${Object.keys(extra).length}`,
+        title,
+        property_type: "casa",
+        city: "Bertioga",
+        ...extra,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  };
+
+  // Rascunho com uma foto no Storage.
+  const semReserva = `Rascunho para excluir ${run}`;
+  const idA = await insert(semReserva);
+  const mediaId = randomUUID();
+  const file = `${idA}/${mediaId}/640.webp`;
+  await api.storage
+    .from("property-media")
+    .upload(file, readFileSync(FOTO_REAL), { contentType: "image/jpeg" });
+  await api.from("property_media").insert({
+    id: mediaId,
+    property_id: idA,
+    kind: "image",
+    storage_path: `${idA}/${mediaId}`,
+    width: 640,
+    height: 480,
+    alt_text: "Sala",
+    is_cover: true,
+  });
+  const fotoUrl = api.storage.from("property-media").getPublicUrl(file).data.publicUrl;
+  expect((await fetch(fotoUrl)).status).toBe(200);
+
+  // Publicado com uma solicitação de reserva.
+  const comReserva = `Casa com reserva ${run}`;
+  const idB = await insert(comReserva, {
+    offers_seasonal: true,
+    nightly_price: 800,
+    min_nights: 2,
+    max_guests: 6,
+    status: "published",
+    published_at: new Date().toISOString(),
+  });
+  const { error: bookingError } = await api.rpc("request_booking", {
+    p_property_id: idB,
+    p_mode: "seasonal",
+    p_check_in: isoInDays(40),
+    p_check_out: isoInDays(43),
+    p_guests: 2,
+    p_name: "Hóspede Teste",
+    p_email: `hospede${run}@teste.local`,
+    p_phone: "13996195221",
+    p_message: null,
+    p_privacy_consent: true,
+  });
+  if (bookingError) throw bookingError;
+
+  try {
+    await loginAsAdmin(page, await createAdminWithTotp());
+    await page.goto("/admin/imoveis");
+    const linhaA = page.getByRole("row").filter({ hasText: semReserva });
+    const excluirA = linhaA.getByRole("button", { name: `Excluir ${semReserva}` });
+
+    // Cancelar a confirmação não exclui.
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await excluirA.click();
+    await expect(linhaA).toBeVisible();
+
+    // Confirmar exclui o anúncio, os dados ligados e os arquivos.
+    page.once("dialog", (dialog) => {
+      expect(dialog.message()).toContain(semReserva);
+      void dialog.accept();
+    });
+    await excluirA.click();
+    await expect(linhaA).toHaveCount(0);
+    expect((await api.from("properties").select("id").eq("id", idA)).data).toHaveLength(0);
+    expect(
+      (await api.from("property_media").select("id").eq("property_id", idA)).data,
+    ).toHaveLength(0);
+    expect((await fetch(fotoUrl)).status).toBeGreaterThanOrEqual(400);
+
+    // Com solicitação de reserva: explica e mantém o anúncio.
+    const linhaB = page.getByRole("row").filter({ hasText: comReserva });
+    page.once("dialog", (dialog) => dialog.accept());
+    await linhaB.getByRole("button", { name: `Excluir ${comReserva}` }).click();
+    await expect(alert(page, "tem solicitações de reserva")).toBeVisible();
+    await expect(linhaB).toBeVisible();
+    expect((await api.from("properties").select("id").eq("id", idB)).data).toHaveLength(1);
+    await expectNoHorizontalScroll(page);
+  } finally {
+    await api.storage.from("property-media").remove([file]);
+    await api.from("booking_requests").delete().eq("property_id", idB);
+    await api.from("properties").delete().in("id", [idA, idB]);
+  }
 });
