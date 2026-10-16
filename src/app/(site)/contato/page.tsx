@@ -10,6 +10,7 @@ import { first, SLUG } from "@/lib/search/shared";
 import { siteConfig } from "@/lib/site-config";
 import { whatsappLink } from "@/lib/whatsapp";
 import { getPublicProperty } from "@/server/queries/property-page";
+import { todayInSaoPaulo } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Contato",
@@ -21,9 +22,7 @@ export default async function ContatoPage({ searchParams }: PageProps<"/contato"
   const slug = first((await searchParams).imovel);
   const property = slug && SLUG.test(slug) ? await getPublicProperty(slug) : null;
   const { NEXT_PUBLIC_TURNSTILE_SITE_KEY: turnstileSiteKey } = getPublicEnv();
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(),
-  );
+  const today = todayInSaoPaulo();
   const { contact } = siteConfig;
 
   return (

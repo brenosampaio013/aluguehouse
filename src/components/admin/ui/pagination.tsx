@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
+import { totalPages } from "@/lib/admin/list-params";
 import { cn } from "@/lib/cn";
 
 /** Páginas visíveis: primeira, última e vizinhas da atual, com reticências. */
@@ -31,13 +32,13 @@ export function ListPagination({
   count: number;
   hrefFor: (page: number) => string;
 }) {
-  const total = Math.max(1, Math.ceil(count / pageSize));
-  const start = count === 0 ? 0 : (page - 1) * pageSize + 1;
+  const total = totalPages(count, pageSize);
+  const start = Math.min(count, (page - 1) * pageSize + 1);
   const end = Math.min(count, page * pageSize);
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-areia px-4 py-3">
       <p className="text-small text-rocha tabular-nums">
-        {count === 0 ? "Nenhum resultado" : `${start}–${end} de ${count}`}
+        {count === 0 || start > end ? "Nenhum resultado" : `${start}–${end} de ${count}`}
       </p>
       {total > 1 ? (
         <nav aria-label="Paginação">

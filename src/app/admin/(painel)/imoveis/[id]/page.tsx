@@ -21,6 +21,7 @@ import { publishChecklist } from "@/lib/properties/publish";
 import { getServerEnv } from "@/lib/server-env";
 import { listUpcomingBlocks } from "@/server/queries/admin-bookings";
 import { getPropertyForEdit } from "@/server/queries/admin-properties";
+import { todayInSaoPaulo } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Editar imóvel" };
 
@@ -69,9 +70,7 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
   if (!z.uuid().safeParse(id).success) notFound();
 
   const { supabase } = await requireAdmin();
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(),
-  );
+  const today = todayInSaoPaulo();
   const [data, blocks] = await Promise.all([
     getPropertyForEdit(supabase, id),
     listUpcomingBlocks(supabase, id, today),

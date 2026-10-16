@@ -5,6 +5,7 @@ import type { createSupabaseServerClient } from "@/lib/supabase/server";
 import { z } from "@/lib/zod";
 
 import { stayOf } from "./admin-bookings";
+import { getStatusCounts } from "./status-counts";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -20,6 +21,8 @@ const totalsSchema = z.object({
   reviews: num,
   rating_avg: nullableNum,
   booked_nights: num,
+  /** Noites só dos imóveis elegíveis à ocupação (publicados com aluguel). */
+  occupied_nights: num,
 });
 
 const dashboardSchema = z.object({
@@ -74,54 +77,59 @@ export async function getDashboardMetrics(
 
 /** Itens que pedem ação: os mais antigos primeiro. */
 export async function getPendingWork(supabase: Client) {
-  const [bookings, inquiries, reviews, drafts] = await Promise.all([
+  // As contagens vêm da mesma consulta do menu (memorizada por requisição).
+  const [counts, bookings, inquiries, drafts] = await Promise.all([
+    getStatusCounts(),
     supabase
       .from("booking_requests")
-      .select("id, guest_name, stay, created_at, properties(title)", { count: "exact" })
+      .select("id, guest_name, stay, created_at, properties(title)")
       .eq("status", "pending")
       .order("created_at")
       .limit(5),
     supabase
       .from("inquiries")
-      .select("id, name, kind, created_at", { count: "exact" })
+      .select("id, name, kind, created_at")
       .eq("status", "new")
       .order("created_at")
       .limit(5),
-    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase
       .from("properties")
-      .select("id, title, updated_at", { count: "exact" })
+      .select("id, title, updated_at")
       .eq("status", "draft")
       .order("updated_at", { ascending: false })
       .limit(3),
   ]);
-  for (const result of [bookings, inquiries, reviews, drafts]) if (result.error) throw result.error;
+  for (const result of [bookings, inquiries, drafts]) if (result.error) throw result.error;
   return {
     bookings: (bookings.data ?? []).map((row) => ({ ...row, ...stayOf(row.stay) })),
-    bookingsCount: bookings.count ?? 0,
+    bookingsCount: counts.booking_requests.pending,
     inquiries: inquiries.data ?? [],
-    inquiriesCount: inquiries.count ?? 0,
-    reviewsCount: reviews.count ?? 0,
+    inquiriesCount: counts.inquiries.new,
+    reviewsCount: counts.reviews.pending,
     drafts: drafts.data ?? [],
-    draftsCount: drafts.count ?? 0,
+    draftsCount: counts.properties.draft,
   };
 }
 
-/** Reservas aprovadas com chegada nos próximos `days` dias. */
-export async function getUpcomingArrivals(supabase: Client, today: string, days = 14) {
+/**
+ * Reservas aprovadas com chegada nos próximos `days` dias. Tudo filtrado no
+ * banco antes do limite: estadias já iniciadas (lower(stay) < hoje) nunca
+ * ocupam as vagas da lista.
+ */
+export async function getUpcomingArrivals(supabase: Client, today: string, days = 14, limit = 8) {
   const until = addDaysISO(today, days + 1);
   const { data, error } = await supabase
     .from("booking_requests")
     .select("id, guest_name, guests_count, stay, rental_mode, properties(title)")
     .eq("status", "approved")
+    // Chegada a partir de hoje: a estadia não começa antes de [hoje, hoje].
+    .rangeGte("stay", `[${today},${today}]`)
+    // ...e começa antes de `until` (sobrepõe a janela).
     .overlaps("stay", `[${today},${until})`)
     .order("stay")
-    .limit(30);
+    .limit(limit);
   if (error) throw error;
-  return data
-    .map((row) => ({ ...row, ...stayOf(row.stay) }))
-    .filter((row) => row.checkIn >= today && row.checkIn < until)
-    .slice(0, 8);
+  return data.map((row) => ({ ...row, ...stayOf(row.stay) }));
 }
 
 export type Activity = {
@@ -233,4 +241,15 @@ export async function listPropertyOptions(supabase: Client) {
     .limit(500);
   if (error) throw error;
   return data.map((row) => ({ value: row.id, label: row.title }));
+}
+
+/** Título do imóvel do filtro (null se não existir). */
+export async function getPropertyTitle(supabase: Client, id: string) {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("title")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.title ?? null;
 }

@@ -668,6 +668,7 @@ export type Database = {
         Args: { p_from: string; p_property_id?: string; p_to: string };
         Returns: Json;
       };
+      admin_status_counts: { Args: Record<PropertyKey, never>; Returns: Json };
       approve_booking_request: { Args: { p_id: string }; Returns: undefined };
       cancel_booking_request: { Args: { p_id: string; p_notes?: string }; Returns: undefined };
       decline_booking_request: { Args: { p_id: string; p_notes?: string }; Returns: undefined };

@@ -1,4 +1,5 @@
 import { parseBookingTab } from "@/lib/booking/labels";
+import { parseInquiryTab } from "@/lib/inquiries";
 import { parseReviewTab } from "@/lib/reviews";
 
 import {
@@ -70,17 +71,10 @@ export type BookingFilters = ReturnType<typeof parseBookingFilters>;
 
 // Contatos --------------------------------------------------------------
 
-export const inquiryListTabs = [
-  { slug: "novos", label: "Novos", status: "new" },
-  { slug: "em-andamento", label: "Em andamento", status: "in_progress" },
-  { slug: "encerrados", label: "Encerrados", status: "closed" },
-  { slug: "todos", label: "Todos", status: null },
-] as const;
 export const inquiryKinds = ["contact", "visit", "sale_interest"] as const;
 
 export function parseInquiryFilters(params: RawParams) {
-  const slug = first(params.situacao);
-  const tab = inquiryListTabs.find((item) => item.slug === slug) ?? inquiryListTabs[0];
+  const tab = parseInquiryTab(params.situacao);
   return {
     tab,
     q: parseSearch(params.q),

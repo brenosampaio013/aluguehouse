@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 import { visiblePages } from "@/components/admin/ui/pagination";
 import { toCsv } from "@/lib/admin/csv";
 import { safeReturnPath } from "@/lib/admin/return-to";
+import { normalizeStatusCounts } from "@/server/queries/status-counts";
 import { parseBookingFilters, parseInquiryFilters, parseUuid } from "@/lib/admin/filters";
 import {
   buildHref,
   orIlike,
+  outOfRangeHref,
   pageRange,
   parseDate,
   parsePage,
@@ -141,5 +143,44 @@ describe("volta para a lista depois de uma ação", () => {
     ]) {
       expect(safeReturnPath(value, "/admin/contatos")).toBe("/admin/contatos");
     }
+  });
+});
+
+describe("página além da última", () => {
+  it("excluiu o último item da última página: volta para a anterior, com filtros e aviso", () => {
+    // 21 imóveis → 2 páginas; exclui o único da página 2 → sobram 20 (1 página).
+    expect(
+      outOfRangeHref(
+        "/admin/imoveis",
+        { pagina: "2", situacao: "draft", aviso: "excluido" },
+        2,
+        20,
+      ),
+    ).toBe("/admin/imoveis?situacao=draft&aviso=excluido");
+    expect(outOfRangeHref("/admin/imoveis", { pagina: "5" }, 5, 45)).toBe(
+      "/admin/imoveis?pagina=3",
+    );
+  });
+
+  it("página válida ou lista vazia na página 1: nada a fazer", () => {
+    expect(outOfRangeHref("/admin/imoveis", { pagina: "2" }, 2, 21)).toBeNull();
+    expect(outOfRangeHref("/admin/imoveis", {}, 1, 0)).toBeNull();
+    expect(outOfRangeHref("/admin/imoveis", { pagina: "3" }, 3, 0)).toBe("/admin/imoveis");
+  });
+});
+
+describe("contagens por situação", () => {
+  it("completa com zero as situações sem registros", () => {
+    const counts = normalizeStatusCounts({
+      properties: { published: 2 },
+      booking_requests: { pending: "3" },
+      inquiries: {},
+      reviews: {},
+    });
+    expect(counts.properties).toEqual({ draft: 0, published: 2, archived: 0 });
+    expect(counts.booking_requests.pending).toBe(3);
+    expect(counts.booking_requests.expired).toBe(0);
+    expect(counts.inquiries).toEqual({ new: 0, in_progress: 0, closed: 0 });
+    expect(counts.reviews.pending).toBe(0);
   });
 });

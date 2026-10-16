@@ -10,16 +10,13 @@ import { formatVisit, inquiryKindLabels, visitDateTime } from "@/lib/inquiries";
 import { inquirySchema } from "@/lib/inquiry-schema";
 import { notifyAdmin } from "@/server/email/notify-admin";
 import { guardPublicForm } from "@/server/security/public-form";
+import { todayInSaoPaulo } from "@/lib/format";
 
 import type { FormState } from "./auth";
 
 export type InquiryFormState = FormState & {
   values?: { name?: string; email?: string; phone?: string; message?: string };
 };
-
-function todaySP() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
-}
 
 /** Visitante: mensagem de contato, pedido de visita ou interesse em compra. */
 export async function submitInquiry(
@@ -38,7 +35,7 @@ export async function submitInquiry(
   // Campo-isca: responde como se tivesse dado certo, sem gravar nada.
   if (text("website") !== "") return { status: "success", message: sent };
 
-  const parsed = inquirySchema(todaySP()).safeParse({
+  const parsed = inquirySchema(todayInSaoPaulo()).safeParse({
     kind: formData.get("kind"),
     propertyId: text("propertyId"),
     ...values,

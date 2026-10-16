@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { PropertyDeleteButton } from "@/components/admin/property-delete-button";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -15,13 +16,11 @@ import { FormMessage } from "@/components/ui/form-message";
 import { DownloadIcon, EditIcon, ExternalIcon, HouseIcon, PlusIcon } from "@/components/ui/icons";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { parsePropertyFilters, type PropertyFilters } from "@/lib/admin/filters";
-import { buildHref, first, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
+import { buildHref, first, outOfRangeHref, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
 import { formatPrice } from "@/lib/format";
 import { propertyStatusLabels, propertyTypeLabels } from "@/lib/properties/labels";
-import {
-  countPropertiesByStatus,
-  searchPropertiesForAdmin,
-} from "@/server/queries/admin-properties";
+import { searchPropertiesForAdmin } from "@/server/queries/admin-properties";
+import { getStatusCounts } from "@/server/queries/status-counts";
 
 export const metadata: Metadata = { title: "Imóveis" };
 
@@ -71,8 +70,11 @@ export default async function ImoveisPage({ searchParams }: PageProps<"/admin/im
   const { supabase } = await requireAdmin();
   const [{ rows, count }, counts] = await Promise.all([
     searchPropertiesForAdmin(supabase, filters, pageRange(filters.page)),
-    countPropertiesByStatus(supabase),
+    getStatusCounts().then((all) => all.properties),
   ]);
+  // Página além da última (ex.: excluiu o último item dela): vai para a última válida.
+  const validPage = outOfRangeHref("/admin/imoveis", params, filters.page, count);
+  if (validPage) redirect(validPage);
   const base = listParams(filters);
   const href = (extra: Record<string, string | number | null>) =>
     buildHref("/admin/imoveis", { ...base, ...extra });

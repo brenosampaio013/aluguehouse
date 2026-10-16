@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { InquiryDeleteButton, InquiryStatusForm } from "@/components/admin/inquiry-status-form";
 import { Badge, type BadgeTone } from "@/components/admin/ui/badge";
@@ -13,17 +14,19 @@ import { buttonClasses } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { ChatIcon, DownloadIcon, InboxIcon, MailIcon } from "@/components/ui/icons";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { inquiryListTabs, parseInquiryFilters, type InquiryFilters } from "@/lib/admin/filters";
-import { buildHref, first, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
+import { parseInquiryFilters, type InquiryFilters } from "@/lib/admin/filters";
+import { buildHref, first, outOfRangeHref, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
 import {
   formatVisit,
   inquiryKindLabels,
   inquiryStatusLabels,
+  inquiryTabs,
   type InquiryStatus,
 } from "@/lib/inquiries";
 import { guestWhatsappLink } from "@/lib/whatsapp";
 import { listPropertyOptions } from "@/server/queries/admin-dashboard";
-import { countInquiriesByStatus, searchInquiries } from "@/server/queries/inquiries";
+import { searchInquiries } from "@/server/queries/inquiries";
+import { getStatusCounts } from "@/server/queries/status-counts";
 
 export const metadata: Metadata = { title: "Contatos" };
 
@@ -63,9 +66,12 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
   const { supabase } = await requireAdmin();
   const [{ rows, count }, counts, properties] = await Promise.all([
     searchInquiries(supabase, filters, pageRange(filters.page)),
-    countInquiriesByStatus(supabase),
+    getStatusCounts().then((all) => all.inquiries),
     listPropertyOptions(supabase),
   ]);
+  // Página além da última (ex.: excluiu o último item dela): vai para a última válida.
+  const validPage = outOfRangeHref("/admin/contatos", params, filters.page, count);
+  if (validPage) redirect(validPage);
   const base = listParams(filters);
   const href = (extra: Record<string, string | number | null>) =>
     buildHref("/admin/contatos", { ...base, ...extra });
@@ -95,7 +101,7 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
       <StatusTabs
         label="Situação dos contatos"
         current={filters.tab.slug}
-        tabs={inquiryListTabs.map((tab) => ({
+        tabs={inquiryTabs.map((tab) => ({
           slug: tab.slug,
           label: tab.label,
           href: buildHref("/admin/contatos", { ...base, situacao: tab.slug, dir: null }),

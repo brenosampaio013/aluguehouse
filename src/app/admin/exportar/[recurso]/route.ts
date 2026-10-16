@@ -6,7 +6,7 @@ import {
   parseInquiryFilters,
   parsePropertyFilters,
 } from "@/lib/admin/filters";
-import type { RawParams } from "@/lib/admin/list-params";
+import { EXPORT_LIMIT, type RawParams } from "@/lib/admin/list-params";
 import { getSessionState } from "@/lib/auth/session";
 import { bookingStatusLabels, rentalModeLabels } from "@/lib/booking/labels";
 import { todayInSaoPaulo } from "@/lib/format";
@@ -16,6 +16,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { searchBookingRequests } from "@/server/queries/admin-bookings";
 import { searchPropertiesForAdmin } from "@/server/queries/admin-properties";
 import { searchInquiries } from "@/server/queries/inquiries";
+import { ExportChangedError, ExportTooLargeError, fetchAllPages } from "@/server/queries/paged";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 type Export = { base: string; headers: string[]; rows: CsvValue[][] };
@@ -29,7 +30,11 @@ const when = (value: string | null) => (value ? dateTime.format(new Date(value))
 
 const exporters: Record<string, (supabase: Client, params: RawParams) => Promise<Export>> = {
   async imoveis(supabase, params) {
-    const { rows } = await searchPropertiesForAdmin(supabase, parsePropertyFilters(params), null);
+    const filters = parsePropertyFilters(params);
+    const rows = await fetchAllPages(
+      (range) => searchPropertiesForAdmin(supabase, filters, range),
+      EXPORT_LIMIT,
+    );
     return {
       base: "imoveis",
       headers: [
@@ -71,7 +76,11 @@ const exporters: Record<string, (supabase: Client, params: RawParams) => Promise
     };
   },
   async solicitacoes(supabase, params) {
-    const { rows } = await searchBookingRequests(supabase, parseBookingFilters(params), null);
+    const filters = parseBookingFilters(params);
+    const rows = await fetchAllPages(
+      (range) => searchBookingRequests(supabase, filters, range),
+      EXPORT_LIMIT,
+    );
     return {
       base: "solicitacoes",
       headers: [
@@ -107,7 +116,11 @@ const exporters: Record<string, (supabase: Client, params: RawParams) => Promise
     };
   },
   async contatos(supabase, params) {
-    const { rows } = await searchInquiries(supabase, parseInquiryFilters(params), null);
+    const filters = parseInquiryFilters(params);
+    const rows = await fetchAllPages(
+      (range) => searchInquiries(supabase, filters, range),
+      EXPORT_LIMIT,
+    );
     return {
       base: "contatos",
       headers: [
@@ -162,7 +175,25 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/admin/export
       },
     });
   } catch (error) {
+    // Nunca entrega arquivo parcial: explica por que não exportou.
+    const text = (message: string, status: number) =>
+      new Response(message, {
+        status,
+        headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    if (error instanceof ExportTooLargeError) {
+      return text(
+        `A exportação teria ${error.total.toLocaleString("pt-BR")} linhas, acima do limite de ${error.limit.toLocaleString("pt-BR")}. Filtre por período, situação ou imóvel e exporte em partes.`,
+        413,
+      );
+    }
+    if (error instanceof ExportChangedError) {
+      return text(
+        "Os registros mudaram enquanto o arquivo era gerado. Nada foi exportado; tente de novo.",
+        409,
+      );
+    }
     console.error(`Falha ao exportar ${recurso}`, error);
-    return new Response("Não foi possível gerar o arquivo agora. Tente de novo.", { status: 500 });
+    return text("Não foi possível gerar o arquivo agora. Tente de novo.", 500);
   }
 }

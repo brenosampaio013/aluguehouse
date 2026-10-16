@@ -4,7 +4,7 @@ import { PropertyCard } from "@/components/property/property-card";
 import { Container } from "@/components/ui/container";
 import { FormMessage } from "@/components/ui/form-message";
 import { getPublicEnv } from "@/lib/env";
-import { formatDateISO } from "@/lib/format";
+import { formatDateISO, todayInSaoPaulo } from "@/lib/format";
 import { regions } from "@/lib/regions";
 import {
   PAGE_SIZE,
@@ -39,11 +39,6 @@ const copy = {
     switchPath: "/temporada",
   },
 } as const;
-
-/** Data de hoje em São Paulo, para o mínimo dos campos de data. */
-function todaySaoPaulo() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
-}
 
 function plural(n: number, one: string, many: string) {
   return `${n} ${n === 1 ? one : many}`;
@@ -104,7 +99,7 @@ export async function RentalListing({
             mode={mode}
             filters={filters}
             amenities={amenities}
-            today={todaySaoPaulo()}
+            today={todayInSaoPaulo()}
           />
         </FiltersDisclosure>
 
