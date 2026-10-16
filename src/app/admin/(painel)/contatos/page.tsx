@@ -26,6 +26,7 @@ import {
 import { guestWhatsappLink } from "@/lib/whatsapp";
 import { listPropertyOptions } from "@/server/queries/admin-dashboard";
 import { searchInquiries } from "@/server/queries/inquiries";
+import { settle } from "@/server/queries/settle";
 import { getStatusCounts } from "@/server/queries/status-counts";
 
 export const metadata: Metadata = { title: "Contatos" };
@@ -64,11 +65,13 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
         ? "Mensagem excluída."
         : null;
   const { supabase } = await requireAdmin();
-  const [{ rows, count }, counts, properties] = await Promise.all([
+  const [{ rows, count }, countsResult, properties] = await Promise.all([
     searchInquiries(supabase, filters, pageRange(filters.page)),
-    getStatusCounts().then((all) => all.inquiries),
+    // Sem as contagens a lista continua útil: só as abas ficam sem números.
+    settle(getStatusCounts(), "contagens das abas"),
     listPropertyOptions(supabase),
   ]);
+  const counts = countsResult.ok ? countsResult.data.inquiries : null;
   // Página além da última (ex.: excluiu o último item dela): vai para a última válida.
   const validPage = outOfRangeHref("/admin/contatos", params, filters.page, count);
   if (validPage) redirect(validPage);
@@ -77,7 +80,7 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
     buildHref("/admin/contatos", { ...base, ...extra });
   const returnTo = href({ pagina: filters.page > 1 ? filters.page : null });
   const filtered = Boolean(filters.q || filters.kind || filters.propertyId);
-  const total = counts.new + counts.in_progress + counts.closed;
+  const total = counts ? counts.new + counts.in_progress + counts.closed : null;
 
   return (
     <AdminPage>
@@ -105,7 +108,7 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
           slug: tab.slug,
           label: tab.label,
           href: buildHref("/admin/contatos", { ...base, situacao: tab.slug, dir: null }),
-          count: tab.status ? counts[tab.status] : total,
+          count: tab.status ? (counts?.[tab.status] ?? null) : total,
         }))}
       />
 

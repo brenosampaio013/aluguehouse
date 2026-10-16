@@ -20,6 +20,7 @@ import { buildHref, first, outOfRangeHref, PAGE_SIZE, pageRange } from "@/lib/ad
 import { formatPrice } from "@/lib/format";
 import { propertyStatusLabels, propertyTypeLabels } from "@/lib/properties/labels";
 import { searchPropertiesForAdmin } from "@/server/queries/admin-properties";
+import { settle } from "@/server/queries/settle";
 import { getStatusCounts } from "@/server/queries/status-counts";
 
 export const metadata: Metadata = { title: "Imóveis" };
@@ -68,17 +69,19 @@ export default async function ImoveisPage({ searchParams }: PageProps<"/admin/im
   const params = await searchParams;
   const filters = parsePropertyFilters(params);
   const { supabase } = await requireAdmin();
-  const [{ rows, count }, counts] = await Promise.all([
+  const [{ rows, count }, countsResult] = await Promise.all([
     searchPropertiesForAdmin(supabase, filters, pageRange(filters.page)),
-    getStatusCounts().then((all) => all.properties),
+    // Sem as contagens a lista continua útil: só as abas ficam sem números.
+    settle(getStatusCounts(), "contagens das abas"),
   ]);
+  const counts = countsResult.ok ? countsResult.data.properties : null;
   // Página além da última (ex.: excluiu o último item dela): vai para a última válida.
   const validPage = outOfRangeHref("/admin/imoveis", params, filters.page, count);
   if (validPage) redirect(validPage);
   const base = listParams(filters);
   const href = (extra: Record<string, string | number | null>) =>
     buildHref("/admin/imoveis", { ...base, ...extra });
-  const total = counts.draft + counts.published + counts.archived;
+  const total = counts ? counts.draft + counts.published + counts.archived : null;
   const filtered = Boolean(filters.q || filters.mode);
 
   return (
@@ -106,6 +109,11 @@ export default async function ImoveisPage({ searchParams }: PageProps<"/admin/im
 
       {first(params.aviso) === "excluido" ? (
         <FormMessage tone="success">Imóvel excluído.</FormMessage>
+      ) : first(params.aviso) === "excluido-arquivos" ? (
+        <FormMessage tone="error">
+          Imóvel excluído, mas parte das fotos ou dos vídeos não pôde ser apagada do armazenamento.
+          O problema ficou registrado no log do servidor para limpeza.
+        </FormMessage>
       ) : null}
 
       <StatusTabs
@@ -117,7 +125,7 @@ export default async function ImoveisPage({ searchParams }: PageProps<"/admin/im
             slug: status,
             label: propertyStatusLabels[status],
             href: href({ situacao: status }),
-            count: counts[status],
+            count: counts?.[status] ?? null,
           })),
         ]}
       />

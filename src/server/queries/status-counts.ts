@@ -20,18 +20,23 @@ const statusLists = {
   reviews: readonly Enums["review_status"][];
 };
 
+/** Contagens de uma tabela, ou null se o banco não conseguiu contá-la. */
 export type StatusCounts = {
-  [T in keyof typeof statusLists]: Record<(typeof statusLists)[T][number], number>;
+  [T in keyof typeof statusLists]: Record<(typeof statusLists)[T][number], number> | null;
 };
 
-const countsSchema = z.record(z.string(), z.record(z.string(), z.coerce.number()));
+const countsSchema = z.record(
+  z.string(),
+  z.record(z.string(), z.coerce.number()).nullable().optional(),
+);
 
-/** Completa com zero as situações sem nenhum registro. */
+/** Completa com zero as situações sem registros; tabela que falhou fica null. */
 export function normalizeStatusCounts(raw: unknown): StatusCounts {
   const parsed = countsSchema.parse(raw);
-  const result = {} as Record<string, Record<string, number>>;
+  const result = {} as Record<string, Record<string, number> | null>;
   for (const [table, statuses] of Object.entries(statusLists)) {
-    result[table] = Object.fromEntries(statuses.map((s) => [s, parsed[table]?.[s] ?? 0]));
+    const counts = parsed[table];
+    result[table] = counts ? Object.fromEntries(statuses.map((s) => [s, counts[s] ?? 0])) : null;
   }
   return result as StatusCounts;
 }

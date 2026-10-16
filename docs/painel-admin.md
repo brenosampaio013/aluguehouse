@@ -49,7 +49,7 @@ Também mostra: gráfico de evolução (solicitações e contatos por dia,
 semana ou mês, com dica no mouse/teclado e tabela com os dados), pedidos
 por situação e modalidade, imóveis mais procurados, pendências (pedidos
 mais antigos primeiro, com alerta de chegada já passada), próximas chegadas
-(14 dias), atividade recente e atalhos.
+(14 dias contando hoje: de hoje a hoje+13), atividade recente e atalhos.
 
 Ocupação: numerador e denominador usam o mesmo conjunto de imóveis
 (publicados que oferecem temporada ou mensal), então arquivados, rascunhos
@@ -80,15 +80,21 @@ aviso e números zerados; nada é ignorado em silêncio.
   redireciona para a última página válida, mantendo filtros e aviso.
 - Contagens das abas e do menu: uma só consulta agrupada
   (`public.admin_status_counts`), memorizada por requisição e compartilhada
-  entre o layout, as abas e as pendências da visão geral.
+  entre o layout, as abas e as pendências da visão geral. Cada tabela é
+  contada à parte: se uma falhar, só ela volta `null` (aviso no log do
+  Postgres) e as outras continuam. Sem contagem, a lista ainda abre (as abas
+  só ficam sem números) e o menu só perde aquele contador.
 - A busca escapa os curingas do `LIKE` e usa valores entre aspas no filtro
   do PostgREST: vírgulas, parênteses, `%` e `_` são procurados como texto.
 - Exportação: `GET /admin/exportar/{imoveis|solicitacoes|contatos}` com os
   mesmos filtros da tela. As linhas são lidas em lotes de 1.000 (limite
-  `max_rows` do PostgREST) e o total é conferido com a contagem do banco:
-  o arquivo nunca sai cortado. Acima de 50.000 linhas a exportação é
-  recusada (HTTP 413) pedindo para filtrar; se os registros mudarem durante
-  a leitura, também é recusada (HTTP 409) para tentar de novo. CSV com `;`, BOM UTF-8 e CRLF
+  `max_rows` do PostgREST) por cursor (`id > último id lido`, índice da
+  chave primária): registros criados ou excluídos durante a leitura não
+  deslocam os demais, então nada que já existia é pulado ou repetido. O
+  total é contado uma vez, no primeiro lote; depois as linhas são
+  reordenadas como na tela (texto em português, vazios como no Postgres,
+  desempate por id). Acima de 20.000 linhas a exportação é recusada (HTTP 413) pedindo para filtrar — o arquivo é montado em memória e o limite o
+  mantém bem abaixo da memória de um Worker. CSV com `;`, BOM UTF-8 e CRLF
   (abre direto no Excel em português) e proteção contra injeção de fórmula
   (células que começam com `= + - @` recebem `'`).
 
@@ -107,6 +113,13 @@ viram mensagens claras e os botões ficam desabilitados durante o envio.
   depois de normalizado (`safeReturnPath`): nunca leva para fora da lista.
 - Contadores do menu e da visão geral são atualizados após cada ação
   (`revalidatePath("/admin", "layout")`).
+- Salvar ou mudar a situação de um imóvel confere se a linha foi gravada:
+  se ele foi excluído em outra aba, a tela avisa e nada é dado como salvo.
+- Remover tarifa ou taxa pede confirmação e mostra o erro se o banco recusar.
+- Excluir imóvel: os arquivos do Storage são listados por completo (em
+  páginas) antes; se o Storage falhar, nada é excluído. Se a remoção dos
+  arquivos falhar depois de apagar o imóvel, a tela avisa e o log registra
+  o que ficou para limpeza.
 
 ## Segurança
 

@@ -8,8 +8,10 @@ export const PAGE_SIZE = 20;
 /**
  * Limite de linhas por exportação CSV. Acima disso a exportação é recusada
  * com aviso (nunca sai cortada): o admin filtra por período ou situação.
+ * 20.000 linhas mantêm o arquivo (montado em memória para seguir a ordem da
+ * tela) bem abaixo do limite de memória de um Worker da Cloudflare.
  */
-export const EXPORT_LIMIT = 50_000;
+export const EXPORT_LIMIT = 20_000;
 
 export type RawParams = Record<string, string | string[] | undefined>;
 export type SortDir = "asc" | "desc";
@@ -54,10 +56,20 @@ export function parseSort<K extends string>(
   return { key, dir: dir ?? (key === fallback.key ? fallback.dir : "asc") };
 }
 
+/**
+ * Como ler uma consulta: uma página da tela (posição + total) ou um lote da
+ * exportação por cursor (id > afterId, em ordem de id). O cursor não pula nem
+ * repete registros quando alguém cria ou exclui algo durante a leitura, e
+ * usa o índice da chave primária.
+ */
+export type Paging =
+  | { kind: "range"; from: number; to: number }
+  | { kind: "after"; afterId: string | null; size: number; withCount: boolean };
+
 /** Faixa de linhas para .range(from, to) do Supabase (inclusiva). */
 export function pageRange(page: number, size = PAGE_SIZE) {
   const from = (page - 1) * size;
-  return { from, to: from + size - 1 };
+  return { kind: "range" as const, from, to: from + size - 1 };
 }
 
 export function totalPages(count: number, size = PAGE_SIZE) {

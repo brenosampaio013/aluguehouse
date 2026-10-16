@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { csvFilename, toCsv, type CsvValue } from "@/lib/admin/csv";
+import { sortRows, timeValue } from "@/lib/admin/sort";
 import {
   parseBookingFilters,
   parseInquiryFilters,
@@ -16,7 +17,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { searchBookingRequests } from "@/server/queries/admin-bookings";
 import { searchPropertiesForAdmin } from "@/server/queries/admin-properties";
 import { searchInquiries } from "@/server/queries/inquiries";
-import { ExportChangedError, ExportTooLargeError, fetchAllPages } from "@/server/queries/paged";
+import { ExportTooLargeError, fetchAllByCursor } from "@/server/queries/paged";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 type Export = { base: string; headers: string[]; rows: CsvValue[][] };
@@ -31,9 +32,21 @@ const when = (value: string | null) => (value ? dateTime.format(new Date(value))
 const exporters: Record<string, (supabase: Client, params: RawParams) => Promise<Export>> = {
   async imoveis(supabase, params) {
     const filters = parsePropertyFilters(params);
-    const rows = await fetchAllPages(
-      (range) => searchPropertiesForAdmin(supabase, filters, range),
-      EXPORT_LIMIT,
+    type Row = Awaited<ReturnType<typeof searchPropertiesForAdmin>>["rows"][number];
+    // Lê por cursor (ordem de id) e reordena como a tela.
+    const sortValue = {
+      atualizado: (p: Row) => timeValue(p.updated_at),
+      titulo: (p: Row) => p.title,
+      cidade: (p: Row) => p.city,
+      criado: (p: Row) => timeValue(p.created_at),
+    }[filters.sort.key];
+    const rows = sortRows(
+      await fetchAllByCursor(
+        (paging) => searchPropertiesForAdmin(supabase, filters, paging),
+        EXPORT_LIMIT,
+      ),
+      sortValue,
+      filters.sort.dir,
     );
     return {
       base: "imoveis",
@@ -77,9 +90,20 @@ const exporters: Record<string, (supabase: Client, params: RawParams) => Promise
   },
   async solicitacoes(supabase, params) {
     const filters = parseBookingFilters(params);
-    const rows = await fetchAllPages(
-      (range) => searchBookingRequests(supabase, filters, range),
-      EXPORT_LIMIT,
+    type Row = Awaited<ReturnType<typeof searchBookingRequests>>["rows"][number];
+    const sortValue = {
+      recebida: (r: Row) => timeValue(r.created_at),
+      chegada: (r: Row) => r.checkIn,
+      total: (r: Row) => r.quoted_total,
+      hospede: (r: Row) => r.guest_name,
+    }[filters.sort.key];
+    const rows = sortRows(
+      await fetchAllByCursor(
+        (paging) => searchBookingRequests(supabase, filters, paging),
+        EXPORT_LIMIT,
+      ),
+      sortValue,
+      filters.sort.dir,
     );
     return {
       base: "solicitacoes",
@@ -117,9 +141,10 @@ const exporters: Record<string, (supabase: Client, params: RawParams) => Promise
   },
   async contatos(supabase, params) {
     const filters = parseInquiryFilters(params);
-    const rows = await fetchAllPages(
-      (range) => searchInquiries(supabase, filters, range),
-      EXPORT_LIMIT,
+    const rows = sortRows(
+      await fetchAllByCursor((paging) => searchInquiries(supabase, filters, paging), EXPORT_LIMIT),
+      (i) => timeValue(i.created_at),
+      filters.dir,
     );
     return {
       base: "contatos",
@@ -155,7 +180,8 @@ const exporters: Record<string, (supabase: Client, params: RawParams) => Promise
  */
 export async function GET(request: NextRequest, ctx: RouteContext<"/admin/exportar/[recurso]">) {
   const { recurso } = await ctx.params;
-  const exporter = exporters[recurso];
+  // Só chaves próprias: "constructor", "toString" etc. do protótipo não valem.
+  const exporter = Object.hasOwn(exporters, recurso) ? exporters[recurso] : undefined;
   if (!exporter) return new Response("Exportação não encontrada.", { status: 404 });
 
   const session = await getSessionState();
@@ -185,12 +211,6 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/admin/export
       return text(
         `A exportação teria ${error.total.toLocaleString("pt-BR")} linhas, acima do limite de ${error.limit.toLocaleString("pt-BR")}. Filtre por período, situação ou imóvel e exporte em partes.`,
         413,
-      );
-    }
-    if (error instanceof ExportChangedError) {
-      return text(
-        "Os registros mudaram enquanto o arquivo era gerado. Nada foi exportado; tente de novo.",
-        409,
       );
     }
     console.error(`Falha ao exportar ${recurso}`, error);

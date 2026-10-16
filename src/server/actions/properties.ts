@@ -18,6 +18,7 @@ import {
 } from "@/lib/properties/schemas";
 import { publishChecklist } from "@/lib/properties/publish";
 import { VIDEO_BUCKET } from "@/lib/videos";
+import { removeFiles, storageFiles } from "@/server/storage-files";
 
 import type { FormState } from "./auth";
 
@@ -43,6 +44,9 @@ function dbErrorMessage(
 }
 
 const idSchema = z.uuid();
+
+const NOT_FOUND = "Imóvel não encontrado: ele pode ter sido excluído em outra aba. Nada foi salvo.";
+const REMOVE_FAILED = "Não foi possível remover. Tente de novo.";
 
 function propertyPath(id: string) {
   return `/admin/imoveis/${id}`;
@@ -77,21 +81,6 @@ export async function createProperty(_prev: FormState, formData: FormData): Prom
   redirect(propertyPath(id));
 }
 
-type AdminClient = Awaited<ReturnType<typeof requireAdmin>>["supabase"];
-
-/** Caminhos de todos os arquivos do imóvel num bucket ("<imóvel>/<mídia>/<arquivo>"). */
-async function storageFiles(supabase: AdminClient, bucket: string, propertyId: string) {
-  const storage = supabase.storage.from(bucket);
-  const { data: folders } = await storage.list(propertyId, { limit: 1000 });
-  const paths: string[] = [];
-  for (const folder of folders ?? []) {
-    const prefix = `${propertyId}/${folder.name}`;
-    const { data: files } = await storage.list(prefix, { limit: 1000 });
-    for (const file of files ?? []) paths.push(`${prefix}/${file.name}`);
-  }
-  return paths;
-}
-
 /**
  * Exclui o imóvel, as fotos, os vídeos e os dados ligados a ele (tarifas,
  * taxas, comodidades, bloqueios e favoritos). Imóvel com solicitação de
@@ -117,11 +106,23 @@ export async function deleteProperty(_prev: FormState, formData: FormData): Prom
     };
   }
 
-  // Lista os arquivos antes: depois de apagar o imóvel, nada mais aponta para eles.
-  const [photos, videos] = await Promise.all([
-    storageFiles(supabase, MEDIA_BUCKET, id.data),
-    storageFiles(supabase, VIDEO_BUCKET, id.data),
-  ]);
+  // Lista os arquivos antes: depois de apagar o imóvel, nada mais aponta para
+  // eles. Sem a lista completa, não exclui (evita arquivos órfãos).
+  let photos: string[];
+  let videos: string[];
+  try {
+    [photos, videos] = await Promise.all([
+      storageFiles(supabase.storage, MEDIA_BUCKET, id.data),
+      storageFiles(supabase.storage, VIDEO_BUCKET, id.data),
+    ]);
+  } catch (storageError) {
+    console.error("Falha ao listar os arquivos do imóvel antes de excluir", storageError);
+    return {
+      status: "error",
+      message:
+        "Não foi possível acessar as fotos e os vídeos do imóvel agora. Nada foi excluído; tente de novo em instantes.",
+    };
+  }
 
   const { data: deleted, error } = await supabase
     .from("properties")
@@ -139,12 +140,21 @@ export async function deleteProperty(_prev: FormState, formData: FormData): Prom
   }
   if (!deleted?.length) return { status: "error", message: "Imóvel não encontrado." };
 
-  if (photos.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(photos);
-  if (videos.length > 0) await supabase.storage.from(VIDEO_BUCKET).remove(videos);
+  const orphans =
+    (await removeFiles(supabase.storage, MEDIA_BUCKET, photos)) +
+    (await removeFiles(supabase.storage, VIDEO_BUCKET, videos));
+  if (orphans > 0) {
+    console.error(`Imóvel ${id.data} excluído com ${orphans} arquivo(s) não apagado(s) no Storage`);
+  }
 
   revalidatePath("/admin", "layout");
-  // Volta para a mesma lista (filtros e página) com o aviso de sucesso.
-  redirect(safeReturnPath(formData.get("returnTo"), "/admin/imoveis", { aviso: "excluido" }));
+  // Volta para a mesma lista (filtros e página) com o aviso. Se algum arquivo
+  // não pôde ser apagado, o aviso diz isso (fica registrado no log).
+  redirect(
+    safeReturnPath(formData.get("returnTo"), "/admin/imoveis", {
+      aviso: orphans > 0 ? "excluido-arquivos" : "excluido",
+    }),
+  );
 }
 
 export async function updateGeneral(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -171,8 +181,13 @@ export async function updateGeneral(_prev: FormState, formData: FormData): Promi
     condo_fee: parsed.data.condo_fee ?? null,
     iptu_yearly: parsed.data.iptu_yearly ?? null,
   };
-  const { error } = await supabase.from("properties").update(values).eq("id", id.data);
+  const { data: updated, error } = await supabase
+    .from("properties")
+    .update(values)
+    .eq("id", id.data)
+    .select("id");
   if (error) return { status: "error", message: dbErrorMessage(error) };
+  if (!updated?.length) return { status: "error", message: NOT_FOUND };
 
   revalidatePath(propertyPath(id.data));
   revalidatePath("/admin/imoveis");
@@ -248,12 +263,22 @@ export async function addSeasonalRate(_prev: FormState, formData: FormData): Pro
   return { status: "success", message: `Tarifa "${parsed.data.label}" adicionada.` };
 }
 
-export async function deleteSeasonalRate(formData: FormData) {
-  const id = idSchema.parse(formData.get("id"));
-  const rateId = idSchema.parse(formData.get("rateId"));
+export async function deleteSeasonalRate(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = idSchema.safeParse(formData.get("id"));
+  const rateId = idSchema.safeParse(formData.get("rateId"));
+  if (!id.success || !rateId.success) return { status: "error", message: "Tarifa inválida." };
   const { supabase } = await requireAdmin();
-  await supabase.from("seasonal_rates").delete().eq("id", rateId).eq("property_id", id);
-  revalidatePath(propertyPath(id));
+  const { data, error } = await supabase
+    .from("seasonal_rates")
+    .delete()
+    .eq("id", rateId.data)
+    .eq("property_id", id.data)
+    .select("id");
+  if (error) return { status: "error", message: dbErrorMessage(error, REMOVE_FAILED) };
+  if (!data?.length)
+    return { status: "error", message: "Tarifa não encontrada. Recarregue a página." };
+  revalidatePath(propertyPath(id.data));
+  return { status: "success", message: "Tarifa removida." };
 }
 
 export async function addFee(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -277,12 +302,22 @@ export async function addFee(_prev: FormState, formData: FormData): Promise<Form
   return { status: "success", message: `Taxa "${parsed.data.label}" adicionada.` };
 }
 
-export async function deleteFee(formData: FormData) {
-  const id = idSchema.parse(formData.get("id"));
-  const feeId = idSchema.parse(formData.get("feeId"));
+export async function deleteFee(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = idSchema.safeParse(formData.get("id"));
+  const feeId = idSchema.safeParse(formData.get("feeId"));
+  if (!id.success || !feeId.success) return { status: "error", message: "Taxa inválida." };
   const { supabase } = await requireAdmin();
-  await supabase.from("property_fees").delete().eq("id", feeId).eq("property_id", id);
-  revalidatePath(propertyPath(id));
+  const { data, error } = await supabase
+    .from("property_fees")
+    .delete()
+    .eq("id", feeId.data)
+    .eq("property_id", id.data)
+    .select("id");
+  if (error) return { status: "error", message: dbErrorMessage(error, REMOVE_FAILED) };
+  if (!data?.length)
+    return { status: "error", message: "Taxa não encontrada. Recarregue a página." };
+  revalidatePath(propertyPath(id.data));
+  return { status: "success", message: "Taxa removida." };
 }
 
 const statusSchema = z.enum(["publish", "unpublish", "archive", "restore"]);
@@ -319,18 +354,25 @@ export async function changeStatus(_prev: FormState, formData: FormData): Promis
       };
     }
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("properties")
       .update({
         status: "published",
         published_at: property.published_at ?? new Date().toISOString(),
       })
-      .eq("id", id.data);
+      .eq("id", id.data)
+      .select("id");
     if (error) return { status: "error", message: dbErrorMessage(error) };
+    if (!updated?.length) return { status: "error", message: NOT_FOUND };
   } else {
     const status = action.data === "archive" ? "archived" : "draft";
-    const { error } = await supabase.from("properties").update({ status }).eq("id", id.data);
+    const { data: updated, error } = await supabase
+      .from("properties")
+      .update({ status })
+      .eq("id", id.data)
+      .select("id");
     if (error) return { status: "error", message: dbErrorMessage(error) };
+    if (!updated?.length) return { status: "error", message: NOT_FOUND };
   }
 
   revalidatePath(propertyPath(id.data));

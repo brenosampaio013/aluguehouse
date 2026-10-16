@@ -1,5 +1,9 @@
 import "server-only";
 
+import type { Paging } from "@/lib/admin/list-params";
+
+export type { Paging };
+
 type PagedResult<T> = {
   data: T[] | null;
   error: { code?: string; details?: string | null } | null;
@@ -23,6 +27,11 @@ export function pagedRows<T>(result: PagedResult<T>): { rows: T[]; count: number
 /** Máximo de linhas por chamada ao PostgREST (`max_rows` em supabase/config.toml). */
 export const DB_BATCH_SIZE = 1000;
 
+/** Contagem exata só quando precisa: página da tela ou 1º lote da exportação. */
+export function withCount(paging: Paging): "exact" | undefined {
+  return paging.kind === "range" || paging.withCount ? "exact" : undefined;
+}
+
 /** A exportação passaria do limite: o admin precisa filtrar mais. */
 export class ExportTooLargeError extends Error {
   constructor(
@@ -33,32 +42,42 @@ export class ExportTooLargeError extends Error {
   }
 }
 
-/** As linhas mudaram enquanto os lotes eram lidos: o arquivo sairia incompleto. */
-export class ExportChangedError extends Error {
-  constructor() {
-    super("Os dados mudaram durante a exportação.");
-  }
-}
-
 /**
- * Lê todas as linhas de uma consulta em lotes (o PostgREST devolve no
- * máximo DB_BATCH_SIZE por chamada). Nunca devolve um resultado parcial:
- * acima de `limit` lança ExportTooLargeError, e se o total lido não bater
- * com a contagem do banco lança ExportChangedError.
+ * Lê todas as linhas de uma consulta em lotes por cursor (o PostgREST devolve
+ * no máximo DB_BATCH_SIZE por chamada). O total é contado uma única vez, no
+ * primeiro lote; acima de `limit` lança ExportTooLargeError, nunca devolve
+ * um resultado parcial. Registros criados durante a leitura podem entrar;
+ * os que já existiam nunca são pulados nem repetidos.
  */
-export async function fetchAllPages<T extends { id: string }>(
-  fetchPage: (range: { from: number; to: number }) => Promise<{ rows: T[]; count: number }>,
+export async function fetchAllByCursor<T extends { id: string }>(
+  fetchBatch: (paging: Extract<Paging, { kind: "after" }>) => Promise<{
+    rows: T[];
+    count: number;
+  }>,
   limit: number,
   batchSize = DB_BATCH_SIZE,
 ): Promise<T[]> {
-  const first = await fetchPage({ from: 0, to: batchSize - 1 });
+  const first = await fetchBatch({
+    kind: "after",
+    afterId: null,
+    size: batchSize,
+    withCount: true,
+  });
   if (first.count > limit) throw new ExportTooLargeError(first.count, limit);
 
-  const byId = new Map(first.rows.map((row) => [row.id, row]));
-  for (let from = batchSize; from < first.count; from += batchSize) {
-    const page = await fetchPage({ from, to: from + batchSize - 1 });
-    for (const row of page.rows) byId.set(row.id, row);
+  const rows = [...first.rows];
+  let batch = first.rows;
+  while (batch.length === batchSize) {
+    const afterId = batch[batch.length - 1]!.id;
+    ({ rows: batch } = await fetchBatch({
+      kind: "after",
+      afterId,
+      size: batchSize,
+      withCount: false,
+    }));
+    rows.push(...batch);
+    // Muitos registros criados durante a leitura: recusa em vez de cortar.
+    if (rows.length > limit) throw new ExportTooLargeError(rows.length, limit);
   }
-  if (byId.size !== first.count) throw new ExportChangedError();
-  return [...byId.values()];
+  return rows;
 }

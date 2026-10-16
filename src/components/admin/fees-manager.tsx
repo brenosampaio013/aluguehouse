@@ -10,6 +10,7 @@ import { addFee, deleteFee } from "@/server/actions/properties";
 import type { Database } from "@/types/database";
 
 import { FormFeedback } from "./form-feedback";
+import { RemoveRowButton } from "./remove-row-button";
 import { useFormAction } from "./use-form-action";
 
 type Fee = Database["public"]["Tables"]["property_fees"]["Row"];
@@ -70,13 +71,12 @@ export function FeesManager({ propertyId, fees }: { propertyId: string; fees: Fe
                   </td>
                   <td className="py-2 pr-4">{feeAppliesToLabels[fee.applies_to]}</td>
                   <td className="py-2 text-right">
-                    <form action={deleteFee}>
-                      <input type="hidden" name="id" value={propertyId} />
-                      <input type="hidden" name="feeId" value={fee.id} />
-                      <Button type="submit" variant="text" className="text-erro hover:text-erro">
-                        Remover<span className="sr-only"> taxa {fee.label}</span>
-                      </Button>
-                    </form>
+                    <RemoveRowButton
+                      action={deleteFee}
+                      fields={{ id: propertyId, feeId: fee.id }}
+                      label={`taxa ${fee.label}`}
+                      confirmTitle={`Remover a taxa “${fee.label}”?`}
+                    />
                   </td>
                 </tr>
               ))}

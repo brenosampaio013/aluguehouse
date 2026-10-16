@@ -6,6 +6,7 @@ import { addDaysISO, formatBRL, formatDateISO, parseDateRange } from "@/lib/form
 import { addSeasonalRate, deleteSeasonalRate } from "@/server/actions/properties";
 
 import { FormFeedback } from "./form-feedback";
+import { RemoveRowButton } from "./remove-row-button";
 import { useFormAction } from "./use-form-action";
 
 type Rate = {
@@ -64,13 +65,12 @@ export function RatesManager({ propertyId, rates }: { propertyId: string; rates:
                       {rate.min_nights ? `${rate.min_nights} noites` : "—"}
                     </td>
                     <td className="py-2 text-right">
-                      <form action={deleteSeasonalRate}>
-                        <input type="hidden" name="id" value={propertyId} />
-                        <input type="hidden" name="rateId" value={rate.id} />
-                        <Button type="submit" variant="text" className="text-erro hover:text-erro">
-                          Remover<span className="sr-only"> tarifa {rate.label}</span>
-                        </Button>
-                      </form>
+                      <RemoveRowButton
+                        action={deleteSeasonalRate}
+                        fields={{ id: propertyId, rateId: rate.id }}
+                        label={`tarifa ${rate.label}`}
+                        confirmTitle={`Remover a tarifa “${rate.label}”?`}
+                      />
                     </td>
                   </tr>
                 );

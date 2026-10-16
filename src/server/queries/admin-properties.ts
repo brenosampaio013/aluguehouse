@@ -6,7 +6,7 @@ import type { PropertyFilters } from "@/lib/admin/filters";
 import { orIlike } from "@/lib/admin/list-params";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
-import { pagedRows } from "./paged";
+import { pagedRows, withCount, type Paging } from "./paged";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -65,20 +65,23 @@ const modeColumns = {
 export async function searchPropertiesForAdmin(
   supabase: Client,
   filters: PropertyFilters,
-  range: { from: number; to: number },
+  paging: Paging,
 ) {
   let query = supabase
     .from("properties")
     .select(
       "id, slug, title, city, neighborhood, region, property_type, status, offers_seasonal, offers_monthly, offers_sale, nightly_price, monthly_price, sale_price, bedrooms, max_guests, created_at, updated_at, published_at",
-      { count: "exact" },
+      { count: withCount(paging) },
     );
   if (filters.q) query = query.or(orIlike(["title", "city", "neighborhood", "slug"], filters.q));
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.mode) query = query.eq(modeColumns[filters.mode], true);
+  if (paging.kind === "after") {
+    if (paging.afterId) query = query.gt("id", paging.afterId);
+    return pagedRows(await query.order("id").limit(paging.size));
+  }
   query = query
     .order(propertySortColumns[filters.sort.key], { ascending: filters.sort.dir === "asc" })
     .order("id");
-  query = query.range(range.from, range.to);
-  return pagedRows(await query);
+  return pagedRows(await query.range(paging.from, paging.to));
 }
