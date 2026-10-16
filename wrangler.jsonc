@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alugue-houses",
+  "name": "aluguehouse",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-12",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -10,8 +10,10 @@
   },
   "services": [
     {
+      // Usado pelo OpenNext (revalidação). O "service" deve ser o mesmo
+      // "name" acima, que é o nome do Worker no painel da Cloudflare.
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "alugue-houses",
+      "service": "aluguehouse",
     },
   ],
   "observability": {

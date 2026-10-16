@@ -77,6 +77,88 @@ O ambiente `production` do GitHub permite exigir sua aprovação manual antes
 de cada publicação (Settings → Environments → production → Required
 reviewers).
 
+## Pré-lançamento (endereço provisório)
+
+Decisão de 15/10/2026: publicar primeiro em
+`https://aluguehouse.<subdominio>.workers.dev`, **fora do Google**
+(`SITE_INDEXING` vazio), para testar com o imóvel real. O lançamento oficial
+(domínio, CRECI, LGPD, revisão jurídica, `SITE_INDEXING=on`) vem depois.
+
+A branch `main` foi criada nesse dia com a versão aprovada; a publicação
+automática parte dela. Mudanças seguintes chegam à `main` por pull request.
+
+Mínimo para o pré-lançamento (itens das seções 3, 4 e 6 abaixo):
+
+1. **Supabase**: projeto em São Paulo; URL Configuration com o endereço
+   `workers.dev` (Site URL e `…/auth/callback`); MFA TOTP ligado; usuário
+   administrador criado e promovido.
+2. **Cloudflare**: subdomínio `workers.dev` da conta (Workers & Pages),
+   API Token "Edit Cloudflare Workers" e Account ID; **Turnstile**
+   (recomendado) com o hostname `aluguehouse.<subdominio>.workers.dev`.
+3. **GitHub**: variáveis `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` e, por
+   último, `DEPLOY_ENABLED=true`; segredos `CLOUDFLARE_API_TOKEN`,
+   `CLOUDFLARE_ACCOUNT_ID`, `SUPABASE_DB_URL`, `SUPABASE_URL`,
+   `SUPABASE_SERVICE_ROLE_KEY` e `TURNSTILE_SECRET_KEY`.
+4. Actions → **Publicar** → Run workflow (na `main`).
+5. Antes de cadastrar dados reais: **backups** no R2 (`docs/backups.md`).
+
+Pode esperar o lançamento oficial: domínio, Resend (sem ele, o login de
+hóspedes usa o e-mail embutido do Supabase, limitado a poucos por hora, e os
+avisos ao administrador ficam desligados), `SITE_INDEXING=on`.
+
+## Publicação pelo painel da Cloudflare (Workers Builds)
+
+Alternativa ao workflow "Publicar" do GitHub: a Cloudflare faz o build e o
+deploy a cada push na `main`. **Use só um dos dois caminhos** (com o painel,
+deixe `DEPLOY_ENABLED` desligado no GitHub, senão os dois publicam).
+
+Workers & Pages → `aluguehouse` → Settings → Build:
+
+| Campo                                | Valor                                                                               |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| Git repository / branch de produção  | `brenosampaio013/aluguehouse` / `main`                                              |
+| Root directory                       | `/` (vazio)                                                                         |
+| **Build command**                    | `pnpm run cf:build`                                                                 |
+| **Deploy command**                   | `pnpm exec opennextjs-cloudflare deploy`                                            |
+| Non-production branch deploy command | `pnpm exec opennextjs-cloudflare upload` (ou desligue os builds de outras branches) |
+
+- **Por que o build é obrigatório**: `opennextjs-cloudflare deploy` (e
+  `npx wrangler deploy`, que repassa para ele) **não compila**: procura
+  `.open-next/.build/open-next.config.edge.mjs`, gerado por
+  `opennextjs-cloudflare build`. Com o build vazio ou só `next build`, o
+  deploy falha com "Could not find compiled Open Next config, did you run
+  the build command?". `cf:build` roda o build do Next (com a cópia do
+  MapLibre) e o empacotamento do OpenNext.
+- **O nome do Worker no painel precisa ser `aluguehouse`** — o mesmo do
+  `wrangler.jsonc` (`name` e o `service` de `WORKER_SELF_REFERENCE`). O
+  Worker foi criado no painel com esse nome (o do repositório) e o
+  `wrangler.jsonc` foi alinhado a ele; se um dia mudar, mude os dois.
+- **Plano Workers Paid**: o Worker comprimido tem cerca de 3,1 MB; o plano
+  Free aceita até 3 MB.
+- Node 22 vem do `.nvmrc`; o pnpm 10, do `packageManager` do `package.json`.
+
+**Variáveis de build** (Settings → Build → Variables and secrets) — entram
+no código durante o build; sem elas o build para com "Build interrompido:
+variáveis públicas ausentes":
+
+- `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+  (opcional), `NEXT_PUBLIC_MAP_STYLE_URL` (opcional).
+
+**Variáveis e segredos do Worker** (Settings → Variables and Secrets) — lidos
+quando o site roda; marque como **Secret** os sigilosos:
+
+- Secret: `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`,
+  `RESEND_API_KEY` (quando houver).
+- Texto: `EMAIL_FROM`, `ADMIN_NOTIFY_EMAIL` (opcionais). `SITE_INDEXING`:
+  não crie até o lançamento oficial.
+
+**Banco de dados**: o build do painel não aplica migrations. No GitHub,
+crie o segredo `SUPABASE_DB_URL` e a variável `MIGRATIONS_ENABLED=true`, e
+rode Actions → **Banco de dados (migrations)** → Run workflow **antes** do
+primeiro deploy; depois ele roda sozinho quando chegarem migrations novas.
+
 ## O que falta — em ordem
 
 ### 1. Decisões e pendências legais (antes de anunciar)
@@ -99,7 +181,7 @@ reviewers).
 
 - [ ] Registrar o domínio (ex.: no Registro.br) e apontar os servidores de
       nome para a Cloudflare (a Cloudflare mostra os dois endereços ao adicionar
-      o site). Até lá, dá para testar no endereço `alugue-houses.<conta>.workers.dev`.
+      o site). Até lá, dá para testar no endereço `aluguehouse.<conta>.workers.dev`.
 
 ### 3. Supabase de produção (plano Free)
 
@@ -126,7 +208,7 @@ reviewers).
 - [ ] Turnstile: criar o widget para o domínio (chave do site e secreta).
 - [ ] R2: bucket privado para backups e token só desse bucket
       (`docs/backups.md`).
-- [ ] Depois da primeira publicação: Workers → alugue-houses → Settings →
+- [ ] Depois da primeira publicação: Workers → aluguehouse → Settings →
       Domains & Routes → adicionar o domínio.
 
 ### 5. Resend
