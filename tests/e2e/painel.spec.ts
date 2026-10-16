@@ -202,9 +202,10 @@ test("visão geral, listas, filtros, CSV e exclusão com confirmação", async (
       .eq("property_id", property.id);
     expect(left).toHaveLength(0);
 
-    // Página além do fim não quebra: lista vazia com paginação
-    await page.goto("/admin/imoveis?pagina=9999");
-    await expect(page.getByText("Nenhum imóvel encontrado")).toBeVisible();
+    // Página além do fim (link antigo): vai para a última página válida
+    await page.goto(`/admin/imoveis?pagina=9999&q=${encodeURIComponent(`painel geral ${run}`)}`);
+    await expect(page).not.toHaveURL(/pagina=9999/);
+    await expect(page.getByRole("row").filter({ hasText: property.title })).toBeVisible();
   } finally {
     await cleanup(property.id);
   }
@@ -248,6 +249,168 @@ test("painel sem violações WCAG 2.1 AA", async ({ page }) => {
       expect(results.violations, url).toEqual([]);
       await expectNoHorizontalScroll(page);
     }
+  } finally {
+    await cleanup(property.id);
+  }
+});
+
+test("exporta mais de 1.000 registros completos (sem o corte do PostgREST)", async ({
+  request,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "dados pesados: basta um tamanho de tela");
+  test.setTimeout(120_000);
+  const marker = `lote-${randomUUID().slice(0, 8)}`;
+  const api = adminApi();
+  const total = 1250;
+  const rows = Array.from({ length: total }, (_, i) => ({
+    kind: "contact" as const,
+    name: `Exportação ${marker} ${String(i).padStart(4, "0")}`,
+    email: `${marker}-${i}@teste.local`,
+    message: `Mensagem ${i}`,
+    privacy_consent_at: new Date().toISOString(),
+  }));
+  for (let i = 0; i < rows.length; i += 500) {
+    await api
+      .from("inquiries")
+      .insert(rows.slice(i, i + 500))
+      .throwOnError();
+  }
+  try {
+    await loginAsAdmin(page, await createAdminWithTotp());
+    const csv = await page.request.get(`/admin/exportar/contatos?situacao=todos&q=${marker}`);
+    expect(csv.status()).toBe(200);
+    const lines = (await csv.text()).trim().split("\r\n");
+    expect(lines).toHaveLength(total + 1); // cabeçalho + todas as linhas
+    const names = new Set(lines.slice(1).map((line) => line.split(";")[1]));
+    expect(names.size).toBe(total); // sem repetidas
+    expect(names.has(`Exportação ${marker} 1249`)).toBe(true);
+  } finally {
+    await api.from("inquiries").delete().like("email", `${marker}-%`);
+  }
+});
+
+test("excluir o último imóvel da última página volta para uma página válida", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "fluxo de dados: basta um tamanho de tela");
+  test.setTimeout(120_000);
+  const marker = `pag${randomUUID().slice(0, 6)}`;
+  const api = adminApi();
+  const { data } = await api
+    .from("properties")
+    .insert(
+      Array.from({ length: 21 }, (_, i) => ({
+        slug: `${marker}-${i}`,
+        title: `Paginação ${marker} ${String(i).padStart(2, "0")}`,
+        property_type: "casa" as const,
+        city: "Bertioga",
+      })),
+    )
+    .select("id")
+    .throwOnError();
+  const ids = data!.map((row) => row.id);
+  try {
+    await loginAsAdmin(page, await createAdminWithTotp());
+    // Ordem por título: o 21º (…20) fica sozinho na página 2.
+    await page.goto(`/admin/imoveis?q=${marker}&ordem=titulo&dir=asc&pagina=2`);
+    const rows = page.getByRole("row").filter({ hasText: `Paginação ${marker}` });
+    await expect(rows).toHaveCount(1);
+    await rows.getByRole("button", { name: /Excluir/ }).click();
+    await answerConfirm(page, "Excluir definitivamente");
+    await expect(page.getByRole("status").filter({ hasText: "Imóvel excluído." })).toBeVisible();
+    await expect(page).not.toHaveURL(/pagina=2/);
+    await expect(page).toHaveURL(new RegExp(`q=${marker}`));
+    await expect(rows).toHaveCount(20);
+    await expect(page.getByText("1–20 de 20")).toBeVisible();
+  } finally {
+    await api.from("properties").delete().in("id", ids);
+  }
+});
+
+test("próximas chegadas aparecem mesmo com 30+ estadias em andamento", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "fluxo de dados: basta um tamanho de tela");
+  test.setTimeout(120_000);
+  const marker = `cheg${randomUUID().slice(0, 6)}`;
+  const api = adminApi();
+  const { data } = await api
+    .from("properties")
+    .insert(
+      Array.from({ length: 32 }, (_, i) => ({
+        slug: `${marker}-${i}`,
+        title: `Chegadas ${marker} ${i}`,
+        property_type: "casa" as const,
+        city: "Bertioga",
+      })),
+    )
+    .select("id")
+    .throwOnError();
+  const ids = data!.map((row) => row.id);
+  const booking = (propertyId: string, from: number, to: number, name: string) => ({
+    property_id: propertyId,
+    rental_mode: "monthly" as const,
+    guest_name: name,
+    guest_email: `${marker}@teste.local`,
+    guest_phone: "13999999999",
+    stay: `[${isoInDays(from)},${isoInDays(to)})`,
+    guests_count: 2,
+    quote_snapshot: {},
+    quoted_total: 1,
+    privacy_consent_at: new Date().toISOString(),
+    status: "approved" as const,
+  });
+  try {
+    // 31 estadias que começaram há 5 dias e uma chegada amanhã.
+    await api
+      .from("booking_requests")
+      .insert([
+        ...ids.slice(0, 31).map((id, i) => booking(id, -5, 30, `Em andamento ${marker} ${i}`)),
+        booking(ids[31]!, 1, 31, `Chega amanhã ${marker}`),
+      ])
+      .throwOnError();
+    await loginAsAdmin(page, await createAdminWithTotp());
+    const arrivals = page.getByRole("region", { name: "Próximas chegadas" });
+    await expect(arrivals).toContainText(`Chega amanhã ${marker}`);
+    await expect(arrivals).not.toContainText(`Em andamento ${marker}`);
+  } finally {
+    await api.from("booking_requests").delete().in("property_id", ids);
+    await api.from("properties").delete().in("id", ids);
+  }
+});
+
+test("filtro de imóvel da visão geral: válido, inválido e inexistente", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "fluxo de dados: basta um tamanho de tela");
+  test.setTimeout(90_000);
+  const { property } = await seed();
+  try {
+    await loginAsAdmin(page, await createAdminWithTotp());
+    const warning = page
+      .getByRole("alert")
+      .filter({ hasText: /filtro de imóvel|imóvel do filtro/ });
+
+    await page.goto(`/admin?imovel=${property.id}`);
+    await expect(
+      page.getByText(new RegExp(`^Últimos 30 dias: .* · ${property.title}$`)),
+    ).toBeVisible();
+    await expect(page.getByLabel("Imóvel")).toHaveValue(property.id);
+    await expect(warning).toHaveCount(0);
+
+    await page.goto("/admin?imovel=nao-e-um-uuid");
+    await expect(warning).toContainText("inválido e foi ignorado");
+    await expect(page.getByText(/^Últimos 30 dias: .* · todos os imóveis$/)).toBeVisible();
+
+    await page.goto(`/admin?imovel=${randomUUID()}`);
+    await expect(warning).toContainText("não existe");
+    await expect(
+      page
+        .getByRole("region", { name: "Indicadores do período" })
+        .getByRole("group", { name: "Solicitações recebidas", exact: true })
+        .locator("[data-valor]"),
+    ).toHaveText("0");
   } finally {
     await cleanup(property.id);
   }

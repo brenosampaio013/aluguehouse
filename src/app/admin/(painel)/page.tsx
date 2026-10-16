@@ -32,7 +32,8 @@ import {
   periodPresets,
   ratio,
 } from "@/lib/admin/dashboard";
-import { buildHref, parseEnum } from "@/lib/admin/list-params";
+import { parseUuid } from "@/lib/admin/filters";
+import { buildHref, first } from "@/lib/admin/list-params";
 import { bookingStatusLabels, rentalModeLabels, type BookingStatus } from "@/lib/booking/labels";
 import { cn } from "@/lib/cn";
 import { formatBRL, formatDateISO, todayInSaoPaulo } from "@/lib/format";
@@ -42,6 +43,7 @@ import {
   getPendingWork,
   getRecentActivity,
   getUpcomingArrivals,
+  getPropertyTitle,
   listPropertyOptions,
   type Activity,
 } from "@/server/queries/admin-dashboard";
@@ -84,19 +86,34 @@ export default async function VisaoGeralPage({ searchParams }: PageProps<"/admin
   const today = todayInSaoPaulo();
   const period = parseDashboardPeriod(params, today);
 
-  const options = await settle(listPropertyOptions(supabase), "imóveis do filtro");
-  const propertyOptions = options.ok ? options.data : [];
-  const propertyId = parseEnum(
-    params.imovel,
-    propertyOptions.map((option) => option.value),
-  );
+  // Filtro de imóvel: valida o formato aqui (sem depender da lista do
+  // seletor) e confere a existência em paralelo com os indicadores.
+  const rawProperty = first(params.imovel);
+  const propertyId = parseUuid(rawProperty);
+  const invalidFilter = Boolean(rawProperty) && !propertyId;
 
-  const [metrics, pending, arrivals, activity] = await Promise.all([
+  const [options, selected, metrics, pending, arrivals, activity] = await Promise.all([
+    settle(listPropertyOptions(supabase), "imóveis do filtro"),
+    propertyId ? settle(getPropertyTitle(supabase, propertyId), "imóvel do filtro") : null,
     settle(getDashboardMetrics(supabase, { ...period, propertyId }), "indicadores"),
     settle(getPendingWork(supabase), "pendências"),
     settle(getUpcomingArrivals(supabase, today), "próximas chegadas"),
     settle(getRecentActivity(supabase), "atividade recente"),
   ]);
+
+  const selectedTitle = selected?.ok ? selected.data : null;
+  const propertyOptions = options.ok ? options.data : [];
+  // O imóvel escolhido sempre aparece no seletor, mesmo fora da lista.
+  if (propertyId && selectedTitle && !propertyOptions.some((o) => o.value === propertyId)) {
+    propertyOptions.unshift({ value: propertyId, label: selectedTitle });
+  }
+  const filterWarning = invalidFilter
+    ? "O filtro de imóvel da URL é inválido e foi ignorado: os números abaixo são de todos os imóveis."
+    : selected && !selected.ok
+      ? "Não foi possível confirmar o imóvel do filtro agora; os números abaixo continuam filtrados por ele."
+      : selected?.ok && selectedTitle === null
+        ? "O imóvel do filtro não existe (pode ter sido excluído): os números abaixo ficam zerados. Use “Limpar” para ver todos."
+        : null;
 
   const exportHref = buildHref("/admin/exportar/solicitacoes", {
     situacao: "todas",
@@ -110,9 +127,7 @@ export default async function VisaoGeralPage({ searchParams }: PageProps<"/admin
       <PageHeader
         title="Visão geral"
         description={`${period.label}: ${formatDateISO(period.from)} a ${formatDateISO(period.to)}${
-          propertyId
-            ? ` · ${propertyOptions.find((option) => option.value === propertyId)?.label}`
-            : " · todos os imóveis"
+          propertyId ? ` · ${selectedTitle ?? "imóvel selecionado"}` : " · todos os imóveis"
         }`}
         actions={
           <>
@@ -131,6 +146,15 @@ export default async function VisaoGeralPage({ searchParams }: PageProps<"/admin
           </>
         }
       />
+
+      {filterWarning ? (
+        <p
+          role="alert"
+          className="rounded-control border border-junco bg-areia px-4 py-3 text-abismo"
+        >
+          {filterWarning}
+        </p>
+      ) : null}
 
       <Card as="div">
         <form
@@ -192,7 +216,7 @@ export default async function VisaoGeralPage({ searchParams }: PageProps<"/admin
             <button type="submit" className={buttonClasses("primary", "min-h-11 px-4")}>
               Aplicar
             </button>
-            {period.preset !== "30" || propertyId ? (
+            {period.preset !== "30" || rawProperty ? (
               <Link href="/admin" className={buttonClasses("text", "min-h-11")}>
                 Limpar
               </Link>
@@ -357,8 +381,9 @@ function Metrics({ metrics }: { metrics: Awaited<ReturnType<typeof getDashboardM
   const { current: cur, previous: prev } = metrics;
   const days = metrics.period.days;
   const capacity = metrics.rental_properties * days;
-  const occupancy = ratio(cur.booked_nights, capacity);
-  const prevOccupancy = ratio(prev.booked_nights, capacity);
+  // Mesmo conjunto de imóveis no numerador e no denominador (publicados com aluguel).
+  const occupancy = ratio(cur.occupied_nights, capacity);
+  const prevOccupancy = ratio(prev.occupied_nights, capacity);
   const approval = ratio(cur.approved, cur.requests);
   const prevApproval = ratio(prev.approved, prev.requests);
 
@@ -413,7 +438,7 @@ function Metrics({ metrics }: { metrics: Awaited<ReturnType<typeof getDashboardM
           hint={
             metrics.rental_properties === 0
               ? "Nenhum imóvel de aluguel publicado"
-              : `${number.format(cur.booked_nights)} de ${number.format(capacity)} noites (${metrics.rental_properties} ${
+              : `${number.format(cur.occupied_nights)} de ${number.format(capacity)} noites (${metrics.rental_properties} ${
                   metrics.rental_properties === 1 ? "imóvel" : "imóveis"
                 })`
           }

@@ -18,7 +18,7 @@ import { stayLimits, stayMode } from "@/lib/booking/calendar";
 import { bookingErrorMessage } from "@/lib/booking/schema";
 import { cn } from "@/lib/cn";
 import { getPublicEnv } from "@/lib/env";
-import { addDaysISO, formatBRL, formatDateISO, formatPrice } from "@/lib/format";
+import { addDaysISO, formatBRL, formatDateISO, formatPrice, todayInSaoPaulo } from "@/lib/format";
 import { publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import { propertyTypeLabels } from "@/lib/properties/labels";
 import { listingStatus } from "@/lib/properties/listing";
@@ -87,11 +87,6 @@ function plural(n: number, one: string, many: string) {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-/** Hoje no fuso de São Paulo (AAAA-MM-DD). */
-function todaySP() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
-}
-
 /** Janela do calendário público: um ano a partir de hoje. */
 const CALENDAR_DAYS = 365;
 
@@ -120,7 +115,7 @@ async function stayFromSearch(
 
   const guests = int(first(raw.hospedes), 1, 50) ?? 1;
   const base = { checkIn, checkOut, guests };
-  const today = todaySP();
+  const today = todayInSaoPaulo();
   if (checkIn < today)
     return { status: "invalid", message: "A data de chegada já passou.", ...base };
   if (checkOut <= checkIn)
@@ -154,7 +149,7 @@ export default async function ImovelPage({ params, searchParams }: Props) {
   } = getPublicEnv();
   const stay = await stayFromSearch(property, await searchParams);
   const rents = property.offers_seasonal || property.offers_monthly;
-  const today = todaySP();
+  const today = todayInSaoPaulo();
   const lastDate = addDaysISO(today, CALENDAR_DAYS);
   const [blocked, reviews] = await Promise.all([
     rents ? getUnavailableRanges(property.id, today, lastDate) : [],

@@ -19,6 +19,7 @@ import { organizationJsonLd } from "@/lib/seo/json-ld";
 import type { RegionSlug } from "@/lib/regions";
 import { MAX_SEARCH_GUESTS } from "@/lib/search/home-search";
 import { siteConfig } from "@/lib/site-config";
+import { todayInSaoPaulo } from "@/lib/format";
 import {
   getFeaturedProperties,
   getMaxGuestCapacity,
@@ -66,11 +67,6 @@ async function loadRegionCounts(): Promise<Partial<Record<RegionSlug, number>>> 
   }
 }
 
-/** Hoje no fuso de São Paulo (AAAA-MM-DD), como no calendário do imóvel. */
-function todaySP() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
-}
-
 export default async function HomePage() {
   // Gera a página a cada visita para os destaques refletirem o que está
   // publicado agora. Cache com revalidação entra na etapa de otimização.
@@ -89,7 +85,10 @@ export default async function HomePage() {
       {/* A busca sobe sobre a borda inferior do topo. */}
       <Container className="relative z-20 -mt-20 sm:-mt-24">
         <div className="entrada max-w-[60rem] [--atraso:380ms]">
-          <HeroSearch today={todaySP()} maxGuests={Math.min(maxGuests, MAX_SEARCH_GUESTS)} />
+          <HeroSearch
+            today={todayInSaoPaulo()}
+            maxGuests={Math.min(maxGuests, MAX_SEARCH_GUESTS)}
+          />
         </div>
       </Container>
 

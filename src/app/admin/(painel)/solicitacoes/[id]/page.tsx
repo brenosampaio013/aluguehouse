@@ -12,7 +12,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { nightsBetween } from "@/lib/booking/calendar";
 import { blockKindLabels, bookingStatusLabels, rentalModeLabels } from "@/lib/booking/labels";
-import { formatBRL, formatDateISO } from "@/lib/format";
+import { formatBRL, formatDateISO, todayInSaoPaulo } from "@/lib/format";
 import { guestWhatsappLink } from "@/lib/whatsapp";
 import { getBookingRequest } from "@/server/queries/admin-bookings";
 import type { StayQuote } from "@/server/queries/property-page";
@@ -57,9 +57,7 @@ export default async function SolicitacaoPage({ params }: PageProps<"/admin/soli
   const quote = request.quote_snapshot as unknown as StayQuote;
   const reference = request.id.slice(0, 8).toUpperCase();
   const nights = nightsBetween(request.checkIn, request.checkOut);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(),
-  );
+  const today = todayInSaoPaulo();
   const checkInPassed = request.checkIn < today;
   const property = request.properties;
   const firstName = request.guest_name.split(" ")[0];

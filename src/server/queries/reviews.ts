@@ -6,7 +6,6 @@ import { createSupabasePublicClient } from "@/lib/supabase/public";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { pagedRows } from "./paged";
-import type { ReviewStatus } from "@/lib/reviews";
 import type { ReviewFilters } from "@/lib/admin/filters";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -44,15 +43,6 @@ export async function getMyStays(supabase: Client, userId: string) {
   }));
 }
 
-export async function countPendingReviews(supabase: Client) {
-  const { count, error } = await supabase
-    .from("reviews")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
-  if (error) throw error;
-  return count ?? 0;
-}
-
 /** Avaliações do painel com filtros e paginação no banco. */
 export async function searchReviewsForAdmin(
   supabase: Client,
@@ -74,20 +64,4 @@ export async function searchReviewsForAdmin(
       .order("id")
       .range(range.from, range.to),
   );
-}
-
-/** Quantas avaliações em cada situação (para as abas). */
-export async function countReviewsByStatus(supabase: Client) {
-  const statuses = ["pending", "approved", "rejected"] as const;
-  const results = await Promise.all(
-    statuses.map((status) =>
-      supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", status),
-    ),
-  );
-  const counts: Record<ReviewStatus, number> = { pending: 0, approved: 0, rejected: 0 };
-  results.forEach((result, index) => {
-    if (result.error) throw result.error;
-    counts[statuses[index]!] = result.count ?? 0;
-  });
-  return counts;
 }

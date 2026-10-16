@@ -3,7 +3,7 @@ import "server-only";
 import { notFound } from "next/navigation";
 
 import type { PropertyFilters } from "@/lib/admin/filters";
-import { EXPORT_LIMIT, orIlike } from "@/lib/admin/list-params";
+import { orIlike } from "@/lib/admin/list-params";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { pagedRows } from "./paged";
@@ -60,12 +60,12 @@ const modeColumns = {
 
 /**
  * Lista do painel com busca, filtros, ordenação e paginação no banco
- * (`range` ausente = exportação, até EXPORT_LIMIT linhas).
+ * (a exportação lê todas as páginas com fetchAllPages).
  */
 export async function searchPropertiesForAdmin(
   supabase: Client,
   filters: PropertyFilters,
-  range: { from: number; to: number } | null,
+  range: { from: number; to: number },
 ) {
   let query = supabase
     .from("properties")
@@ -79,22 +79,6 @@ export async function searchPropertiesForAdmin(
   query = query
     .order(propertySortColumns[filters.sort.key], { ascending: filters.sort.dir === "asc" })
     .order("id");
-  query = range ? query.range(range.from, range.to) : query.limit(EXPORT_LIMIT);
+  query = query.range(range.from, range.to);
   return pagedRows(await query);
-}
-
-/** Quantos imóveis em cada situação (para as abas). */
-export async function countPropertiesByStatus(supabase: Client) {
-  const statuses = ["draft", "published", "archived"] as const;
-  const results = await Promise.all(
-    statuses.map((status) =>
-      supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", status),
-    ),
-  );
-  const counts: Record<(typeof statuses)[number], number> = { draft: 0, published: 0, archived: 0 };
-  results.forEach((result, index) => {
-    if (result.error) throw result.error;
-    counts[statuses[index]!] = result.count ?? 0;
-  });
-  return counts;
 }

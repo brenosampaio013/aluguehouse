@@ -59,5 +59,7 @@ describe("contatos", () => {
   it("abas: novos por padrão", () => {
     expect(parseInquiryTab(undefined).status).toBe("new");
     expect(parseInquiryTab("encerrados").status).toBe("closed");
+    expect(parseInquiryTab("todos").status).toBeNull();
+    expect(parseInquiryTab("inexistente").slug).toBe("novos");
   });
 });

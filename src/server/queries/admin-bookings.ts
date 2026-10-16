@@ -3,8 +3,7 @@ import "server-only";
 import { notFound } from "next/navigation";
 
 import type { BookingFilters } from "@/lib/admin/filters";
-import { EXPORT_LIMIT, orIlike } from "@/lib/admin/list-params";
-import type { BookingStatus } from "@/lib/booking/labels";
+import { orIlike } from "@/lib/admin/list-params";
 import { addDaysISO, parseDateRange } from "@/lib/format";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,15 +16,6 @@ export function stayOf(value: unknown) {
   const range = parseDateRange(String(value));
   if (!range) throw new Error(`Período inválido: ${String(value)}`);
   return { checkIn: range.start, checkOut: range.endExclusive };
-}
-
-export async function countPendingBookings(supabase: Client) {
-  const { count, error } = await supabase
-    .from("booking_requests")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
-  if (error) throw error;
-  return count ?? 0;
 }
 
 export async function getBookingRequest(supabase: Client, id: string) {
@@ -97,7 +87,7 @@ function endOfDaySP(date: string) {
 export async function searchBookingRequests(
   supabase: Client,
   filters: BookingFilters,
-  range: { from: number; to: number } | null,
+  range: { from: number; to: number },
 ) {
   let query = supabase
     .from("booking_requests")
@@ -122,29 +112,7 @@ export async function searchBookingRequests(
   query = query
     .order(bookingSortColumns[filters.sort.key], { ascending: filters.sort.dir === "asc" })
     .order("id");
-  query = range ? query.range(range.from, range.to) : query.limit(EXPORT_LIMIT);
+  query = query.range(range.from, range.to);
   const { rows, count } = pagedRows(await query);
   return { rows: rows.map((row) => ({ ...row, ...stayOf(row.stay) })), count };
-}
-
-/** Quantas solicitações em cada situação (para as abas). */
-export async function countBookingsByStatus(supabase: Client) {
-  const statuses = ["pending", "approved", "declined", "cancelled", "expired"] as const;
-  const results = await Promise.all(
-    statuses.map((status) =>
-      supabase
-        .from("booking_requests")
-        .select("id", { count: "exact", head: true })
-        .eq("status", status),
-    ),
-  );
-  const counts = Object.fromEntries(statuses.map((status) => [status, 0])) as Record<
-    BookingStatus,
-    number
-  >;
-  results.forEach((result, index) => {
-    if (result.error) throw result.error;
-    counts[statuses[index]!] = result.count ?? 0;
-  });
-  return counts;
 }

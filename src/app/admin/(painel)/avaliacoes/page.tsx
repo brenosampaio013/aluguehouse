@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { ReviewModeration } from "@/components/admin/review-moderation";
 import { Card } from "@/components/admin/ui/card";
@@ -13,10 +14,11 @@ import { FormMessage } from "@/components/ui/form-message";
 import { StarIcon } from "@/components/ui/icons";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { parseReviewFilters, type ReviewFilters } from "@/lib/admin/filters";
-import { buildHref, first, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
+import { buildHref, first, outOfRangeHref, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
 import { reviewTabs } from "@/lib/reviews";
 import { listPropertyOptions } from "@/server/queries/admin-dashboard";
-import { countReviewsByStatus, searchReviewsForAdmin } from "@/server/queries/reviews";
+import { searchReviewsForAdmin } from "@/server/queries/reviews";
+import { getStatusCounts } from "@/server/queries/status-counts";
 
 export const metadata: Metadata = { title: "Avaliações" };
 
@@ -42,9 +44,12 @@ export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin
   const { supabase } = await requireAdmin();
   const [{ rows, count }, counts, properties] = await Promise.all([
     searchReviewsForAdmin(supabase, filters, pageRange(filters.page)),
-    countReviewsByStatus(supabase),
+    getStatusCounts().then((all) => all.reviews),
     listPropertyOptions(supabase),
   ]);
+  // Página além da última (ex.: excluiu o último item dela): vai para a última válida.
+  const validPage = outOfRangeHref("/admin/avaliacoes", params, filters.page, count);
+  if (validPage) redirect(validPage);
   const base = listParams(filters);
   const filtered = Boolean(filters.propertyId || filters.rating);
 

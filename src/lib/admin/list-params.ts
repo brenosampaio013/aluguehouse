@@ -5,8 +5,11 @@
  */
 
 export const PAGE_SIZE = 20;
-/** Limite de linhas por exportação CSV (evita consultas gigantes). */
-export const EXPORT_LIMIT = 5000;
+/**
+ * Limite de linhas por exportação CSV. Acima disso a exportação é recusada
+ * com aviso (nunca sai cortada): o admin filtra por período ou situação.
+ */
+export const EXPORT_LIMIT = 50_000;
 
 export type RawParams = Record<string, string | string[] | undefined>;
 export type SortDir = "asc" | "desc";
@@ -84,4 +87,29 @@ export function orIlike(columns: readonly string[], text: string): string {
   const like = `%${text.replace(/[\\%_]/g, "\\$&")}%`;
   const quoted = `"${like.replace(/["\\]/g, "\\$&")}"`;
   return columns.map((column) => `${column}.ilike.${quoted}`).join(",");
+}
+
+/**
+ * Página pedida além da última (ex.: excluiu o último item da última
+ * página, ou um link antigo): devolve a URL da última página válida,
+ * mantendo todos os outros parâmetros (filtros e avisos). Página válida →
+ * null.
+ */
+export function outOfRangeHref(
+  path: string,
+  params: RawParams,
+  page: number,
+  count: number,
+  size = PAGE_SIZE,
+): string | null {
+  const last = totalPages(count, size);
+  if (page <= last) return null;
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    const v = first(value);
+    if (key !== "pagina" && v !== undefined && v !== "") search.set(key, v);
+  }
+  if (last > 1) search.set("pagina", String(last));
+  const query = search.toString();
+  return query ? `${path}?${query}` : path;
 }

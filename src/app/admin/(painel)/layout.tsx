@@ -4,17 +4,8 @@ import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/shell/admin-shell";
 import { MENU_COOKIE } from "@/components/admin/shell/nav-items";
 import { getSessionState } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { countPendingBookings } from "@/server/queries/admin-bookings";
-import { countNewInquiries } from "@/server/queries/inquiries";
-import { countPendingReviews } from "@/server/queries/reviews";
 import { settle } from "@/server/queries/settle";
-
-/** Contador que não derruba o painel inteiro se a consulta falhar. */
-async function safeCount(task: Promise<number>) {
-  const result = await settle(task, "pendências do menu");
-  return result.ok ? result.data : 0;
-}
+import { getStatusCounts } from "@/server/queries/status-counts";
 
 /**
  * Autorização definitiva do painel: papel admin + MFA concluído.
@@ -24,11 +15,10 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
   const session = await getSessionState();
   if (session.status === "admin_needs_mfa") redirect("/admin/mfa");
   if (session.status !== "admin") redirect("/admin/entrar");
-  const supabase = await createSupabaseServerClient();
-  const [bookings, reviews, inquiries, cookieStore] = await Promise.all([
-    safeCount(countPendingBookings(supabase)),
-    safeCount(countPendingReviews(supabase)),
-    safeCount(countNewInquiries(supabase)),
+  // Mesma consulta das abas das listas (memorizada por requisição). Se
+  // falhar, o menu só fica sem os contadores.
+  const [counts, cookieStore] = await Promise.all([
+    settle(getStatusCounts(), "pendências do menu"),
     cookies(),
   ]);
 
@@ -37,9 +27,9 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
       email={session.email}
       initialCollapsed={cookieStore.get(MENU_COOKIE)?.value === "recolhido"}
       pending={{
-        "/admin/solicitacoes": bookings,
-        "/admin/avaliacoes": reviews,
-        "/admin/contatos": inquiries,
+        "/admin/solicitacoes": counts.ok ? counts.data.booking_requests.pending : 0,
+        "/admin/avaliacoes": counts.ok ? counts.data.reviews.pending : 0,
+        "/admin/contatos": counts.ok ? counts.data.inquiries.new : 0,
       }}
     >
       {children}

@@ -7,6 +7,7 @@ import {
   parseDecimalInput,
   slugify,
   toDecimalInput,
+  todayInSaoPaulo,
 } from "@/lib/format";
 
 describe("parseDecimalInput", () => {
@@ -67,5 +68,14 @@ describe("parseDateRange", () => {
       endExclusive: "2027-01-03",
     });
     expect(parseDateRange("vazio")).toBeNull();
+  });
+});
+
+describe("todayInSaoPaulo", () => {
+  it("vira o dia à meia-noite de São Paulo (03:00 UTC), não à meia-noite UTC", () => {
+    expect(todayInSaoPaulo(new Date("2026-03-11T02:59:59Z"))).toBe("2026-03-10"); // 23:59:59 em SP
+    expect(todayInSaoPaulo(new Date("2026-03-11T03:00:00Z"))).toBe("2026-03-11"); // 00:00 em SP
+    expect(todayInSaoPaulo(new Date("2026-12-31T23:30:00-03:00"))).toBe("2026-12-31");
+    expect(todayInSaoPaulo(new Date("2027-01-01T00:00:00-03:00"))).toBe("2027-01-01");
   });
 });

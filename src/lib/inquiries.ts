@@ -23,7 +23,8 @@ export const inquiryTabs = [
   { slug: "novos", label: "Novos", status: "new" },
   { slug: "em-andamento", label: "Em andamento", status: "in_progress" },
   { slug: "encerrados", label: "Encerrados", status: "closed" },
-] as const satisfies readonly { slug: string; label: string; status: InquiryStatus }[];
+  { slug: "todos", label: "Todos", status: null },
+] as const satisfies readonly { slug: string; label: string; status: InquiryStatus | null }[];
 
 export function parseInquiryTab(value: string | string[] | undefined) {
   const slug = Array.isArray(value) ? value[0] : value;

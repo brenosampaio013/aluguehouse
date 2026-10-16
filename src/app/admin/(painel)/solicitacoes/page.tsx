@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
 import { Badge } from "@/components/admin/ui/badge";
@@ -14,11 +15,12 @@ import { buttonClasses } from "@/components/ui/button";
 import { CalendarIcon, DownloadIcon } from "@/components/ui/icons";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { parseBookingFilters, type BookingFilters } from "@/lib/admin/filters";
-import { buildHref, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
+import { buildHref, outOfRangeHref, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
 import { bookingTabs, rentalModeLabels } from "@/lib/booking/labels";
 import { formatBRL, formatDateISO, todayInSaoPaulo } from "@/lib/format";
 import { listPropertyOptions } from "@/server/queries/admin-dashboard";
-import { countBookingsByStatus, searchBookingRequests } from "@/server/queries/admin-bookings";
+import { searchBookingRequests } from "@/server/queries/admin-bookings";
+import { getStatusCounts } from "@/server/queries/status-counts";
 
 export const metadata: Metadata = { title: "Solicitações de reserva" };
 
@@ -49,13 +51,17 @@ function listParams(filters: BookingFilters) {
 }
 
 export default async function SolicitacoesPage({ searchParams }: PageProps<"/admin/solicitacoes">) {
-  const filters = parseBookingFilters(await searchParams);
+  const params = await searchParams;
+  const filters = parseBookingFilters(params);
   const { supabase } = await requireAdmin();
   const [{ rows, count }, counts, properties] = await Promise.all([
     searchBookingRequests(supabase, filters, pageRange(filters.page)),
-    countBookingsByStatus(supabase),
+    getStatusCounts().then((all) => all.booking_requests),
     listPropertyOptions(supabase),
   ]);
+  // Página além da última (ex.: excluiu o último item dela): vai para a última válida.
+  const validPage = outOfRangeHref("/admin/solicitacoes", params, filters.page, count);
+  if (validPage) redirect(validPage);
   const today = todayInSaoPaulo();
   const base = listParams(filters);
   const href = (extra: Record<string, string | number | null>) =>
