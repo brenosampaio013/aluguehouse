@@ -10,6 +10,8 @@
   },
   "services": [
     {
+      // Usado pelo OpenNext (revalidação). O "service" deve ser o mesmo
+      // "name" acima, que é o nome do Worker no painel da Cloudflare.
       "binding": "WORKER_SELF_REFERENCE",
       "service": "aluguehouse",
     },
