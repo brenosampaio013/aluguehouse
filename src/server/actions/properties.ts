@@ -6,6 +6,7 @@ import { z } from "@/lib/zod";
 
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { addDaysISO, slugify } from "@/lib/format";
+import { MEDIA_BUCKET } from "@/lib/media";
 import {
   createPropertySchema,
   feeSchema,
@@ -15,6 +16,7 @@ import {
   seasonalRateSchema,
 } from "@/lib/properties/schemas";
 import { publishChecklist } from "@/lib/properties/publish";
+import { VIDEO_BUCKET } from "@/lib/videos";
 
 import type { FormState } from "./auth";
 
@@ -72,6 +74,75 @@ export async function createProperty(_prev: FormState, formData: FormData): Prom
 
   revalidatePath("/admin/imoveis");
   redirect(propertyPath(id));
+}
+
+type AdminClient = Awaited<ReturnType<typeof requireAdmin>>["supabase"];
+
+/** Caminhos de todos os arquivos do imóvel num bucket ("<imóvel>/<mídia>/<arquivo>"). */
+async function storageFiles(supabase: AdminClient, bucket: string, propertyId: string) {
+  const storage = supabase.storage.from(bucket);
+  const { data: folders } = await storage.list(propertyId, { limit: 1000 });
+  const paths: string[] = [];
+  for (const folder of folders ?? []) {
+    const prefix = `${propertyId}/${folder.name}`;
+    const { data: files } = await storage.list(prefix, { limit: 1000 });
+    for (const file of files ?? []) paths.push(`${prefix}/${file.name}`);
+  }
+  return paths;
+}
+
+/**
+ * Exclui o imóvel, as fotos, os vídeos e os dados ligados a ele (tarifas,
+ * taxas, comodidades, bloqueios e favoritos). Imóvel com solicitação de
+ * reserva não é excluído, para manter o histórico: o caminho é arquivar.
+ * Mensagens de contato continuam guardadas, sem o vínculo com o imóvel.
+ */
+export async function deleteProperty(_prev: FormState, formData: FormData): Promise<FormState> {
+  const id = idSchema.safeParse(formData.get("id"));
+  if (!id.success) return { status: "error", message: "Imóvel inválido." };
+
+  const { supabase } = await requireAdmin();
+
+  const { count, error: countError } = await supabase
+    .from("booking_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("property_id", id.data);
+  if (countError) return { status: "error", message: dbErrorMessage(countError) };
+  if (count) {
+    return {
+      status: "error",
+      message:
+        "Este imóvel tem solicitações de reserva e não pode ser excluído, para manter o histórico. Abra o imóvel e use “Arquivar”.",
+    };
+  }
+
+  // Lista os arquivos antes: depois de apagar o imóvel, nada mais aponta para eles.
+  const [photos, videos] = await Promise.all([
+    storageFiles(supabase, MEDIA_BUCKET, id.data),
+    storageFiles(supabase, VIDEO_BUCKET, id.data),
+  ]);
+
+  const { data: deleted, error } = await supabase
+    .from("properties")
+    .delete()
+    .eq("id", id.data)
+    .select("id");
+  if (error) {
+    return {
+      status: "error",
+      message:
+        error.code === "23503"
+          ? "Este imóvel tem solicitações de reserva e não pode ser excluído. Abra o imóvel e use “Arquivar”."
+          : dbErrorMessage(error, "Não foi possível excluir. Tente de novo."),
+    };
+  }
+  if (!deleted?.length) return { status: "error", message: "Imóvel não encontrado." };
+
+  if (photos.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(photos);
+  if (videos.length > 0) await supabase.storage.from(VIDEO_BUCKET).remove(videos);
+
+  revalidatePath("/admin/imoveis");
+  return { status: "success", message: "Imóvel excluído." };
 }
 
 export async function updateGeneral(_prev: FormState, formData: FormData): Promise<FormState> {
