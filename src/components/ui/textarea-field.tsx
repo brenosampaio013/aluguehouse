@@ -22,7 +22,7 @@ export function TextareaField({ label, hint, error, className, ...props }: Texta
         aria-invalid={error ? true : undefined}
         aria-describedby={[hintId, errorId].filter(Boolean).join(" ") || undefined}
         className={cn(
-          "min-h-28 rounded-control bg-branco px-3 py-2 text-body text-abismo",
+          "min-h-28 w-full min-w-0 rounded-control bg-branco px-3 py-2 text-body text-abismo",
           error ? "border-2 border-erro" : "border border-junco",
         )}
         {...props}

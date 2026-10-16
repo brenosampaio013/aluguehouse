@@ -101,7 +101,8 @@ export async function moderateReview(_prev: FormState, formData: FormData): Prom
     return { status: "error", message: "Não foi possível salvar. Recarregue a página." };
   }
 
-  revalidatePath("/admin/avaliacoes");
+  // Layout inteiro: o contador do menu lateral também muda.
+  revalidatePath("/admin", "layout");
   if (data.properties) revalidatePath(`/imoveis/${data.properties.slug}`);
   if (decision === "reply") return { status: "success", message: "Resposta salva." };
 

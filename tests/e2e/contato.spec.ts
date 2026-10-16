@@ -3,7 +3,7 @@ import { randomInt, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-import { loginAsAdmin } from "./support/admin";
+import { loginAsAdmin, openAdminNav } from "./support/admin";
 import { waitForEmail } from "./support/mailpit";
 import { adminApi, createAdminWithTotp, uniqueEmail } from "./support/users";
 
@@ -207,10 +207,7 @@ test("admin acompanha os contatos pelas abas", async ({ page }) => {
     });
 
   await loginAsAdmin(page, await createAdminWithTotp());
-  await page
-    .getByRole("navigation", { name: "Painel" })
-    .getByRole("link", { name: /Contatos/ })
-    .click();
+  await (await openAdminNav(page)).getByRole("link", { name: /Contatos/ }).click();
   const card = page.getByRole("article").filter({ hasText: `Eva Painel ${run}` });
   await expect(card).toContainText("Interesse em compra");
   await expect(card).toContainText("Aceita permuta?");

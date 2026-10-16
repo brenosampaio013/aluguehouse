@@ -4,7 +4,10 @@ import { cache } from "react";
 
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
+
+import { pagedRows } from "./paged";
 import type { ReviewStatus } from "@/lib/reviews";
+import type { ReviewFilters } from "@/lib/admin/filters";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -50,15 +53,41 @@ export async function countPendingReviews(supabase: Client) {
   return count ?? 0;
 }
 
-export async function listReviewsForAdmin(supabase: Client, status: ReviewStatus) {
-  const { data, error } = await supabase
+/** Avaliações do painel com filtros e paginação no banco. */
+export async function searchReviewsForAdmin(
+  supabase: Client,
+  filters: ReviewFilters,
+  range: { from: number; to: number },
+) {
+  let query = supabase
     .from("reviews")
     .select(
       "id, booking_request_id, author_display_name, rating, comment, status, admin_reply, created_at, moderated_at, properties(id, title, slug)",
+      { count: "exact" },
     )
-    .eq("status", status)
-    .order("created_at", { ascending: status === "pending" })
-    .limit(200);
-  if (error) throw error;
-  return data;
+    .eq("status", filters.tab.status);
+  if (filters.propertyId) query = query.eq("property_id", filters.propertyId);
+  if (filters.rating) query = query.eq("rating", filters.rating);
+  return pagedRows(
+    await query
+      .order("created_at", { ascending: filters.tab.status === "pending" })
+      .order("id")
+      .range(range.from, range.to),
+  );
+}
+
+/** Quantas avaliações em cada situação (para as abas). */
+export async function countReviewsByStatus(supabase: Client) {
+  const statuses = ["pending", "approved", "rejected"] as const;
+  const results = await Promise.all(
+    statuses.map((status) =>
+      supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", status),
+    ),
+  );
+  const counts: Record<ReviewStatus, number> = { pending: 0, approved: 0, rejected: 0 };
+  results.forEach((result, index) => {
+    if (result.error) throw result.error;
+    counts[statuses[index]!] = result.count ?? 0;
+  });
+  return counts;
 }

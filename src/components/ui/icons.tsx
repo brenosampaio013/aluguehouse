@@ -124,3 +124,127 @@ export const MailIcon = (p: IconProps) => (
     <path d="m4 7 8 6 8-6" />
   </Icon>
 );
+
+/* Ícones do painel administrativo (mesmo traço dos ícones do site). */
+
+export const DashboardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4" y="4" width="7" height="8" rx="1.5" />
+    <rect x="13" y="4" width="7" height="5" rx="1.5" />
+    <rect x="13" y="11" width="7" height="9" rx="1.5" />
+    <rect x="4" y="14" width="7" height="6" rx="1.5" />
+  </Icon>
+);
+
+export const CalendarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4" y="5.5" width="16" height="14.5" rx="2" />
+    <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+  </Icon>
+);
+
+export const StarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8L12 4Z" />
+  </Icon>
+);
+
+export const InboxIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 13.5 6.2 6A2 2 0 0 1 8.1 4.5h7.8A2 2 0 0 1 17.8 6l2.2 7.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4.5Z" />
+    <path d="M4 13.5h4.5l1 2h5l1-2H20" />
+  </Icon>
+);
+
+export const ChevronLeftIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m14.5 6-6 6 6 6" />
+  </Icon>
+);
+
+export const ChevronRightIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m9.5 6 6 6-6 6" />
+  </Icon>
+);
+
+export const ChevronDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m6 9.5 6 6 6-6" />
+  </Icon>
+);
+
+export const PanelIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+    <path d="M9.5 4.5v15" />
+  </Icon>
+);
+
+export const PlusIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const DownloadIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14" />
+  </Icon>
+);
+
+export const LogoutIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M14 4.5H7A2 2 0 0 0 5 6.5v11a2 2 0 0 0 2 2h7M10.5 12H20M16.5 8l4 4-4 4" />
+  </Icon>
+);
+
+export const AlertIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 4 21 19.5H3L12 4Z" />
+    <path d="M12 10v4M12 17v.01" />
+  </Icon>
+);
+
+export const ExternalIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M14 4.5h5.5V10M19.5 4.5 11 13M17 14v4a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5 18V8.5A1.5 1.5 0 0 1 6.5 7H10" />
+  </Icon>
+);
+
+export const TrashIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 10.5v6M13.5 10.5v6" />
+  </Icon>
+);
+
+export const EditIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 19.5 5.3 16 15.8 5.5a2 2 0 0 1 2.8 2.8L8 18.7l-3.5.8Z" />
+  </Icon>
+);
+
+export const ArrowUpIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </Icon>
+);
+
+export const ArrowDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 5v14M6 13l6 6 6-6" />
+  </Icon>
+);
+
+export const CheckIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </Icon>
+);
+
+export const ClockIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="8" />
+    <path d="M12 7.5V12l3 2" />
+  </Icon>
+);

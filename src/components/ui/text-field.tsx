@@ -26,7 +26,7 @@ export function TextField({ label, hint, error, className, ...props }: TextField
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         className={cn(
-          "min-h-11 rounded-control bg-branco px-3 text-body text-abismo placeholder:text-rocha",
+          "min-h-11 w-full min-w-0 rounded-control bg-branco px-3 text-body text-abismo placeholder:text-rocha",
           error ? "border-2 border-erro" : "border border-junco",
         )}
         {...props}

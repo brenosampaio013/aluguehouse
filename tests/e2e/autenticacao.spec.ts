@@ -65,7 +65,7 @@ test.describe("acesso ao painel", () => {
     await page.getByLabel("Código de 6 dígitos").fill(totp(secret!));
     await page.getByRole("button", { name: "Confirmar código" }).click();
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole("heading", { name: "Painel", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Visão geral", level: 1 })).toBeVisible();
 
     // Sair e voltar: agora o código é pedido sem novo cadastro.
     await page.getByRole("button", { name: "Sair" }).click();

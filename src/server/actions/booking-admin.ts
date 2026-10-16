@@ -31,7 +31,7 @@ function bookingActionError(error: { code?: string; message?: string } | null): 
 }
 
 function revalidateBooking(id: string) {
-  revalidatePath("/admin/solicitacoes", "layout");
+  revalidatePath("/admin", "layout");
   revalidatePath(`/admin/solicitacoes/${id}`);
 }
 

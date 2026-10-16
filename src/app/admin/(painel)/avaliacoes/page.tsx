@@ -2,13 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ReviewModeration } from "@/components/admin/review-moderation";
+import { Card } from "@/components/admin/ui/card";
+import { EmptyState } from "@/components/admin/ui/empty-state";
+import { ListToolbar } from "@/components/admin/ui/list-toolbar";
+import { AdminPage, PageHeader } from "@/components/admin/ui/page";
+import { ListPagination } from "@/components/admin/ui/pagination";
+import { StatusTabs } from "@/components/admin/ui/status-tabs";
 import { Stars } from "@/components/reviews/stars";
-import { Container } from "@/components/ui/container";
 import { FormMessage } from "@/components/ui/form-message";
+import { StarIcon } from "@/components/ui/icons";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { cn } from "@/lib/cn";
-import { parseReviewTab, reviewTabs } from "@/lib/reviews";
-import { listReviewsForAdmin } from "@/server/queries/reviews";
+import { parseReviewFilters, type ReviewFilters } from "@/lib/admin/filters";
+import { buildHref, first, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
+import { reviewTabs } from "@/lib/reviews";
+import { listPropertyOptions } from "@/server/queries/admin-dashboard";
+import { countReviewsByStatus, searchReviewsForAdmin } from "@/server/queries/reviews";
 
 export const metadata: Metadata = { title: "Avaliações" };
 
@@ -18,61 +26,92 @@ const dateTime = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "America/Sao_Paulo",
 });
 
+function listParams(filters: ReviewFilters) {
+  return { situacao: filters.tab.slug, imovel: filters.propertyId, nota: filters.rating };
+}
+
 export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin/avaliacoes">) {
   const params = await searchParams;
-  const tab = parseReviewTab(params.situacao);
+  const filters = parseReviewFilters(params);
   const notice =
-    params.aviso === "publicada"
+    first(params.aviso) === "publicada"
       ? "Avaliação publicada no site."
-      : params.aviso === "nao-publicada"
+      : first(params.aviso) === "nao-publicada"
         ? "Avaliação não será publicada."
         : null;
   const { supabase } = await requireAdmin();
-  const reviews = await listReviewsForAdmin(supabase, tab.status);
+  const [{ rows, count }, counts, properties] = await Promise.all([
+    searchReviewsForAdmin(supabase, filters, pageRange(filters.page)),
+    countReviewsByStatus(supabase),
+    listPropertyOptions(supabase),
+  ]);
+  const base = listParams(filters);
+  const filtered = Boolean(filters.propertyId || filters.rating);
 
   return (
-    <main id="conteudo" className="flex-1 py-12">
-      <Container className="grid gap-8">
-        <div className="grid gap-2">
-          <h1 className="font-serif text-h1 font-normal">Avaliações</h1>
-          <p className="max-w-[68ch] text-rocha">
-            Só hóspedes com estadia aprovada e concluída avaliam. Nada aparece no site antes de você
-            publicar.
-          </p>
-        </div>
+    <AdminPage>
+      <PageHeader
+        title="Avaliações"
+        description="Só hóspedes com estadia aprovada e concluída avaliam. Nada aparece no site antes de você publicar."
+      />
 
-        {notice ? <FormMessage tone="success">{notice}</FormMessage> : null}
+      {notice ? <FormMessage tone="success">{notice}</FormMessage> : null}
 
-        <nav aria-label="Situação das avaliações">
-          <ul className="flex flex-wrap gap-2">
-            {reviewTabs.map((item) => (
-              <li key={item.slug}>
-                <Link
-                  href={`/admin/avaliacoes?situacao=${item.slug}`}
-                  aria-current={item.slug === tab.slug ? "page" : undefined}
-                  className={cn(
-                    "inline-flex min-h-11 items-center rounded-full border px-4 font-semibold",
-                    item.slug === tab.slug
-                      ? "border-petroleo bg-petroleo text-branco"
-                      : "border-junco text-petroleo hover:bg-areia",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <StatusTabs
+        label="Situação das avaliações"
+        current={filters.tab.slug}
+        tabs={reviewTabs.map((tab) => ({
+          slug: tab.slug,
+          label: tab.label,
+          href: buildHref("/admin/avaliacoes", { ...base, situacao: tab.slug }),
+          count: counts[tab.status],
+        }))}
+      />
 
-        {reviews.length === 0 ? (
-          <p className="text-rocha">Nenhuma avaliação nesta situação.</p>
+      <Card as="div">
+        <ListToolbar
+          action="/admin/avaliacoes"
+          hidden={{ situacao: filters.tab.slug }}
+          selects={[
+            {
+              name: "imovel",
+              label: "Imóvel",
+              value: filters.propertyId,
+              allLabel: "Todos",
+              options: properties,
+            },
+            {
+              name: "nota",
+              label: "Nota",
+              value: filters.rating ? String(filters.rating) : null,
+              allLabel: "Todas",
+              options: [5, 4, 3, 2, 1].map((n) => ({
+                value: String(n),
+                label: `${n} ${n === 1 ? "estrela" : "estrelas"}`,
+              })),
+            },
+          ]}
+          active={filtered}
+          clearHref={buildHref("/admin/avaliacoes", { situacao: filters.tab.slug })}
+        />
+
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={<StarIcon />}
+            title={filtered ? "Nenhuma avaliação encontrada" : "Nenhuma avaliação nesta situação"}
+            description={
+              filtered
+                ? "Nenhuma avaliação corresponde aos filtros escolhidos."
+                : "As avaliações enviadas pelos hóspedes aparecem aqui."
+            }
+          />
         ) : (
-          <ul className="grid gap-6">
-            {reviews.map((review) => (
+          <ul className="divide-y divide-areia">
+            {rows.map((review) => (
               <li key={review.id}>
                 <article
                   aria-labelledby={`avaliacao-${review.id}`}
-                  className="grid gap-4 rounded-photo border border-areia p-5 lg:grid-cols-[1fr_380px]"
+                  className="grid gap-4 p-5 lg:grid-cols-[1fr_380px]"
                 >
                   <div className="grid content-start gap-2">
                     <h2 id={`avaliacao-${review.id}`} className="font-semibold">
@@ -80,7 +119,7 @@ export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin
                       {review.properties ? (
                         <Link
                           href={`/imoveis/${review.properties.slug}`}
-                          className="text-petroleo underline underline-offset-3"
+                          className="text-petroleo hover:underline"
                         >
                           {review.properties.title}
                         </Link>
@@ -90,7 +129,9 @@ export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin
                     </h2>
                     <Stars rating={review.rating} />
                     {review.comment ? (
-                      <p className="max-w-[68ch] whitespace-pre-line">{review.comment}</p>
+                      <p className="max-w-[68ch] rounded-control bg-marfim px-4 py-3 whitespace-pre-line">
+                        {review.comment}
+                      </p>
                     ) : (
                       <p className="text-rocha">Sem comentário.</p>
                     )}
@@ -98,7 +139,7 @@ export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin
                       Enviada em {dateTime.format(new Date(review.created_at))} ·{" "}
                       <Link
                         href={`/admin/solicitacoes/${review.booking_request_id}`}
-                        className="underline underline-offset-3"
+                        className="font-semibold text-petroleo hover:underline"
                       >
                         ver reserva
                       </Link>
@@ -108,14 +149,20 @@ export default async function AvaliacoesPage({ searchParams }: PageProps<"/admin
                     reviewId={review.id}
                     status={review.status}
                     reply={review.admin_reply ?? ""}
-                    tab={tab.slug}
+                    tab={filters.tab.slug}
                   />
                 </article>
               </li>
             ))}
           </ul>
         )}
-      </Container>
-    </main>
+        <ListPagination
+          page={filters.page}
+          pageSize={PAGE_SIZE}
+          count={count}
+          hrefFor={(page) => buildHref("/admin/avaliacoes", { ...base, pagina: page })}
+        />
+      </Card>
+    </AdminPage>
   );
 }

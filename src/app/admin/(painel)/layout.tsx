@@ -1,15 +1,20 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { AdminNav } from "@/components/admin/admin-nav";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
-import { Wordmark } from "@/components/ui/wordmark";
+import { AdminShell } from "@/components/admin/shell/admin-shell";
+import { MENU_COOKIE } from "@/components/admin/shell/nav-items";
 import { getSessionState } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { signOut } from "@/server/actions/auth";
 import { countPendingBookings } from "@/server/queries/admin-bookings";
 import { countNewInquiries } from "@/server/queries/inquiries";
 import { countPendingReviews } from "@/server/queries/reviews";
+import { settle } from "@/server/queries/settle";
+
+/** Contador que não derruba o painel inteiro se a consulta falhar. */
+async function safeCount(task: Promise<number>) {
+  const result = await settle(task, "pendências do menu");
+  return result.ok ? result.data : 0;
+}
 
 /**
  * Autorização definitiva do painel: papel admin + MFA concluído.
@@ -20,40 +25,24 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
   if (session.status === "admin_needs_mfa") redirect("/admin/mfa");
   if (session.status !== "admin") redirect("/admin/entrar");
   const supabase = await createSupabaseServerClient();
-  const [bookings, reviews, inquiries] = await Promise.all([
-    countPendingBookings(supabase),
-    countPendingReviews(supabase),
-    countNewInquiries(supabase),
+  const [bookings, reviews, inquiries, cookieStore] = await Promise.all([
+    safeCount(countPendingBookings(supabase)),
+    safeCount(countPendingReviews(supabase)),
+    safeCount(countNewInquiries(supabase)),
+    cookies(),
   ]);
 
   return (
-    <>
-      <header className="border-b border-areia">
-        <Container className="flex min-h-16 flex-wrap items-center justify-between gap-4 py-2">
-          <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <span className="flex items-baseline gap-3">
-              <Wordmark className="text-[1.25rem]" />
-              <span className="text-small text-rocha">Painel</span>
-            </span>
-            <AdminNav
-              pending={{
-                "/admin/solicitacoes": bookings,
-                "/admin/avaliacoes": reviews,
-                "/admin/contatos": inquiries,
-              }}
-            />
-          </span>
-          <span className="flex items-center gap-4">
-            <span className="text-small text-rocha">{session.email}</span>
-            <form action={signOut}>
-              <Button type="submit" variant="text">
-                Sair
-              </Button>
-            </form>
-          </span>
-        </Container>
-      </header>
+    <AdminShell
+      email={session.email}
+      initialCollapsed={cookieStore.get(MENU_COOKIE)?.value === "recolhido"}
+      pending={{
+        "/admin/solicitacoes": bookings,
+        "/admin/avaliacoes": reviews,
+        "/admin/contatos": inquiries,
+      }}
+    >
       {children}
-    </>
+    </AdminShell>
   );
 }

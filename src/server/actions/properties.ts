@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "@/lib/zod";
 
+import { safeReturnPath } from "@/lib/admin/return-to";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { addDaysISO, slugify } from "@/lib/format";
 import { MEDIA_BUCKET } from "@/lib/media";
@@ -141,8 +142,9 @@ export async function deleteProperty(_prev: FormState, formData: FormData): Prom
   if (photos.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(photos);
   if (videos.length > 0) await supabase.storage.from(VIDEO_BUCKET).remove(videos);
 
-  revalidatePath("/admin/imoveis");
-  return { status: "success", message: "Imóvel excluído." };
+  revalidatePath("/admin", "layout");
+  // Volta para a mesma lista (filtros e página) com o aviso de sucesso.
+  redirect(safeReturnPath(formData.get("returnTo"), "/admin/imoveis", { aviso: "excluido" }));
 }
 
 export async function updateGeneral(_prev: FormState, formData: FormData): Promise<FormState> {

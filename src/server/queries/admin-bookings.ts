@@ -2,14 +2,18 @@ import "server-only";
 
 import { notFound } from "next/navigation";
 
+import type { BookingFilters } from "@/lib/admin/filters";
+import { EXPORT_LIMIT, orIlike } from "@/lib/admin/list-params";
 import type { BookingStatus } from "@/lib/booking/labels";
-import { parseDateRange } from "@/lib/format";
+import { addDaysISO, parseDateRange } from "@/lib/format";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
+
+import { pagedRows } from "./paged";
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 /** Período [chegada, saída) de uma coluna daterange. */
-function stayOf(value: unknown) {
+export function stayOf(value: unknown) {
   const range = parseDateRange(String(value));
   if (!range) throw new Error(`Período inválido: ${String(value)}`);
   return { checkIn: range.start, checkOut: range.endExclusive };
@@ -22,20 +26,6 @@ export async function countPendingBookings(supabase: Client) {
     .eq("status", "pending");
   if (error) throw error;
   return count ?? 0;
-}
-
-export async function listBookingRequests(supabase: Client, status: BookingStatus | null) {
-  let query = supabase
-    .from("booking_requests")
-    .select(
-      "id, status, rental_mode, guest_name, stay, guests_count, quoted_total, created_at, properties(id, title)",
-    )
-    .order("created_at", { ascending: status !== "pending" ? false : true })
-    .limit(200);
-  if (status) query = query.eq("status", status);
-  const { data, error } = await query;
-  if (error) throw error;
-  return data.map((row) => ({ ...row, ...stayOf(row.stay) }));
 }
 
 export async function getBookingRequest(supabase: Client, id: string) {
@@ -89,4 +79,72 @@ export async function listUpcomingBlocks(supabase: Client, propertyId: string, t
   return data
     .map((block) => ({ ...block, ...stayOf(block.stay) }))
     .filter((block) => block.checkOut > today);
+}
+
+const bookingSortColumns = {
+  recebida: "created_at",
+  chegada: "stay",
+  total: "quoted_total",
+  hospede: "guest_name",
+} as const;
+
+/** Início do dia seguinte em São Paulo (sem horário de verão desde 2019). */
+function endOfDaySP(date: string) {
+  return `${addDaysISO(date, 1)}T00:00:00-03:00`;
+}
+
+/** Lista de solicitações com busca, filtros, ordenação e paginação no banco. */
+export async function searchBookingRequests(
+  supabase: Client,
+  filters: BookingFilters,
+  range: { from: number; to: number } | null,
+) {
+  let query = supabase
+    .from("booking_requests")
+    .select(
+      "id, status, rental_mode, guest_name, guest_email, guest_phone, stay, guests_count, quoted_total, created_at, decided_at, properties(id, title)",
+      { count: "exact" },
+    );
+  if (filters.tab.status) query = query.eq("status", filters.tab.status);
+  if (filters.q) {
+    const digits = filters.q.replace(/\D/g, "");
+    const columns = ["guest_name", "guest_email"];
+    query = query.or(
+      [orIlike(columns, filters.q), digits.length >= 4 ? orIlike(["guest_phone"], digits) : null]
+        .filter(Boolean)
+        .join(","),
+    );
+  }
+  if (filters.propertyId) query = query.eq("property_id", filters.propertyId);
+  if (filters.mode) query = query.eq("rental_mode", filters.mode);
+  if (filters.from) query = query.gte("created_at", `${filters.from}T00:00:00-03:00`);
+  if (filters.to) query = query.lt("created_at", endOfDaySP(filters.to));
+  query = query
+    .order(bookingSortColumns[filters.sort.key], { ascending: filters.sort.dir === "asc" })
+    .order("id");
+  query = range ? query.range(range.from, range.to) : query.limit(EXPORT_LIMIT);
+  const { rows, count } = pagedRows(await query);
+  return { rows: rows.map((row) => ({ ...row, ...stayOf(row.stay) })), count };
+}
+
+/** Quantas solicitações em cada situação (para as abas). */
+export async function countBookingsByStatus(supabase: Client) {
+  const statuses = ["pending", "approved", "declined", "cancelled", "expired"] as const;
+  const results = await Promise.all(
+    statuses.map((status) =>
+      supabase
+        .from("booking_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", status),
+    ),
+  );
+  const counts = Object.fromEntries(statuses.map((status) => [status, 0])) as Record<
+    BookingStatus,
+    number
+  >;
+  results.forEach((result, index) => {
+    if (result.error) throw result.error;
+    counts[statuses[index]!] = result.count ?? 0;
+  });
+  return counts;
 }

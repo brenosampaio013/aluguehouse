@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { loginAsAdmin } from "./support/admin";
+import { answerConfirm, loginAsAdmin, openAdminNav } from "./support/admin";
 import { adminApi, anonApi, createAdminWithTotp } from "./support/users";
 
 const FOTO_REAL = path.join(process.cwd(), "media/recebidas/imovel-01/sala-jantar.jpg");
@@ -40,10 +40,7 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
   const title = `Apartamento de teste ${testInfo.project.name} ${Date.now()}`;
 
   await loginAsAdmin(page, admin);
-  await page
-    .getByRole("navigation", { name: "Painel" })
-    .getByRole("link", { name: "Imóveis" })
-    .click();
+  await (await openAdminNav(page)).getByRole("link", { name: "Imóveis" }).click();
   await page.getByRole("link", { name: "Novo imóvel" }).click();
 
   // Criação
@@ -155,8 +152,8 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
 
   // Excluir a foto remove também os arquivos do Storage
   const fotoUrl = await foto.getAttribute("src");
-  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Excluir foto 1" }).click();
+  await answerConfirm(page, "Excluir", "Excluir a foto 1?");
   await expect(page.getByText("Nenhuma foto ainda.")).toBeVisible();
   expect((await fetch(fotoUrl!)).status).toBeGreaterThanOrEqual(400);
 
@@ -239,16 +236,14 @@ test("admin exclui anúncio da lista, com fotos; com reserva, não exclui", asyn
     const excluirA = linhaA.getByRole("button", { name: `Excluir ${semReserva}` });
 
     // Cancelar a confirmação não exclui.
-    page.once("dialog", (dialog) => dialog.dismiss());
     await excluirA.click();
+    await answerConfirm(page, "Cancelar");
     await expect(linhaA).toBeVisible();
 
     // Confirmar exclui o anúncio, os dados ligados e os arquivos.
-    page.once("dialog", (dialog) => {
-      expect(dialog.message()).toContain(semReserva);
-      void dialog.accept();
-    });
     await excluirA.click();
+    await answerConfirm(page, "Excluir definitivamente", semReserva);
+    await expect(status(page, "Imóvel excluído.")).toBeVisible();
     await expect(linhaA).toHaveCount(0);
     expect((await api.from("properties").select("id").eq("id", idA)).data).toHaveLength(0);
     expect(
@@ -258,8 +253,8 @@ test("admin exclui anúncio da lista, com fotos; com reserva, não exclui", asyn
 
     // Com solicitação de reserva: explica e mantém o anúncio.
     const linhaB = page.getByRole("row").filter({ hasText: comReserva });
-    page.once("dialog", (dialog) => dialog.accept());
     await linhaB.getByRole("button", { name: `Excluir ${comReserva}` }).click();
+    await answerConfirm(page, "Excluir definitivamente");
     await expect(alert(page, "tem solicitações de reserva")).toBeVisible();
     await expect(linhaB).toBeVisible();
     expect((await api.from("properties").select("id").eq("id", idB)).data).toHaveLength(1);

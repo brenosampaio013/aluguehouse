@@ -1,23 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { InquiryStatusForm } from "@/components/admin/inquiry-status-form";
+import { InquiryDeleteButton, InquiryStatusForm } from "@/components/admin/inquiry-status-form";
+import { Badge, type BadgeTone } from "@/components/admin/ui/badge";
+import { Card } from "@/components/admin/ui/card";
+import { EmptyState } from "@/components/admin/ui/empty-state";
+import { ListToolbar } from "@/components/admin/ui/list-toolbar";
+import { AdminPage, PageHeader } from "@/components/admin/ui/page";
+import { ListPagination } from "@/components/admin/ui/pagination";
+import { StatusTabs } from "@/components/admin/ui/status-tabs";
 import { buttonClasses } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
 import { FormMessage } from "@/components/ui/form-message";
-import { ChatIcon } from "@/components/ui/icons";
+import { ChatIcon, DownloadIcon, InboxIcon, MailIcon } from "@/components/ui/icons";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { cn } from "@/lib/cn";
+import { inquiryListTabs, parseInquiryFilters, type InquiryFilters } from "@/lib/admin/filters";
+import { buildHref, first, PAGE_SIZE, pageRange } from "@/lib/admin/list-params";
 import {
   formatVisit,
   inquiryKindLabels,
   inquiryStatusLabels,
-  inquiryTabs,
-  parseInquiryTab,
   type InquiryStatus,
 } from "@/lib/inquiries";
 import { guestWhatsappLink } from "@/lib/whatsapp";
-import { listInquiries } from "@/server/queries/inquiries";
+import { listPropertyOptions } from "@/server/queries/admin-dashboard";
+import { countInquiriesByStatus, searchInquiries } from "@/server/queries/inquiries";
 
 export const metadata: Metadata = { title: "Contatos" };
 
@@ -27,89 +33,173 @@ const dateTime = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "America/Sao_Paulo",
 });
 
+const statusTones: Record<InquiryStatus, BadgeTone> = {
+  new: "info",
+  in_progress: "warning",
+  closed: "muted",
+};
+
+function listParams(filters: InquiryFilters) {
+  const defaultDir = filters.tab.status === "new" ? "asc" : "desc";
+  return {
+    situacao: filters.tab.slug,
+    q: filters.q,
+    tipo: filters.kind,
+    imovel: filters.propertyId,
+    dir: filters.dir === defaultDir ? null : filters.dir,
+  };
+}
+
 export default async function ContatosPage({ searchParams }: PageProps<"/admin/contatos">) {
   const params = await searchParams;
-  const tab = parseInquiryTab(params.situacao);
-  const moved = Array.isArray(params.movido) ? params.movido[0] : params.movido;
+  const filters = parseInquiryFilters(params);
+  const moved = first(params.movido);
   const notice =
     moved && moved in inquiryStatusLabels
       ? `Mensagem movida para “${inquiryStatusLabels[moved as InquiryStatus]}”.`
-      : null;
+      : first(params.aviso) === "excluido"
+        ? "Mensagem excluída."
+        : null;
   const { supabase } = await requireAdmin();
-  const inquiries = await listInquiries(supabase, tab.status);
+  const [{ rows, count }, counts, properties] = await Promise.all([
+    searchInquiries(supabase, filters, pageRange(filters.page)),
+    countInquiriesByStatus(supabase),
+    listPropertyOptions(supabase),
+  ]);
+  const base = listParams(filters);
+  const href = (extra: Record<string, string | number | null>) =>
+    buildHref("/admin/contatos", { ...base, ...extra });
+  const returnTo = href({ pagina: filters.page > 1 ? filters.page : null });
+  const filtered = Boolean(filters.q || filters.kind || filters.propertyId);
+  const total = counts.new + counts.in_progress + counts.closed;
 
   return (
-    <main id="conteudo" className="flex-1 py-12">
-      <Container className="grid gap-8">
-        <div className="grid gap-2">
-          <h1 className="font-serif text-h1 font-normal">Contatos</h1>
-          <p className="max-w-[68ch] text-rocha">
-            Mensagens do formulário de contato, pedidos de visita e interesse em compra.
-          </p>
-        </div>
+    <AdminPage>
+      <PageHeader
+        title="Contatos"
+        description="Mensagens do formulário de contato, pedidos de visita e interesse em compra."
+        actions={
+          <Link
+            href={buildHref("/admin/exportar/contatos", base)}
+            prefetch={false}
+            className={buttonClasses("secondary", "min-h-10 px-4")}
+          >
+            <DownloadIcon width={18} height={18} />
+            Exportar CSV
+          </Link>
+        }
+      />
 
-        {notice ? <FormMessage tone="success">{notice}</FormMessage> : null}
+      {notice ? <FormMessage tone="success">{notice}</FormMessage> : null}
 
-        <nav aria-label="Situação dos contatos">
-          <ul className="flex flex-wrap gap-2">
-            {inquiryTabs.map((item) => (
-              <li key={item.slug}>
-                <Link
-                  href={`/admin/contatos?situacao=${item.slug}`}
-                  aria-current={item.slug === tab.slug ? "page" : undefined}
-                  className={cn(
-                    "inline-flex min-h-11 items-center rounded-full border px-4 font-semibold",
-                    item.slug === tab.slug
-                      ? "border-petroleo bg-petroleo text-branco"
-                      : "border-junco text-petroleo hover:bg-areia",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <StatusTabs
+        label="Situação dos contatos"
+        current={filters.tab.slug}
+        tabs={inquiryListTabs.map((tab) => ({
+          slug: tab.slug,
+          label: tab.label,
+          href: buildHref("/admin/contatos", { ...base, situacao: tab.slug, dir: null }),
+          count: tab.status ? counts[tab.status] : total,
+        }))}
+      />
 
-        {inquiries.length === 0 ? (
-          <p className="text-rocha">Nenhuma mensagem nesta situação.</p>
+      <Card as="div">
+        <ListToolbar
+          action="/admin/contatos"
+          search={filters.q}
+          searchLabel="Buscar por nome, e-mail ou texto da mensagem"
+          hidden={{ situacao: filters.tab.slug }}
+          selects={[
+            {
+              name: "tipo",
+              label: "Tipo",
+              value: filters.kind,
+              allLabel: "Todos",
+              options: Object.entries(inquiryKindLabels).map(([value, label]) => ({
+                value,
+                label,
+              })),
+            },
+            {
+              name: "imovel",
+              label: "Imóvel",
+              value: filters.propertyId,
+              allLabel: "Todos",
+              options: properties,
+            },
+            {
+              name: "dir",
+              label: "Ordem",
+              value: filters.dir,
+              allLabel: "Padrão",
+              options: [
+                { value: "desc", label: "Mais recentes primeiro" },
+                { value: "asc", label: "Mais antigos primeiro" },
+              ],
+            },
+          ]}
+          active={filtered}
+          clearHref={buildHref("/admin/contatos", { situacao: filters.tab.slug })}
+        />
+
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={<InboxIcon />}
+            title={filtered ? "Nenhuma mensagem encontrada" : "Nenhuma mensagem nesta situação"}
+            description={
+              filtered
+                ? "Nenhuma mensagem corresponde à busca e aos filtros escolhidos."
+                : "As mensagens enviadas pelo site aparecem aqui."
+            }
+          />
         ) : (
-          <ul className="grid gap-6">
-            {inquiries.map((inquiry) => (
+          <ul className="divide-y divide-areia">
+            {rows.map((inquiry) => (
               <li key={inquiry.id}>
                 <article
                   aria-labelledby={`contato-${inquiry.id}`}
-                  className="grid gap-4 rounded-photo border border-areia p-5 lg:grid-cols-[1fr_320px]"
+                  className="grid gap-4 p-5 lg:grid-cols-[1fr_300px]"
                 >
                   <div className="grid min-w-0 content-start gap-2">
-                    <p className="text-small font-semibold text-rocha">
-                      {inquiryKindLabels[inquiry.kind]} ·{" "}
-                      {dateTime.format(new Date(inquiry.created_at))}
-                    </p>
-                    <h2 id={`contato-${inquiry.id}`} className="font-serif text-h3 font-normal">
+                    <div className="flex flex-wrap items-center gap-2 text-small text-rocha">
+                      <Badge tone={statusTones[inquiry.status]}>
+                        {inquiryStatusLabels[inquiry.status]}
+                      </Badge>
+                      <span className="font-semibold">{inquiryKindLabels[inquiry.kind]}</span>
+                      <span aria-hidden="true">·</span>
+                      <time dateTime={inquiry.created_at} className="tabular-nums">
+                        {dateTime.format(new Date(inquiry.created_at))}
+                      </time>
+                    </div>
+                    <h2 id={`contato-${inquiry.id}`} className="text-h3 font-semibold">
                       {inquiry.name}
                     </h2>
                     {inquiry.properties ? (
-                      <p>
+                      <p className="text-small">
                         Imóvel:{" "}
                         <Link
-                          href={`/imoveis/${inquiry.properties.slug}`}
-                          className="text-petroleo underline underline-offset-3"
+                          href={`/admin/imoveis/${inquiry.properties.id}`}
+                          className="font-semibold text-petroleo hover:underline"
                         >
                           {inquiry.properties.title}
                         </Link>
                       </p>
                     ) : null}
                     {inquiry.preferred_datetime ? (
-                      <p>Visita preferida: {formatVisit(inquiry.preferred_datetime)}</p>
+                      <p className="text-small">
+                        Visita preferida: {formatVisit(inquiry.preferred_datetime)}
+                      </p>
                     ) : null}
-                    <p className="max-w-[68ch] whitespace-pre-line">{inquiry.message}</p>
+                    <p className="max-w-[72ch] rounded-control bg-marfim px-4 py-3 whitespace-pre-line">
+                      {inquiry.message}
+                    </p>
                   </div>
                   <div className="grid content-start gap-3">
                     <a
                       href={`mailto:${inquiry.email}`}
-                      className="break-all text-petroleo underline underline-offset-3"
+                      className="inline-flex items-center gap-2 break-all text-petroleo hover:underline"
                     >
+                      <MailIcon width={18} height={18} className="shrink-0" />
                       {inquiry.email}
                     </a>
                     {inquiry.phone ? (
@@ -120,7 +210,7 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
                         )}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={buttonClasses("secondary")}
+                        className={buttonClasses("secondary", "min-h-10 px-4")}
                       >
                         <ChatIcon />
                         Responder no WhatsApp
@@ -130,7 +220,12 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
                     <InquiryStatusForm
                       inquiryId={inquiry.id}
                       status={inquiry.status}
-                      tab={tab.slug}
+                      returnTo={returnTo}
+                    />
+                    <InquiryDeleteButton
+                      inquiryId={inquiry.id}
+                      name={inquiry.name}
+                      returnTo={returnTo}
                     />
                   </div>
                 </article>
@@ -138,7 +233,13 @@ export default async function ContatosPage({ searchParams }: PageProps<"/admin/c
             ))}
           </ul>
         )}
-      </Container>
-    </main>
+        <ListPagination
+          page={filters.page}
+          pageSize={PAGE_SIZE}
+          count={count}
+          hrefFor={(page) => href({ pagina: page })}
+        />
+      </Card>
+    </AdminPage>
   );
 }
