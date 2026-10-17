@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/shell/admin-shell";
 import { MENU_COOKIE } from "@/components/admin/shell/nav-items";
 import { getSessionState } from "@/lib/auth/session";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { countPendingOwnerRequests } from "@/server/queries/admin-owners";
 import { settle } from "@/server/queries/settle";
 import { getStatusCounts } from "@/server/queries/status-counts";
 
@@ -17,8 +19,12 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
   if (session.status !== "admin") redirect("/admin/entrar");
   // Mesma consulta das abas das listas (memorizada por requisição). Cada
   // tabela é contada à parte no banco: se uma falhar, só o contador dela some.
-  const [counts, cookieStore] = await Promise.all([
+  const [counts, ownerRequests, cookieStore] = await Promise.all([
     settle(getStatusCounts(), "pendências do menu"),
+    settle(
+      createSupabaseServerClient().then(countPendingOwnerRequests),
+      "pedidos dos proprietários no menu",
+    ),
     cookies(),
   ]);
 
@@ -30,6 +36,7 @@ export default async function PainelLayout({ children }: LayoutProps<"/admin">) 
         "/admin/solicitacoes": counts.ok ? (counts.data.booking_requests?.pending ?? 0) : 0,
         "/admin/avaliacoes": counts.ok ? (counts.data.reviews?.pending ?? 0) : 0,
         "/admin/contatos": counts.ok ? (counts.data.inquiries?.new ?? 0) : 0,
+        "/admin/proprietarios": ownerRequests.ok ? ownerRequests.data : 0,
       }}
     >
       {children}

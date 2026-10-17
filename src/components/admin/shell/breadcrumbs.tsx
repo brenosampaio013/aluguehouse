@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 
 import { ChevronRightIcon } from "@/components/ui/icons";
 
-import { breadcrumbsFor } from "./nav-items";
+import { breadcrumbsFor, type PanelArea } from "./nav-items";
 
-export function Breadcrumbs() {
-  const crumbs = breadcrumbsFor(usePathname());
+export function Breadcrumbs({ area = "admin" }: { area?: PanelArea }) {
+  const crumbs = breadcrumbsFor(usePathname(), area);
   return (
     <nav aria-label="Trilha de navegação" className="min-w-0">
       <ol className="flex min-w-0 items-center gap-1 text-small text-rocha">

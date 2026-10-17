@@ -114,6 +114,14 @@ test.describe("login do hóspede", () => {
     await expect(errorAlert(page, "expirou ou já foi usado")).toBeVisible();
   });
 
+  test("link do modelo padrão (?code= no endereço do site) vai para o callback", async ({
+    page,
+  }) => {
+    await page.goto("/?code=codigo-invalido");
+    // O callback tenta trocar o código; inválido, explica como pedir outro.
+    await expect(page).toHaveURL(/\/entrar\?erro=link$/);
+  });
+
   test("e-mail inválido é apontado no campo", async ({ page }) => {
     await page.goto("/entrar");
     await page.getByLabel("E-mail").fill("nome@");

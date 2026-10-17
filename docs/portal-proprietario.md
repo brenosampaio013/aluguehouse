@@ -9,7 +9,7 @@ o que falta.
 | ---- | ------------------------------------------------------------------------- | ---------------- |
 | A    | Auditoria e plano                                                         | concluída        |
 | B    | Segurança no banco: vínculo, isolamento, funções, testes                  | concluída        |
-| C    | Portal: visão geral, meus imóveis, calendário, reservas; vínculo no admin | próxima          |
+| C    | Portal: visão geral, meus imóveis, calendário, reservas; vínculo no admin | concluída        |
 | D    | Financeiro e repasses                                                     | regras pendentes |
 | E    | Documentos, notificações, perfil                                          | depois da C      |
 
@@ -89,6 +89,85 @@ pedidos); pedidos com validação de datas e limite; B não cancela pedido de
 A sabendo o ID; sem MFA, sem vínculo, hóspede e visitante sem acesso; admin
 com acesso preservado, aprova bloqueio (grava no calendário), recusa
 sobreposto e recusa alteração; desvincular corta o acesso.
+
+## Portal (Fase C)
+
+### Acesso
+
+1. O admin abre o imóvel (`/admin/imoveis/{id}#proprietarios`), informa o
+   e-mail e confirma que é do proprietário. O servidor (depois de exigir
+   admin com MFA) procura a conta (`admin_find_user_by_email`); se não
+   existir, cria; se for de hóspede, passa a ser de proprietário; conta de
+   admin é recusada. Só essa troca de papel usa a chave `service_role`, no
+   servidor. O vínculo é gravado com a sessão do admin (RLS).
+2. O proprietário entra em `/entrar` com o link enviado ao e-mail e, no
+   primeiro acesso, cadastra o aplicativo autenticador em
+   `/proprietario/verificacao` (mesmos componentes do admin). Sem o código,
+   nenhuma página do portal abre e o banco não entrega nada (`aal2`).
+3. Remover o acesso (botão no imóvel) vale na hora.
+
+Proteção em camadas: o proxy manda quem não está logado para
+`/entrar?next=/proprietario`; o layout do portal e cada página/ação chamam
+`requireOwner()`; cada página confere o vínculo (`property_owners`) antes
+de mostrar um imóvel, porque a política pública também deixa ler imóveis
+publicados de outros donos; e o banco confere de novo em cada função.
+IDs de outro proprietário na URL mostram "Página não encontrada"; nos
+filtros (calendário, reservas) são ignorados.
+
+### Telas (`src/app/proprietario/`)
+
+Mesma estrutura do painel (menu lateral recolhível, gaveta no celular,
+trilha de navegação): `AdminShell` agora recebe a área (`admin` ou
+`owner`), sem duplicar componentes.
+
+| Menu         | Conteúdo                                                                                                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Visão geral  | Imóveis vinculados; reservas futuras, em andamento, aguardando aprovação, concluídas e canceladas (contadas no banco); próximas entradas e saídas (30 dias); ocupação dos próximos 30 dias por imóvel; pedidos em análise |
+| Meus imóveis | Cartões com foto, situação do anúncio, local, capacidade e preço; ficha com fotos, características, comodidades, tarifas (base e sazonais), taxas, regras, disponibilidade (60 dias) e pedido de alteração                |
+| Calendário   | Mês a mês (±24 meses): livre, reservado, uso do proprietário, manutenção e pedido pendente; tarifa de cada noite (sazonal ou base) e estadia mínima quando a temporada exige mais; pedido de bloqueio                     |
+| Reservas     | Abas por etapa, filtro por imóvel, paginação; detalhe com datas, hóspedes (primeiro nome), situação e valores **estimados**                                                                                               |
+| Financeiro   | Aviso de que ainda não há lançamentos e do que vai aparecer (Fase D). Nenhum valor estimado                                                                                                                               |
+| Documentos   | Em preparação (Fase E)                                                                                                                                                                                                    |
+| Notificações | Em preparação (Fase E)                                                                                                                                                                                                    |
+| Meu perfil   | E-mail de acesso, nome e telefone (gravados em `profiles`), situação do segundo fator                                                                                                                                     |
+
+Etapas da reserva (`src/lib/owner/portal.ts`): pendente → "Aguardando
+aprovação"; aprovada com entrada depois de hoje → "Confirmada"; aprovada
+com hoje dentro da estadia → "Hospedagem em andamento"; aprovada com saída
+até hoje → "Concluída"; recusada, cancelada, expirada como no banco.
+
+### Admin
+
+- **Imóvel → Proprietários**: dar e remover acesso; pedidos daquele imóvel.
+- **Menu → Proprietários** (`/admin/proprietarios`): pedidos pendentes de
+  todos os imóveis (contador no menu), quem tem acesso a quê e os pedidos
+  já decididos. Aprovar um bloqueio grava "uso do proprietário" no
+  calendário; se as datas foram ocupadas, o banco recusa e o pedido segue
+  pendente. Aprovar uma alteração só registra que o admin já editou o
+  anúncio.
+- Migration `20261017140000_owner_portal_admin.sql`: `admin_user_emails` e
+  `admin_find_user_by_email` (só admin com MFA; devolvem id, e-mail e papel).
+
+### Testes (Fase C)
+
+- pgTAP `19_portal_admin.test.sql` (8): busca de conta e e-mails só para
+  admin com MFA; proprietário, hóspede e admin sem MFA recebem 42501.
+- Unitários `owner-portal.test.ts` e `owner-actions.test.ts` (19): etapas,
+  calendário (limites da estadia, tarifa e mínimo sazonais, pedido
+  pendente), ocupação, orçamento com JSON estranho, menu e trilha; ações
+  com banco recusando, imóvel de outro dono, falha de rede e sucesso só
+  depois da gravação.
+- Ponta a ponta `tests/e2e/proprietario.spec.ts` (computador, tablet e
+  celular), com usuários reais do Supabase local: visitante e hóspede
+  barrados; proprietário sem o código barrado (inclusive no `/admin`);
+  proprietário sem imóveis; números reais da visão geral; só imóveis
+  vinculados (com rascunho); IDs de outro dono na URL e nos filtros;
+  reservas por etapa sem e-mail, telefone ou nome completo; pedido de
+  alteração e cancelamento gravados no banco sem mudar o anúncio; bloqueio
+  sobre reserva recusado; bloqueio aprovado pelo admin aparece no
+  calendário; tarifa sazonal e mínimo no calendário; perfil gravado; admin
+  dá e remove acesso (com confirmação obrigatória); WCAG 2.1 AA e sem
+  rolagem lateral nas páginas do portal.
 
 ## Financeiro (Fase D) — pendências
 

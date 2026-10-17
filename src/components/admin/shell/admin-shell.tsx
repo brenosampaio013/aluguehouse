@@ -18,9 +18,11 @@ import { signOut } from "@/server/actions/auth";
 
 import { AdminNav } from "./admin-nav";
 import { Breadcrumbs } from "./breadcrumbs";
-import { MENU_COOKIE } from "./nav-items";
+import { MENU_COOKIE, panelAreas, type PanelArea } from "./nav-items";
 
 type Props = {
+  /** Painel do admin (padrão) ou portal do proprietário. */
+  area?: PanelArea;
   children: ReactNode;
   email: string | null;
   pending: Record<string, number>;
@@ -29,10 +31,11 @@ type Props = {
 };
 
 /**
- * Estrutura do painel: menu lateral recolhível no computador, gaveta no
- * celular e cabeçalho com trilha de navegação e perfil.
+ * Estrutura do painel e do portal do proprietário: menu lateral recolhível
+ * no computador, gaveta no celular e cabeçalho com trilha de navegação e perfil.
  */
-export function AdminShell({ children, email, pending, initialCollapsed }: Props) {
+export function AdminShell({ area = "admin", children, email, pending, initialCollapsed }: Props) {
+  const { home, title, navLabel } = panelAreas[area];
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const drawerRef = useRef<HTMLDialogElement>(null);
   const pathname = usePathname();
@@ -46,7 +49,7 @@ export function AdminShell({ children, email, pending, initialCollapsed }: Props
     const next = !collapsed;
     setCollapsed(next);
     // Preferência só deste navegador; o servidor lê para evitar "piscar".
-    document.cookie = `${MENU_COOKIE}=${next ? "recolhido" : "aberto"}; path=/admin; max-age=31536000; samesite=lax`;
+    document.cookie = `${MENU_COOKIE}=${next ? "recolhido" : "aberto"}; path=${home}; max-age=31536000; samesite=lax`;
   }
 
   const initial = (email ?? "A").charAt(0).toUpperCase();
@@ -67,9 +70,9 @@ export function AdminShell({ children, email, pending, initialCollapsed }: Props
           )}
         >
           <Link
-            href="/admin"
+            href={home}
             className="flex items-baseline gap-2"
-            aria-label="Painel Alugue Houses"
+            aria-label={`${navLabel} Alugue Houses`}
           >
             {collapsed ? (
               <span aria-hidden="true" className="font-serif text-h3 font-medium">
@@ -78,13 +81,13 @@ export function AdminShell({ children, email, pending, initialCollapsed }: Props
             ) : (
               <>
                 <Wordmark className="text-[1.125rem]" />
-                <span className="text-small text-rocha">Painel</span>
+                <span className="text-small text-rocha">{title}</span>
               </>
             )}
           </Link>
         </div>
         <div className="relative flex-1 overflow-y-auto p-3">
-          <AdminNav pending={pending} collapsed={collapsed} />
+          <AdminNav area={area} pending={pending} collapsed={collapsed} />
         </div>
         <div className="grid gap-1 border-t border-areia p-3">
           <a
@@ -124,7 +127,7 @@ export function AdminShell({ children, email, pending, initialCollapsed }: Props
       {/* Gaveta (celular e tablet) */}
       <dialog
         ref={drawerRef}
-        aria-label="Menu do painel"
+        aria-label={`Menu: ${navLabel}`}
         className="m-0 h-dvh max-h-none w-72 max-w-[85vw] bg-branco p-0 text-abismo backdrop:bg-abismo/40 lg:hidden"
         onClick={(event) => {
           if (event.target === event.currentTarget) event.currentTarget.close();
@@ -134,7 +137,7 @@ export function AdminShell({ children, email, pending, initialCollapsed }: Props
           <div className="flex h-16 items-center justify-between border-b border-areia px-4">
             <span className="flex items-baseline gap-2">
               <Wordmark className="text-[1.125rem]" />
-              <span className="text-small text-rocha">Painel</span>
+              <span className="text-small text-rocha">{title}</span>
             </span>
             <button
               type="button"
@@ -146,7 +149,7 @@ export function AdminShell({ children, email, pending, initialCollapsed }: Props
             </button>
           </div>
           <div className="relative flex-1 overflow-y-auto p-3">
-            <AdminNav pending={pending} onNavigate={() => drawerRef.current?.close()} />
+            <AdminNav area={area} pending={pending} onNavigate={() => drawerRef.current?.close()} />
           </div>
           <div className="border-t border-areia p-3">
             <a
@@ -175,7 +178,7 @@ export function AdminShell({ children, email, pending, initialCollapsed }: Props
           </button>
           <PanelIcon aria-hidden="true" className="hidden shrink-0 text-rocha lg:block" />
           <div className="min-w-0 flex-1">
-            <Breadcrumbs />
+            <Breadcrumbs area={area} />
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span
