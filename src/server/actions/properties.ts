@@ -8,6 +8,7 @@ import { safeReturnPath } from "@/lib/admin/return-to";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { addDaysISO, slugify } from "@/lib/format";
 import { MEDIA_BUCKET } from "@/lib/media";
+import { OWNER_DOCS_BUCKET } from "@/lib/owner/documents";
 import {
   createPropertySchema,
   feeSchema,
@@ -110,17 +111,19 @@ export async function deleteProperty(_prev: FormState, formData: FormData): Prom
   // eles. Sem a lista completa, não exclui (evita arquivos órfãos).
   let photos: string[];
   let videos: string[];
+  let documents: string[];
   try {
-    [photos, videos] = await Promise.all([
+    [photos, videos, documents] = await Promise.all([
       storageFiles(supabase.storage, MEDIA_BUCKET, id.data),
       storageFiles(supabase.storage, VIDEO_BUCKET, id.data),
+      storageFiles(supabase.storage, OWNER_DOCS_BUCKET, id.data),
     ]);
   } catch (storageError) {
     console.error("Falha ao listar os arquivos do imóvel antes de excluir", storageError);
     return {
       status: "error",
       message:
-        "Não foi possível acessar as fotos e os vídeos do imóvel agora. Nada foi excluído; tente de novo em instantes.",
+        "Não foi possível acessar as fotos, os vídeos e os documentos do imóvel agora. Nada foi excluído; tente de novo em instantes.",
     };
   }
 
@@ -142,7 +145,8 @@ export async function deleteProperty(_prev: FormState, formData: FormData): Prom
 
   const orphans =
     (await removeFiles(supabase.storage, MEDIA_BUCKET, photos)) +
-    (await removeFiles(supabase.storage, VIDEO_BUCKET, videos));
+    (await removeFiles(supabase.storage, VIDEO_BUCKET, videos)) +
+    (await removeFiles(supabase.storage, OWNER_DOCS_BUCKET, documents));
   if (orphans > 0) {
     console.error(`Imóvel ${id.data} excluído com ${orphans} arquivo(s) não apagado(s) no Storage`);
   }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { OwnerNoticeForm } from "@/components/admin/owner-notice-form";
 import { OwnerRequestsList } from "@/components/admin/owner-requests-list";
 import { Card, CardHeader } from "@/components/admin/ui/card";
 import { EmptyState, SectionError } from "@/components/admin/ui/empty-state";
@@ -78,6 +79,27 @@ export default async function ProprietariosAdminPage() {
         ) : (
           <SectionError what="os proprietários" />
         )}
+      </Card>
+
+      <Card aria-labelledby="aviso">
+        <CardHeader
+          id="aviso"
+          title="Enviar aviso"
+          description="Aparece nas notificações do portal dos proprietários."
+        />
+        <div className="p-5">
+          {owners.ok ? (
+            <OwnerNoticeForm
+              properties={[
+                ...new Map(
+                  owners.data.flatMap((o) => o.properties).map((p) => [p.id, p] as const),
+                ).values(),
+              ].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"))}
+            />
+          ) : (
+            <SectionError what="os imóveis com proprietários" />
+          )}
+        </div>
       </Card>
 
       <Card aria-labelledby="decididos">

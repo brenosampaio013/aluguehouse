@@ -11,7 +11,7 @@ o que falta.
 | B    | Segurança no banco: vínculo, isolamento, funções, testes                  | concluída        |
 | C    | Portal: visão geral, meus imóveis, calendário, reservas; vínculo no admin | concluída        |
 | D    | Financeiro e repasses                                                     | regras pendentes |
-| E    | Documentos, notificações, perfil                                          | depois da C      |
+| E    | Documentos, notificações, perfil                                          | concluída        |
 
 ## Decisões (17/10/2026)
 
@@ -168,6 +168,65 @@ até hoje → "Concluída"; recusada, cancelada, expirada como no banco.
   calendário; tarifa sazonal e mínimo no calendário; perfil gravado; admin
   dá e remove acesso (com confirmação obrigatória); WCAG 2.1 AA e sem
   rolagem lateral nas páginas do portal.
+
+## Documentos e notificações (Fase E)
+
+Migration `20261017150000_owner_documents_notifications.sql` (não destrutiva).
+
+### Documentos privados
+
+- Bucket **privado** `owner-documents` (PDF, JPG, PNG ou WebP, até 10 MB).
+  Não existe URL pública: o endereço `/object/public/…` não funciona.
+- O admin envia em **Imóvel → Documentos do proprietário** (título e tipo:
+  contrato, relatório, vistoria, comprovante, outro). O arquivo vai do
+  navegador direto ao bucket, em `<imóvel>/<documento>/<nome>`; o servidor
+  confere que ele existe, o tipo e o tamanho antes de registrar em
+  `owner_documents`. Excluir apaga o registro e o arquivo. Excluir o imóvel
+  também apaga os documentos.
+- O proprietário vê a lista em **Documentos** (filtro por imóvel). "Abrir"
+  passa por `/proprietario/documentos/{id}/abrir`, que confere a sessão,
+  lê o registro com a sessão dele e redireciona para um **link assinado de
+  60 segundos**. No Storage, o proprietário só alcança arquivos registrados
+  de imóveis vinculados a ele; não envia nem apaga nada.
+
+### Notificações
+
+Geradas pelo banco (gatilhos), para os proprietários vinculados ao imóvel:
+
+| Quando                                   | Aviso                                                           |
+| ---------------------------------------- | --------------------------------------------------------------- |
+| Pedido de reserva novo                   | Novo pedido de reserva                                          |
+| Reserva aprovada / recusada / cancelada  | Reserva confirmada / recusada / cancelada                       |
+| Pedido do proprietário aprovado/recusado | Pedido aprovado / recusado (com a resposta), só para quem pediu |
+| Documento novo                           | Novo documento disponível                                       |
+| Aviso do admin                           | Título e mensagem do admin                                      |
+
+- Do hóspede, só o primeiro nome; nunca e-mail, telefone ou anotações.
+  Avisos ligados a uma reserva somem com ela no prazo de guarda (LGPD).
+- O admin envia avisos em **Proprietários → Enviar aviso** (todos ou os de
+  um imóvel), pela função `admin_notify_owners`.
+- O proprietário vê em **Notificações** (não lidas destacadas, contador no
+  menu); abrir uma marca como lida e leva à página dela; "Marcar todas
+  como lidas". Só pela função `mark_owner_notifications_read`, que mexe
+  apenas nas dele.
+- Por enquanto as notificações ficam só no portal (sem e-mail), até o
+  envio de e-mails do Supabase estar configurado com SMTP próprio.
+
+### Testes (Fase E)
+
+- pgTAP `20_portal_documentos_notificacoes.test.sql` (26): avisos de pedido,
+  aprovação e cancelamento só para o dono do imóvel e sem sobrenome, e-mail
+  ou anotação; resposta a pedido; aviso do admin (todos ou um imóvel);
+  leitura e "marcar como lida" só das próprias; sem MFA, nada; documento
+  fora da pasta do imóvel recusado; bucket privado; no Storage, cada dono
+  só alcança os arquivos registrados dos seus imóveis; proprietário e
+  hóspede não enviam nem leem arquivos de outros.
+- Ponta a ponta (`proprietario.spec.ts`): admin envia PDF pelo painel; URL
+  pública não funciona; dono abre por link assinado (conteúdo conferido);
+  aviso do documento; outro dono não vê nem abre (404); pedido novo gera
+  aviso só com o primeiro nome e não chega a outro dono; contador no menu;
+  abrir marca como lida; aviso do admin; marcar todas como lidas;
+  Documentos e Notificações sem violações WCAG e sem rolagem lateral.
 
 ## Financeiro (Fase D) — pendências
 
