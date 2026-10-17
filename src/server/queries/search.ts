@@ -2,15 +2,55 @@ import "server-only";
 
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { listingStatus } from "@/lib/properties/listing";
-import { PAGE_SIZE, sortToDb, type RentalFilters, type RentalMode } from "@/lib/search/params";
+import { findDestination } from "@/lib/destinations";
+import {
+  MAP_RESULTS_LIMIT,
+  PAGE_SIZE,
+  sortToDb,
+  type RentalFilters,
+  type RentalMode,
+} from "@/lib/search/params";
+import { sortToDb as saleSortToDb } from "@/lib/search/shared";
 import type { SaleFilters } from "@/lib/search/sale-params";
 
 import type { PropertyCardData } from "./public-properties";
 
-export type RentalResult = PropertyCardData & { stay: { nights: number; total: number } | null };
+export type RentalStay = { nights: number; total: number; nightlyAverage: number | null };
+
+export type RentalResult = PropertyCardData & { stay: RentalStay | null };
+
+/** Ponto do mapa: só imóveis com localização aproximada cadastrada. */
+export type RentalMarker = {
+  id: string;
+  slug: string;
+  title: string;
+  place: string;
+  lat: number;
+  lng: number;
+  /** Diária (média do período, com datas) ou valor do mês; sem taxas. */
+  price: number | null;
+  priceKind: "night" | "month";
+  /** Total com taxas, quando há datas. */
+  total: number | null;
+  nights: number | null;
+  rating: { average: number; count: number } | null;
+  cover: PropertyCardData["cover"];
+};
 
 export type RentalSearch =
-  { status: "ok"; items: RentalResult[]; total: number } | { status: "invalid"; message: string };
+  | {
+      status: "ok";
+      /** Imóveis da página atual. */
+      items: RentalResult[];
+      /** Todos os imóveis encontrados com localização (até MAP_RESULTS_LIMIT). */
+      markers: RentalMarker[];
+      total: number;
+      /** Encontrou mais que MAP_RESULTS_LIMIT: a lista mostra só os primeiros. */
+      capped: boolean;
+      /** Imóveis encontrados sem localização (aparecem só na lista). */
+      withoutLocation: number;
+    }
+  | { status: "invalid"; message: string };
 
 /** Mensagens para os códigos de erro da busca (docs/banco.md). */
 const messages: Record<string, string> = {
@@ -19,25 +59,37 @@ const messages: Record<string, string> = {
   seasonal_max_29: "Temporada vai até 29 noites. Para 30 noites ou mais, veja o aluguel mensal.",
   monthly_min_30: "Aluguel mensal começa em 30 noites. Para estadias menores, veja a temporada.",
   max_nights: "O período máximo é de 90 noites.",
+  invalid_area: "A área do mapa é inválida. Mova o mapa e pesquise de novo.",
 };
 
+/**
+ * Busca de aluguel (temporada e mensal) com mapa: uma consulta traz todos os
+ * imóveis encontrados (até MAP_RESULTS_LIMIT), com coordenadas aproximadas,
+ * preço do período, avaliação e capa. A lista mostra a página atual; o mapa,
+ * todos os que têm localização.
+ */
 export async function searchRentals(
   mode: RentalMode,
   filters: RentalFilters,
 ): Promise<RentalSearch> {
+  const destination = findDestination(filters.destino);
   const supabase = createSupabasePublicClient();
-  const { data, error } = await supabase.rpc("search_rentals", {
+  const { data, error } = await supabase.rpc("search_rentals_map", {
     p_mode: mode,
     p_region: filters.regiao,
+    p_city: destination?.city,
+    p_neighborhood: destination?.neighborhood,
+    p_bbox: filters.area,
     p_check_in: filters.chegada,
     p_check_out: filters.saida,
     p_guests: filters.hospedes,
     p_bedrooms: filters.quartos,
+    p_type: filters.tipo,
+    p_price_min: filters.precoMin,
     p_price_max: filters.precoMax,
     p_amenities: filters.comodidades.length > 0 ? filters.comodidades : undefined,
     p_sort: sortToDb[filters.ordem],
-    p_limit: PAGE_SIZE,
-    p_offset: (filters.pagina - 1) * PAGE_SIZE,
+    p_limit: MAP_RESULTS_LIMIT,
   });
 
   if (error) {
@@ -47,32 +99,80 @@ export async function searchRentals(
   }
 
   const rows = data ?? [];
-  const ids = rows.map((row) => row.id);
-  const [covers, details] = await Promise.all([loadCovers(ids), loadDetails(ids)]);
+  const priceKind = mode === "seasonal" ? "night" : "month";
 
-  const items = rows.map((row): RentalResult => ({
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    city: row.city,
-    neighborhood: row.neighborhood,
-    bedrooms: row.bedrooms,
-    suites: row.suites,
-    maxGuests: row.max_guests,
-    price:
-      row.base_price === null
-        ? null
-        : { kind: mode === "seasonal" ? "night" : "month", amount: row.base_price },
-    cover: covers.get(row.id) ?? null,
-    location: details.get(row.id)?.location ?? null,
-    listing: details.get(row.id)?.listing ?? null,
-    stay:
-      row.nights && row.quote_total !== null
-        ? { nights: row.nights, total: row.quote_total }
-        : null,
-  }));
+  const results = rows.map((row): RentalResult => {
+    const location =
+      row.approx_lat !== null && row.approx_lng !== null
+        ? { lat: Number(row.approx_lat), lng: Number(row.approx_lng) }
+        : null;
+    return {
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      city: row.city,
+      neighborhood: row.neighborhood,
+      bedrooms: row.bedrooms,
+      suites: row.suites,
+      maxGuests: row.max_guests,
+      price: row.unit_price === null ? null : { kind: priceKind, amount: row.unit_price },
+      cover:
+        row.cover_path && row.cover_width
+          ? {
+              path: row.cover_path,
+              width: row.cover_width,
+              alt: row.cover_alt ?? row.title,
+              isDemo: row.cover_is_demo ?? false,
+            }
+          : null,
+      location,
+      listing: listingStatus({ offers_sale: row.offers_sale }),
+      rating:
+        row.rating_avg !== null && row.rating_count > 0
+          ? { average: Number(row.rating_avg), count: row.rating_count }
+          : null,
+      stay:
+        row.nights && row.quote_total !== null
+          ? {
+              nights: row.nights,
+              total: row.quote_total,
+              nightlyAverage: mode === "seasonal" ? row.unit_price : null,
+            }
+          : null,
+    };
+  });
 
-  return { status: "ok", items, total: rows[0]?.total_count ?? 0 };
+  const markers = results.flatMap((item): RentalMarker[] =>
+    item.location
+      ? [
+          {
+            id: item.id,
+            slug: item.slug,
+            title: item.title,
+            place: [item.neighborhood, item.city].filter(Boolean).join(" · "),
+            lat: item.location.lat,
+            lng: item.location.lng,
+            price: item.price?.amount ?? null,
+            priceKind,
+            total: item.stay?.total ?? null,
+            nights: item.stay?.nights ?? null,
+            rating: item.rating ?? null,
+            cover: item.cover,
+          },
+        ]
+      : [],
+  );
+
+  const offset = (filters.pagina - 1) * PAGE_SIZE;
+  const total = rows[0]?.total_count ?? 0;
+  return {
+    status: "ok",
+    items: results.slice(offset, offset + PAGE_SIZE),
+    markers,
+    total,
+    capped: total > rows.length,
+    withoutLocation: results.length - markers.length,
+  };
 }
 
 /** Foto de capa (ou a primeira) de cada imóvel, em uma única consulta. */
@@ -139,7 +239,7 @@ export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
     p_bedrooms: filters.quartos,
     p_area_min: filters.areaMin,
     p_amenities: filters.comodidades.length > 0 ? filters.comodidades : undefined,
-    p_sort: sortToDb[filters.ordem],
+    p_sort: saleSortToDb[filters.ordem],
     p_limit: PAGE_SIZE,
     p_offset: (filters.pagina - 1) * PAGE_SIZE,
   });

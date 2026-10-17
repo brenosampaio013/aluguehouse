@@ -20,6 +20,8 @@ export type PropertyCardData = {
   cover: { path: string; width: number; alt: string; isDemo: boolean } | null;
   /** Selo sobre a foto (ex.: "CASA À VENDA"). */
   listing?: ListingStatus | null;
+  /** Média das avaliações aprovadas (só quando há avaliações). */
+  rating?: { average: number; count: number } | null;
 };
 
 export type CardRow = {

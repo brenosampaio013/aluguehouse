@@ -16,13 +16,13 @@ import { SearchIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { addDaysISO } from "@/lib/format";
 import { propertyTypeLabels } from "@/lib/properties/labels";
-import type { RegionSlug } from "@/lib/regions";
 import {
   buildSearch,
   destinationName,
   guestsSummary,
   matchDestinations,
   modeStayLimits,
+  pickDestination,
   SEARCH_WINDOW_DAYS,
   searchModes,
   stepGuests,
@@ -81,7 +81,7 @@ export function HeroSearch({ today, maxGuests }: { today: string; maxGuests: num
   const [panel, setPanel] = useState<Panel>(null);
   const [error, setError] = useState<string>();
 
-  const [region, setRegion] = useState<RegionSlug>();
+  const [region, setRegion] = useState<string>();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -137,7 +137,7 @@ export function HeroSearch({ today, maxGuests }: { today: string; maxGuests: num
     setPanel("onde");
   }
 
-  function selectDestination(slug: RegionSlug | undefined) {
+  function selectDestination(slug: string | undefined) {
     setRegion(slug);
     setQuery(destinationName(slug) ?? "");
     setActiveIndex(-1);
@@ -174,17 +174,17 @@ export function HeroSearch({ today, maxGuests }: { today: string; maxGuests: num
     event.preventDefault();
     let chosen = region;
     if (!chosen && query.trim()) {
-      const matches = matchDestinations(query);
-      if (matches.length !== 1) {
+      const match = pickDestination(query);
+      if (!match) {
         setError("Escolha um destino da lista.");
         openWhere();
         whereRef.current?.focus();
         return;
       }
-      chosen = matches[0]!.slug;
+      chosen = match.slug;
     }
     const result = buildSearch(
-      { mode, region: chosen, checkIn, checkOut, guests, saleType, salePriceMax: salePrice },
+      { mode, destination: chosen, checkIn, checkOut, guests, saleType, salePriceMax: salePrice },
       today,
     );
     if (!result.ok) {

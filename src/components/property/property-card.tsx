@@ -2,14 +2,27 @@ import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
 
 import { FavoriteButton } from "@/components/favorites/favorite-button";
-import { AreaIcon, BathIcon, BedIcon, GuestsIcon, HouseIcon } from "@/components/ui/icons";
+import {
+  AreaIcon,
+  BathIcon,
+  BedIcon,
+  GuestsIcon,
+  HouseIcon,
+  StarIcon,
+} from "@/components/ui/icons";
 import { formatPrice } from "@/lib/format";
 import { mediaSrcSet, publicMediaUrl, variantPath, variantWidths } from "@/lib/media";
 import type { PropertyCardData } from "@/server/queries/public-properties";
 
 import { ListingBadge } from "./listing-badge";
 
-export type CardStay = { nights: number; total: number };
+export type CardStay = {
+  nights: number;
+  /** Total estimado com as taxas (sem caução). */
+  total: number;
+  /** Média das diárias do período (temporada). */
+  nightlyAverage?: number | null;
+};
 
 const priceSuffix = { night: "por noite", month: "por mês", sale: "à venda" } as const;
 
@@ -123,6 +136,18 @@ export function PropertyCard({
             {property.title}
           </Link>
         </h3>
+        {property.rating ? (
+          <p className="inline-flex items-center gap-1 text-small text-abismo">
+            <StarIcon width={14} height={14} className="text-dourado" aria-hidden="true" />
+            <span>
+              {property.rating.average.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+              <span className="sr-only"> de 5</span>
+            </span>
+            <span className="text-rocha">
+              ({plural(property.rating.count, "avaliação", "avaliações")})
+            </span>
+          </p>
+        ) : null}
         {facts.length > 0 ? (
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-small text-rocha">
             {facts.map(({ icon: FactIcon, label }) => (
@@ -141,8 +166,13 @@ export function PropertyCard({
                   {formatPrice(stay.total)}
                 </strong>{" "}
                 <span className="text-small text-rocha">
-                  no total · {plural(stay.nights, "noite", "noites")}
+                  no total com taxas · {plural(stay.nights, "noite", "noites")}
                 </span>
+                {stay.nightlyAverage ? (
+                  <span className="w-full text-small text-rocha">
+                    média de {formatPrice(Math.round(stay.nightlyAverage))} por noite
+                  </span>
+                ) : null}
               </>
             ) : (
               <>

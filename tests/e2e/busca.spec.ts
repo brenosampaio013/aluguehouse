@@ -67,6 +67,22 @@ test.describe("busca da página inicial", () => {
     await expect(page).toHaveURL("/temporada?regiao=ilhabela");
   });
 
+  test("destino por cidade e bairro leva à busca com mapa", async ({ page, isMobile }) => {
+    await openSearch(page, isMobile);
+    const onde = page.getByRole("combobox", { name: "Onde?" });
+    const lista = page.getByRole("listbox", { name: "Destinos" });
+    await onde.fill("berti");
+    await expect(lista.getByRole("option", { name: /^Bertioga/ })).toBeVisible();
+    await onde.fill("juqu");
+    await lista.getByRole("option", { name: /Juquehy/ }).click();
+    await expect(onde).toHaveValue("Juquehy");
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await expect(page).toHaveURL("/temporada?destino=juquehy");
+    await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toContainText(
+      "em Juquehy",
+    );
+  });
+
   test("calendário: meses conforme a tela, passado bloqueado, período destacado e limpar", async ({
     page,
     isMobile,
@@ -221,7 +237,7 @@ test.describe("busca da página inicial", () => {
     );
     if (isMobile) await page.getByRole("button", { name: /^Filtros/ }).click();
     const filtros = page.getByRole("form", { name: "Filtros" });
-    await expect(filtros.getByLabel("Região")).toHaveValue("ubatuba");
+    await expect(filtros.getByLabel("Destino")).toHaveValue("ubatuba");
     await expect(filtros.getByLabel("Chegada")).toHaveValue(isoInDays(20));
     await expect(filtros.getByLabel("Hóspedes")).toHaveValue("2");
   });
