@@ -66,7 +66,18 @@ export async function proxy(request: NextRequest) {
   // sessão expirada é renovada.
   const { data } = await supabase.auth.getClaims();
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Link de acesso do modelo padrão do Supabase cai no Site URL com ?code=…
+  // (ex.: "/?code=…"): leva para o callback, que troca o código pela sessão.
+  if (searchParams.has("code") && !pathname.startsWith("/auth/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    url.search = `?code=${encodeURIComponent(searchParams.get("code")!)}`;
+    const redirect = NextResponse.redirect(url);
+    for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    return withCsp(redirect);
+  }
   const isAdminArea =
     pathname === "/admin" ||
     (pathname.startsWith("/admin/") && !pathname.startsWith("/admin/entrar"));

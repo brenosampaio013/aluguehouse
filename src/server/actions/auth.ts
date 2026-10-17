@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "@/lib/zod";
 
 import { NEXT_PATH_COOKIE, safeNextPath } from "@/lib/auth/redirect";
+import { getPublicEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type FormState = {
@@ -54,7 +55,12 @@ export async function requestMagicLink(_prev: FormState, formData: FormData): Pr
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data,
-    options: { shouldCreateUser: true },
+    // Usado pelo modelo padrão do Supabase ({{ .ConfirmationURL }}); precisa
+    // estar nas Redirect URLs do projeto. O modelo do site já aponta para cá.
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: `${getPublicEnv().NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
   });
 
   if (error) {
