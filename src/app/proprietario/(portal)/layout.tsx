@@ -4,7 +4,7 @@ import { AdminShell } from "@/components/admin/shell/admin-shell";
 import { MENU_COOKIE } from "@/components/admin/shell/nav-items";
 import { requireOwner } from "@/lib/auth/require-owner";
 import { todayInSaoPaulo } from "@/lib/format";
-import { getOwnerBookingCounts } from "@/server/queries/owner-portal";
+import { countUnreadNotifications, getOwnerBookingCounts } from "@/server/queries/owner-portal";
 import { settle } from "@/server/queries/settle";
 
 /**
@@ -14,8 +14,9 @@ import { settle } from "@/server/queries/settle";
  */
 export default async function PortalLayout({ children }: LayoutProps<"/proprietario">) {
   const { supabase, session } = await requireOwner();
-  const [counts, cookieStore] = await Promise.all([
+  const [counts, unread, cookieStore] = await Promise.all([
     settle(getOwnerBookingCounts(supabase, todayInSaoPaulo()), "pendências do menu"),
+    settle(countUnreadNotifications(supabase), "notificações não lidas"),
     cookies(),
   ]);
 
@@ -24,7 +25,10 @@ export default async function PortalLayout({ children }: LayoutProps<"/proprieta
       area="owner"
       email={session.email}
       initialCollapsed={cookieStore.get(MENU_COOKIE)?.value === "recolhido"}
-      pending={{ "/proprietario/reservas": counts.ok ? counts.data.pending : 0 }}
+      pending={{
+        "/proprietario/reservas": counts.ok ? counts.data.pending : 0,
+        "/proprietario/notificacoes": unread.ok ? unread.data : 0,
+      }}
     >
       {children}
     </AdminShell>

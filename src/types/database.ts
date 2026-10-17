@@ -241,6 +241,106 @@ export type Database = {
           },
         ];
       };
+      owner_documents: {
+        Row: {
+          category: Database["public"]["Enums"]["owner_document_category"];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          mime_type: string;
+          property_id: string;
+          size_bytes: number;
+          storage_path: string;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          category?: Database["public"]["Enums"]["owner_document_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          mime_type: string;
+          property_id: string;
+          size_bytes: number;
+          storage_path: string;
+          title: string;
+        };
+        Update: {
+          category?: Database["public"]["Enums"]["owner_document_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          mime_type?: string;
+          property_id?: string;
+          size_bytes?: number;
+          storage_path?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "owner_documents_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      owner_notifications: {
+        Row: {
+          body: string | null;
+          booking_request_id: string | null;
+          created_at: string;
+          id: string;
+          kind: Database["public"]["Enums"]["owner_notification_kind"];
+          link: string | null;
+          owner_id: string;
+          property_id: string | null;
+          read_at: string | null;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body?: string | null;
+          booking_request_id?: string | null;
+          created_at?: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["owner_notification_kind"];
+          link?: string | null;
+          owner_id: string;
+          property_id?: string | null;
+          read_at?: string | null;
+          title: string;
+        };
+        Update: {
+          body?: string | null;
+          booking_request_id?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["owner_notification_kind"];
+          link?: string | null;
+          owner_id?: string;
+          property_id?: string | null;
+          read_at?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "owner_notifications_booking_request_id_fkey";
+            columns: ["booking_request_id"];
+            isOneToOne: false;
+            referencedRelation: "booking_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "owner_notifications_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       owner_requests: {
         Row: {
           admin_reply: string | null;
@@ -769,6 +869,10 @@ export type Database = {
           role: string;
         }[];
       };
+      admin_notify_owners: {
+        Args: { p_body: string; p_property_id: string; p_title: string };
+        Returns: number;
+      };
       admin_status_counts: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_user_emails: {
         Args: { p_ids: string[] };
@@ -807,6 +911,7 @@ export type Database = {
         Args: { p_bucket: string; p_max: number; p_window_seconds: number };
         Returns: boolean;
       };
+      mark_owner_notifications_read: { Args: { p_ids?: string[] }; Returns: number };
       owner_bookings: {
         Args: { p_property_id?: string };
         Returns: {
@@ -940,6 +1045,16 @@ export type Database = {
       inquiry_kind: "contact" | "visit" | "sale_interest";
       inquiry_status: "new" | "in_progress" | "closed";
       media_kind: "image" | "video" | "tour";
+      owner_document_category: "contract" | "report" | "inspection" | "receipt" | "other";
+      owner_notification_kind:
+        | "booking_new"
+        | "booking_approved"
+        | "booking_declined"
+        | "booking_cancelled"
+        | "request_approved"
+        | "request_rejected"
+        | "document"
+        | "notice";
       owner_request_kind: "block" | "change";
       owner_request_status: "pending" | "approved" | "rejected" | "cancelled";
       property_status: "draft" | "published" | "archived";
@@ -1067,6 +1182,17 @@ export const Constants = {
       inquiry_kind: ["contact", "visit", "sale_interest"],
       inquiry_status: ["new", "in_progress", "closed"],
       media_kind: ["image", "video", "tour"],
+      owner_document_category: ["contract", "report", "inspection", "receipt", "other"],
+      owner_notification_kind: [
+        "booking_new",
+        "booking_approved",
+        "booking_declined",
+        "booking_cancelled",
+        "request_approved",
+        "request_rejected",
+        "document",
+        "notice",
+      ],
       owner_request_kind: ["block", "change"],
       owner_request_status: ["pending", "approved", "rejected", "cancelled"],
       property_status: ["draft", "published", "archived"],

@@ -7,6 +7,7 @@ import { addDaysISO, formatDateISO, todayInSaoPaulo } from "@/lib/format";
 
 import { answerConfirm, loginAsAdmin } from "./support/admin";
 import { createOwnerWithTotp, loginAsOwner, openAccessLink, openOwnerNav } from "./support/owner";
+import { testEnv } from "./support/env";
 import { adminApi, createAdminWithTotp, loginAsGuest, uniqueEmail } from "./support/users";
 
 /**
@@ -37,6 +38,7 @@ test.describe("portal do proprietário", () => {
     current: randomUUID(),
     cancelled: randomUUID(),
     ofB: randomUUID(),
+    notified: randomUUID(), // criada depois do vínculo, no teste de notificações
   };
   let ownerA: Owner;
   let ownerB: Owner;
@@ -493,6 +495,165 @@ test.describe("portal do proprietário", () => {
     await api.auth.admin.deleteUser(created.id);
   });
 
+  test("documentos privados: admin envia, só o dono abre por link temporário", async ({
+    page,
+    browser,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "fluxo de dados: basta um tamanho de tela");
+    test.setTimeout(120_000);
+    const api = adminApi();
+    const title = `Contrato ${run}`;
+
+    // Admin envia pelo painel.
+    const adminContext = await browser.newContext();
+    const admin = await adminContext.newPage();
+    await loginAsAdmin(admin, await createAdminWithTotp());
+    await admin.goto(`/admin/imoveis/${ids.a1}#documentos`);
+    const section = admin.getByRole("region", { name: "Documentos do proprietário" });
+    await section.getByLabel("Título").fill(title);
+    await section.getByLabel(/Arquivo/).setInputFiles({
+      name: "Contrato Março.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4\n% teste\n%%EOF\n"),
+    });
+    await section.getByRole("button", { name: "Enviar documento" }).click();
+    await expect(section.getByText(`“${title}” disponível`)).toBeVisible();
+    await adminContext.close();
+    const { data: doc } = await api
+      .from("owner_documents")
+      .select("id, storage_path")
+      .eq("title", title)
+      .single();
+    expect(doc!.storage_path).toMatch(new RegExp(`^${ids.a1}/[0-9a-f-]{36}/Contrato-Marco\\.pdf$`));
+
+    // Sem URL pública: o bucket é privado.
+    const publicUrl = `${testEnv.supabaseUrl}/storage/v1/object/public/owner-documents/${doc!.storage_path}`;
+    expect((await page.request.get(publicUrl)).ok()).toBe(false);
+
+    // O dono vê e abre por link assinado.
+    await loginAsOwner(page, ownerA);
+    await page.goto("/proprietario/documentos");
+    await expect(page.getByRole("link", { name: new RegExp(title) })).toBeVisible();
+    const open = await page.request.get(`/proprietario/documentos/${doc!.id}/abrir`, {
+      maxRedirects: 0,
+    });
+    expect(open.status()).toBe(307);
+    const signed = open.headers()["location"]!;
+    expect(signed).toContain("/storage/v1/object/sign/owner-documents/");
+    const file = await page.request.get(signed);
+    expect(file.ok()).toBe(true);
+    expect(await file.text()).toContain("%PDF-1.4");
+
+    // O dono avisado recebeu a notificação do documento novo.
+    await page.goto("/proprietario/notificacoes");
+    await expect(page.getByText(`Casa A ${run} · ${title}`)).toBeVisible();
+
+    // Outro proprietário não abre, nem sabendo o ID.
+    await page.context().clearCookies();
+    await loginAsOwner(page, ownerB);
+    await page.goto("/proprietario/documentos");
+    await expect(page.getByText(title)).toHaveCount(0);
+    const denied = await page.request.get(`/proprietario/documentos/${doc!.id}/abrir`, {
+      maxRedirects: 0,
+    });
+    expect(denied.status()).toBe(404);
+  });
+
+  test("notificações: pedidos de reserva, aviso do admin e marcar como lida", async ({
+    page,
+    browser,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "fluxo de dados: basta um tamanho de tela");
+    test.setTimeout(120_000);
+    const api = adminApi();
+    await loginAsOwner(page, ownerA);
+
+    // Um pedido novo no imóvel de A gera aviso só com o primeiro nome.
+    await api
+      .from("booking_requests")
+      .insert({
+        id: bookings.notified,
+        property_id: ids.a1,
+        rental_mode: "seasonal",
+        guest_name: `Paula Andrade ${run}`,
+        guest_email: `paula-${run}@teste.local`,
+        guest_phone: "13999990001",
+        stay: `[${day(60)},${day(62)})`,
+        guests_count: 2,
+        quote_snapshot: {},
+        quoted_total: 2400,
+        privacy_consent_at: new Date().toISOString(),
+      })
+      .throwOnError();
+    await page.goto("/proprietario/notificacoes");
+    const list = page.locator("main");
+    await expect(list.getByText("Novo pedido de reserva").first()).toBeVisible();
+    await expect(list).toContainText("Paula");
+    await expect(list).not.toContainText("Andrade");
+    await expect(list).not.toContainText(`paula-${run}@`);
+
+    // Menu mostra as não lidas; abrir uma marca como lida e leva à reserva.
+    const nav = await openOwnerNav(page);
+    await expect(nav.getByRole("link", { name: /Notificações/ })).toContainText("pendentes");
+    await list.getByRole("button", { name: /Novo pedido de reserva.*Paula/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/proprietario/reservas/${bookings.notified}$`));
+    await expect
+      .poll(async () =>
+        (
+          await api
+            .from("owner_notifications")
+            .select("read_at")
+            .eq("owner_id", ownerA.id)
+            .eq("booking_request_id", bookings.notified)
+        ).data?.map((n) => n.read_at !== null),
+      )
+      .toEqual([true]);
+    // B não foi avisado do pedido no imóvel de A.
+    const { count: ofB } = await api
+      .from("owner_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", ownerB.id)
+      .eq("booking_request_id", bookings.notified);
+    expect(ofB).toBe(0);
+
+    // Aviso do admin para os proprietários da Casa A.
+    const adminContext = await browser.newContext();
+    const admin = await adminContext.newPage();
+    await loginAsAdmin(admin, await createAdminWithTotp());
+    await admin.goto("/admin/proprietarios");
+    const notice = admin.getByRole("region", { name: "Enviar aviso" });
+    await notice.getByLabel("Para").selectOption(ids.a1);
+    await notice.getByLabel("Título").fill(`Manutenção da piscina ${run}`);
+    await notice.getByRole("button", { name: "Enviar aviso" }).click();
+    await expect(notice.getByText("Aviso enviado para 1 proprietário.")).toBeVisible();
+    await adminContext.close();
+
+    await page.goto("/proprietario/notificacoes");
+    await expect(page.getByText(`Manutenção da piscina ${run}`)).toBeVisible();
+    await page.getByRole("button", { name: "Marcar todas como lidas" }).click();
+    await expect(page.getByText("Todas as notificações foram marcadas como lidas.")).toBeVisible();
+    await expect
+      .poll(
+        async () =>
+          (
+            await api
+              .from("owner_notifications")
+              .select("id", { count: "exact", head: true })
+              .eq("owner_id", ownerA.id)
+              .is("read_at", null)
+          ).count,
+      )
+      .toBe(0);
+
+    // B não recebeu o aviso da Casa A.
+    const { count } = await api
+      .from("owner_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", ownerB.id)
+      .like("title", `%${run}%`);
+    expect(count).toBe(0);
+  });
+
   test("sem violações WCAG 2.1 AA e sem rolagem lateral", async ({ page }) => {
     await loginAsOwner(page, ownerA);
     for (const path of [
@@ -501,6 +662,8 @@ test.describe("portal do proprietário", () => {
       `/proprietario/calendario?imovel=${ids.a1}`,
       "/proprietario/reservas",
       "/proprietario/financeiro",
+      "/proprietario/documentos",
+      "/proprietario/notificacoes",
       "/proprietario/perfil",
     ]) {
       await page.goto(path);

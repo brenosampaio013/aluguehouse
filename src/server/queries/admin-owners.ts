@@ -109,3 +109,20 @@ export async function countPendingOwnerRequests(supabase: Client) {
   if (error) throw error;
   return count ?? 0;
 }
+
+/** Documentos privados de um imóvel (para o admin gerenciar). */
+export async function listOwnerDocumentsAdmin(supabase: Client, propertyId: string) {
+  const { data, error } = await supabase
+    .from("owner_documents")
+    .select("id, title, category, size_bytes, created_at")
+    .eq("property_id", propertyId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((d) => ({
+    id: d.id,
+    title: d.title,
+    category: d.category,
+    sizeBytes: d.size_bytes,
+    createdAt: d.created_at,
+  }));
+}

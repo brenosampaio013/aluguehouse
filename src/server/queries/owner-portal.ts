@@ -311,3 +311,51 @@ export async function listOwnerRequests(supabase: Client, propertyId: string | n
 }
 
 export type OwnerRequest = Awaited<ReturnType<typeof listOwnerRequests>>[number];
+
+// Documentos e notificações ----------------------------------------------------
+
+/** Documentos dos imóveis do proprietário (o banco só devolve os vinculados). */
+export async function listOwnerDocuments(supabase: Client, propertyId: string | null) {
+  let query = supabase
+    .from("owner_documents")
+    .select(
+      "id, property_id, title, category, mime_type, size_bytes, created_at, properties(title)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (propertyId) query = query.eq("property_id", propertyId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map((d) => ({ ...d, propertyTitle: d.properties?.title ?? "" }));
+}
+
+export async function getOwnerDocumentPath(supabase: Client, id: string) {
+  const { data, error } = await supabase
+    .from("owner_documents")
+    .select("storage_path")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.storage_path ?? null;
+}
+
+export async function listOwnerNotifications(supabase: Client, page: number) {
+  const from = (page - 1) * PAGE_SIZE;
+  const { data, error, count } = await supabase
+    .from("owner_notifications")
+    .select("id, kind, title, body, link, read_at, created_at", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .order("id")
+    .range(from, from + PAGE_SIZE - 1);
+  if (error) throw error;
+  return { rows: data ?? [], count: count ?? 0 };
+}
+
+export async function countUnreadNotifications(supabase: Client) {
+  const { count, error } = await supabase
+    .from("owner_notifications")
+    .select("id", { count: "exact", head: true })
+    .is("read_at", null);
+  if (error) throw error;
+  return count ?? 0;
+}

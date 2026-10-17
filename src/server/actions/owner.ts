@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "@/lib/zod";
 
 import { requireOwner } from "@/lib/auth/require-owner";
@@ -142,4 +143,26 @@ export async function updateOwnerProfile(_prev: FormState, formData: FormData): 
   }
   revalidatePath("/proprietario/perfil");
   return { status: "success", message: "Dados salvos." };
+}
+
+/** Abre uma notificação: marca como lida e segue para a página dela. */
+export async function openNotification(formData: FormData) {
+  const id = z.uuid().safeParse(formData.get("id"));
+  const link = String(formData.get("link") ?? "");
+  const { supabase } = await requireOwner();
+  if (id.success) await supabase.rpc("mark_owner_notifications_read", { p_ids: [id.data] });
+  revalidatePath("/proprietario", "layout");
+  // Só caminhos do próprio portal (a coluna no banco também restringe).
+  redirect(
+    /^\/proprietario(\/[A-Za-z0-9/?=&_-]*)?$/.test(link) ? link : "/proprietario/notificacoes",
+  );
+}
+
+/** Marca todas as notificações como lidas. */
+export async function markAllNotificationsRead(): Promise<FormState> {
+  const { supabase } = await requireOwner();
+  const { error } = await supabase.rpc("mark_owner_notifications_read", {});
+  if (error) return { status: "error", message: "Não foi possível marcar agora. Tente de novo." };
+  revalidatePath("/proprietario", "layout");
+  return { status: "success", message: "Todas as notificações foram marcadas como lidas." };
 }

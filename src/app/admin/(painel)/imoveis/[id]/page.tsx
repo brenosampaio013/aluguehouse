@@ -6,6 +6,7 @@ import { AmenitiesForm } from "@/components/admin/amenities-form";
 import { BlocksManager } from "@/components/admin/blocks-manager";
 import { FeesManager } from "@/components/admin/fees-manager";
 import { MediaManager } from "@/components/admin/media-manager";
+import { OwnerDocumentsManager } from "@/components/admin/owner-documents-manager";
 import { OwnerRequestsList } from "@/components/admin/owner-requests-list";
 import { PropertyOwnersManager } from "@/components/admin/property-owners-manager";
 import { PropertyGeneralForm } from "@/components/admin/property-general-form";
@@ -23,7 +24,11 @@ import { getPublicEnv } from "@/lib/env";
 import { publishChecklist } from "@/lib/properties/publish";
 import { getServerEnv } from "@/lib/server-env";
 import { listUpcomingBlocks } from "@/server/queries/admin-bookings";
-import { listOwnerRequestsForAdmin, listPropertyOwners } from "@/server/queries/admin-owners";
+import {
+  listOwnerDocumentsAdmin,
+  listOwnerRequestsForAdmin,
+  listPropertyOwners,
+} from "@/server/queries/admin-owners";
 import { settle } from "@/server/queries/settle";
 import { getPropertyForEdit } from "@/server/queries/admin-properties";
 import { todayInSaoPaulo } from "@/lib/format";
@@ -41,6 +46,7 @@ const sections = [
   { id: "calendario", label: "Calendário" },
   { id: "localizacao", label: "Localização privada" },
   { id: "proprietarios", label: "Proprietários" },
+  { id: "documentos", label: "Documentos do proprietário" },
 ];
 
 function Section({
@@ -77,12 +83,13 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
 
   const { supabase } = await requireAdmin();
   const today = todayInSaoPaulo();
-  const [data, blocks, owners, ownerRequests] = await Promise.all([
+  const [data, blocks, owners, ownerRequests, ownerDocuments] = await Promise.all([
     getPropertyForEdit(supabase, id),
     listUpcomingBlocks(supabase, id, today),
     // A seção de proprietários falha sozinha, sem derrubar a edição do imóvel.
     settle(listPropertyOwners(supabase, id), "proprietários do imóvel"),
     settle(listOwnerRequestsForAdmin(supabase, { propertyId: id }), "pedidos dos proprietários"),
+    settle(listOwnerDocumentsAdmin(supabase, id), "documentos do proprietário"),
   ]);
   const { property } = data;
   const images = data.media.filter((item) => item.kind === "image");
@@ -250,6 +257,18 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
                 <SectionError what="os pedidos dos proprietários" />
               )}
             </div>
+          </Section>
+
+          <Section
+            id="documentos"
+            title="Documentos do proprietário"
+            description="Arquivos privados que os proprietários deste imóvel veem no portal (contratos, relatórios, vistorias). Ficam em armazenamento protegido e só abrem por link temporário."
+          >
+            {ownerDocuments.ok ? (
+              <OwnerDocumentsManager propertyId={property.id} documents={ownerDocuments.data} />
+            ) : (
+              <SectionError what="os documentos" />
+            )}
           </Section>
         </div>
       </div>
