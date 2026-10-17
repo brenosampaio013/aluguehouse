@@ -436,7 +436,11 @@ export function PriceMap(props: PriceMapProps) {
               </button>
             </div>
           ) : (
-            <p className="animate-pulse text-small text-abismo" role="status">
+            <p className="inline-flex items-center gap-2 text-small text-abismo" role="status">
+              <span
+                aria-hidden="true"
+                className="size-4 rounded-full border-2 border-petroleo border-t-transparent motion-safe:animate-spin"
+              />
               Carregando mapa…
             </p>
           )}

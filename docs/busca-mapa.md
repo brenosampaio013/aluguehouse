@@ -131,9 +131,11 @@ Testes: `supabase/tests/database/21_busca_mapa.test.sql` (25), sobre:
 
 ## Verificação
 
-| Teste                                                    | Resultado                    |
-| -------------------------------------------------------- | ---------------------------- |
-| Banco (`pnpm db:test`)                                   | 327 de 327                   |
-| Lint do banco (`pnpm db:lint`)                           | Sem erros                    |
-| Unitários (`pnpm test`)                                  | Ver relatório do PR          |
-| Ponta a ponta: `busca-mapa`, `listagem-aluguel`, `busca` | Computador, tablet e celular |
+| Teste                                                       | Resultado                                                        |
+| ----------------------------------------------------------- | ---------------------------------------------------------------- |
+| Banco (`pnpm db:test`)                                      | 327 de 327                                                       |
+| Lint do banco (`pnpm db:lint`)                              | Sem erros                                                        |
+| `pnpm check` (lint, tipos, formatação, unitários)           | OK; 220 de 220 unitários                                         |
+| Ponta a ponta, suíte completa (computador, tablet, celular) | 439 passando; as 3 falhas eram do mapa antigo e foram corrigidas |
+| Ponta a ponta das páginas afetadas, depois das correções    | 180 de 180                                                       |
+| Build Cloudflare (`pnpm cf:build`)                          | OK                                                               |
