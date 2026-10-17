@@ -241,6 +241,70 @@ export type Database = {
           },
         ];
       };
+      owner_requests: {
+        Row: {
+          admin_reply: string | null;
+          calendar_block_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          kind: Database["public"]["Enums"]["owner_request_kind"];
+          message: string | null;
+          property_id: string;
+          requested_by: string;
+          status: Database["public"]["Enums"]["owner_request_status"];
+          stay: unknown;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          admin_reply?: string | null;
+          calendar_block_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          kind: Database["public"]["Enums"]["owner_request_kind"];
+          message?: string | null;
+          property_id: string;
+          requested_by: string;
+          status?: Database["public"]["Enums"]["owner_request_status"];
+          stay?: unknown;
+          updated_at?: string;
+        };
+        Update: {
+          admin_reply?: string | null;
+          calendar_block_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          kind?: Database["public"]["Enums"]["owner_request_kind"];
+          message?: string | null;
+          property_id?: string;
+          requested_by?: string;
+          status?: Database["public"]["Enums"]["owner_request_status"];
+          stay?: unknown;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "owner_requests_calendar_block_id_fkey";
+            columns: ["calendar_block_id"];
+            isOneToOne: false;
+            referencedRelation: "calendar_blocks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "owner_requests_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -526,6 +590,36 @@ export type Database = {
           },
         ];
       };
+      property_owners: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          owner_id: string;
+          property_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          owner_id: string;
+          property_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          owner_id?: string;
+          property_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_owners_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       property_private: {
         Row: {
           exact_lat: number | null;
@@ -670,7 +764,9 @@ export type Database = {
       };
       admin_status_counts: { Args: Record<PropertyKey, never>; Returns: Json };
       approve_booking_request: { Args: { p_id: string }; Returns: undefined };
+      approve_owner_request: { Args: { p_id: string; p_reply?: string }; Returns: undefined };
       cancel_booking_request: { Args: { p_id: string; p_notes?: string }; Returns: undefined };
+      cancel_owner_request: { Args: { p_id: string }; Returns: undefined };
       decline_booking_request: { Args: { p_id: string; p_notes?: string }; Returns: undefined };
       get_my_stays: {
         Args: Record<PropertyKey, never>;
@@ -697,6 +793,34 @@ export type Database = {
         Args: { p_bucket: string; p_max: number; p_window_seconds: number };
         Returns: boolean;
       };
+      owner_bookings: {
+        Args: { p_property_id?: string };
+        Returns: {
+          check_in: string;
+          check_out: string;
+          created_at: string;
+          decided_at: string;
+          guest_first_name: string;
+          guests_count: number;
+          id: string;
+          property_id: string;
+          property_title: string;
+          quote: Json;
+          quoted_total: number;
+          rental_mode: Database["public"]["Enums"]["rental_mode"];
+          status: Database["public"]["Enums"]["booking_status"];
+        }[];
+      };
+      owner_calendar: {
+        Args: { p_from: string; p_property_id?: string; p_to: string };
+        Returns: {
+          booking_request_id: string;
+          end_date: string;
+          kind: Database["public"]["Enums"]["block_kind"];
+          property_id: string;
+          start_date: string;
+        }[];
+      };
       quote_stay: {
         Args: {
           p_check_in: string;
@@ -707,6 +831,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      reject_owner_request: { Args: { p_id: string; p_reply?: string }; Returns: undefined };
       request_booking: {
         Args: {
           p_check_in: string;
@@ -720,6 +845,19 @@ export type Database = {
           p_privacy_consent: boolean;
           p_property_id: string;
         };
+        Returns: string;
+      };
+      request_owner_block: {
+        Args: {
+          p_check_in: string;
+          p_check_out: string;
+          p_message?: string;
+          p_property_id: string;
+        };
+        Returns: string;
+      };
+      request_property_change: {
+        Args: { p_message: string; p_property_id: string };
         Returns: string;
       };
       search_rentals: {
@@ -788,6 +926,8 @@ export type Database = {
       inquiry_kind: "contact" | "visit" | "sale_interest";
       inquiry_status: "new" | "in_progress" | "closed";
       media_kind: "image" | "video" | "tour";
+      owner_request_kind: "block" | "change";
+      owner_request_status: "pending" | "approved" | "rejected" | "cancelled";
       property_status: "draft" | "published" | "archived";
       property_type: "casa" | "apartamento" | "cobertura" | "terreno" | "outro";
       rental_mode: "seasonal" | "monthly";
@@ -913,6 +1053,8 @@ export const Constants = {
       inquiry_kind: ["contact", "visit", "sale_interest"],
       inquiry_status: ["new", "in_progress", "closed"],
       media_kind: ["image", "video", "tour"],
+      owner_request_kind: ["block", "change"],
+      owner_request_status: ["pending", "approved", "rejected", "cancelled"],
       property_status: ["draft", "published", "archived"],
       property_type: ["casa", "apartamento", "cobertura", "terreno", "outro"],
       rental_mode: ["seasonal", "monthly"],

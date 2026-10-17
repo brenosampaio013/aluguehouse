@@ -1,0 +1,110 @@
+# Portal do proprietário
+
+Área autenticada (`/proprietario`) para cada proprietário acompanhar os
+imóveis dele: disponibilidade, reservas e, depois, financeiro, documentos e
+avisos. Desenvolvido em fases; este documento registra decisões, segurança e
+o que falta.
+
+| Fase | Conteúdo                                                                  | Situação         |
+| ---- | ------------------------------------------------------------------------- | ---------------- |
+| A    | Auditoria e plano                                                         | concluída        |
+| B    | Segurança no banco: vínculo, isolamento, funções, testes                  | concluída        |
+| C    | Portal: visão geral, meus imóveis, calendário, reservas; vínculo no admin | próxima          |
+| D    | Financeiro e repasses                                                     | regras pendentes |
+| E    | Documentos, notificações, perfil                                          | depois da C      |
+
+## Decisões (17/10/2026)
+
+| Tema                      | Decisão                                                               |
+| ------------------------- | --------------------------------------------------------------------- |
+| Acesso                    | Link por e-mail + código do aplicativo autenticador (MFA obrigatório) |
+| Dados do hóspede          | Primeiro nome, quantidade de hóspedes e datas. Sem e-mail ou telefone |
+| Reservas pendentes        | Aparecem como "aguardando aprovação"                                  |
+| Bloqueio para uso próprio | Pedido do proprietário, aprovado pelo admin                           |
+| Valores nas reservas      | Orçamento de diárias e taxas, sempre identificado como **estimativa** |
+| Quem cobra o hóspede      | Alugue Houses                                                         |
+| Comissão                  | 15% sobre as **diárias** (não sobre as taxas)                         |
+| Repasse                   | Até 2 dias após o check-in                                            |
+| Registro dos recebimentos | Sistema automático + administrador                                    |
+| Taxas (limpeza etc.)      | **Não definido** — de quem é cada taxa                                |
+| Despesas descontadas      | **Não definido**                                                      |
+| Cancelamento e reembolso  | **Não definido**                                                      |
+
+## Segurança (Fase B)
+
+Migration `20261017130000_owner_portal_security.sql` — só acrescenta; nenhuma
+política existente foi alterada e o admin mantém o mesmo acesso.
+
+- **Quem é proprietário**: `private.is_owner()` = `app_metadata.role =
+"owner"` (o usuário não consegue alterar; quem define é o admin) **e**
+  sessão com MFA (`aal2`). Mesmo modelo do admin.
+- **Vínculo** `public.property_owners (property_id, owner_id)`: um imóvel pode
+  ter mais de um proprietário. Só o admin cria ou remove. Um gatilho recusa
+  vincular quem não tem o papel de proprietário (hóspede ou admin por
+  engano). Nada é concedido automaticamente.
+- **`private.owns_property(id)`**: proprietário com MFA **e** vinculado ao
+  imóvel. Todas as regras do portal passam por ela, no banco.
+- **Leitura direta (RLS)**: imóveis vinculados (inclusive rascunhos e
+  arquivados), fotos, comodidades, tarifas sazonais e taxas. Políticas novas,
+  somadas às existentes. O site público continua filtrando
+  `status = 'published'` explicitamente em todas as consultas.
+- **Sem acesso direto**: `property_private` (endereço exato e anotações
+  internas), `booking_requests` e `calendar_blocks`. Reservas e calendário só
+  por funções que conferem o vínculo:
+  - `owner_bookings(imóvel?)`: id, imóvel, modalidade, datas, hóspedes,
+    **primeiro nome**, situação (inclusive pendente), orçamento estimado
+    (`quote`, `quoted_total`), datas do pedido e da decisão. Nunca e-mail,
+    telefone, nome completo, mensagem ou anotações do admin.
+  - `owner_calendar(de, até, imóvel?)`: períodos ocupados e o motivo
+    (reserva, uso do proprietário, manutenção), sem anotações. Até 400 dias.
+- **Pedidos** `public.owner_requests` (bloqueio de datas ou alteração do
+  anúncio). O proprietário só grava pelas funções:
+  - `request_owner_block(imóvel, entrada, saída, motivo?)`: datas futuras,
+    até 365 dias, recusa período já ocupado;
+  - `request_property_change(imóvel, descrição)`;
+  - `cancel_owner_request(id)`: só pedidos pendentes do próprio imóvel;
+  - no máximo 20 pedidos pendentes por imóvel.
+  - Coproprietários do mesmo imóvel veem os pedidos uns dos outros.
+- **Decisão do admin**: `approve_owner_request(id, resposta?)` e
+  `reject_owner_request(id, resposta?)`. Aprovar um bloqueio grava "uso do
+  proprietário" no calendário **na mesma transação**; se as datas tiverem
+  sido ocupadas nesse meio-tempo, a restrição de exclusão do calendário
+  recusa e o pedido continua pendente. Aprovar uma alteração só registra que
+  o admin a fez pelo painel: o anúncio nunca muda sozinho.
+- **IDs na URL**: trocar o ID de imóvel, reserva ou pedido não abre nada,
+  porque cada linha é conferida no banco (testado).
+- **Desvincular** tira o acesso na hora. Trocar o papel do usuário vale a
+  partir da próxima renovação da sessão (até 1 hora, `jwt_expiry`); para
+  cortar na hora, desvincule.
+
+### Testes (`supabase/tests/database/18_portal_proprietario.test.sql`, 55)
+
+Usuários: admin, proprietário A (dois imóveis, um rascunho), proprietário B,
+proprietário sem imóveis, hóspede e visitante. Cobrem: vínculo só com papel
+de proprietário; A lê só os seus imóveis, tarifas e taxas (inclusive do
+rascunho) e nada de B, mesmo pedindo pelo ID; nada de endereço exato,
+anotações, tabela de reservas ou calendário; reservas com primeiro nome e
+sem campos privados; escrita direta negada (anúncio, vínculos, calendário,
+pedidos); pedidos com validação de datas e limite; B não cancela pedido de
+A sabendo o ID; sem MFA, sem vínculo, hóspede e visitante sem acesso; admin
+com acesso preservado, aprova bloqueio (grava no calendário), recusa
+sobreposto e recusa alteração; desvincular corta o acesso.
+
+## Financeiro (Fase D) — pendências
+
+Hoje o site **não cobra nada** (os Termos dizem isso): não há pagamentos,
+recebimentos nem repasses registrados. O único valor é o orçamento do pedido.
+
+Antes de calcular qualquer valor, falta definir:
+
+1. De quem é cada taxa (limpeza e outras): do proprietário, da Alugue Houses
+   ou repassada ao prestador?
+2. Quais despesas podem ser descontadas do repasse e quem as lança.
+3. Regra de cancelamento e reembolso (e o efeito na comissão e no repasse).
+4. "Sistema automático" de recebimentos: qual meio de pagamento (gateway)
+   será integrado. Sem ele, só o lançamento manual pelo admin é possível.
+5. Revisão dos Termos de uso, que hoje dizem que nada é cobrado pelo site.
+
+Com as regras já definidas (15% sobre diárias; repasse até 2 dias após o
+check-in), a estrutura da Fase D terá lançamentos confirmados pelo admin
+(ou pelo gateway), somente leitura para o proprietário.
