@@ -762,7 +762,21 @@ export type Database = {
         Args: { p_from: string; p_property_id?: string; p_to: string };
         Returns: Json;
       };
+      admin_find_user_by_email: {
+        Args: { p_email: string };
+        Returns: {
+          id: string;
+          role: string;
+        }[];
+      };
       admin_status_counts: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_user_emails: {
+        Args: { p_ids: string[] };
+        Returns: {
+          email: string;
+          id: string;
+        }[];
+      };
       approve_booking_request: { Args: { p_id: string }; Returns: undefined };
       approve_owner_request: { Args: { p_id: string; p_reply?: string }; Returns: undefined };
       cancel_booking_request: { Args: { p_id: string; p_notes?: string }; Returns: undefined };

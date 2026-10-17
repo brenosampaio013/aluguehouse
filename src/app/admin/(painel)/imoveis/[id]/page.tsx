@@ -6,12 +6,15 @@ import { AmenitiesForm } from "@/components/admin/amenities-form";
 import { BlocksManager } from "@/components/admin/blocks-manager";
 import { FeesManager } from "@/components/admin/fees-manager";
 import { MediaManager } from "@/components/admin/media-manager";
+import { OwnerRequestsList } from "@/components/admin/owner-requests-list";
+import { PropertyOwnersManager } from "@/components/admin/property-owners-manager";
 import { PropertyGeneralForm } from "@/components/admin/property-general-form";
 import { PropertyPrivateForm } from "@/components/admin/property-private-form";
 import { PublishPanel } from "@/components/admin/publish-panel";
 import { RatesManager } from "@/components/admin/rates-manager";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { VideoManager } from "@/components/admin/video-manager";
+import { SectionError } from "@/components/admin/ui/empty-state";
 import { AdminPage, PageHeader } from "@/components/admin/ui/page";
 import { buttonClasses } from "@/components/ui/button";
 import { ExternalIcon } from "@/components/ui/icons";
@@ -20,6 +23,8 @@ import { getPublicEnv } from "@/lib/env";
 import { publishChecklist } from "@/lib/properties/publish";
 import { getServerEnv } from "@/lib/server-env";
 import { listUpcomingBlocks } from "@/server/queries/admin-bookings";
+import { listOwnerRequestsForAdmin, listPropertyOwners } from "@/server/queries/admin-owners";
+import { settle } from "@/server/queries/settle";
 import { getPropertyForEdit } from "@/server/queries/admin-properties";
 import { todayInSaoPaulo } from "@/lib/format";
 
@@ -35,6 +40,7 @@ const sections = [
   { id: "taxas", label: "Taxas" },
   { id: "calendario", label: "Calendário" },
   { id: "localizacao", label: "Localização privada" },
+  { id: "proprietarios", label: "Proprietários" },
 ];
 
 function Section({
@@ -71,9 +77,12 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
 
   const { supabase } = await requireAdmin();
   const today = todayInSaoPaulo();
-  const [data, blocks] = await Promise.all([
+  const [data, blocks, owners, ownerRequests] = await Promise.all([
     getPropertyForEdit(supabase, id),
     listUpcomingBlocks(supabase, id, today),
+    // A seção de proprietários falha sozinha, sem derrubar a edição do imóvel.
+    settle(listPropertyOwners(supabase, id), "proprietários do imóvel"),
+    settle(listOwnerRequestsForAdmin(supabase, { propertyId: id }), "pedidos dos proprietários"),
   ]);
   const { property } = data;
   const images = data.media.filter((item) => item.kind === "image");
@@ -218,6 +227,29 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
               data={data.privateData}
               approx={{ lat: property.approx_lat, lng: property.approx_lng }}
             />
+          </Section>
+
+          <Section
+            id="proprietarios"
+            title="Proprietários"
+            description="Quem acompanha este imóvel no Portal do Proprietário (imóvel, calendário e reservas, sem e-mail ou telefone de hóspedes). Bloqueios e alterações pedidos por eles só valem depois da sua aprovação."
+          >
+            {owners.ok ? (
+              <PropertyOwnersManager propertyId={property.id} owners={owners.data} />
+            ) : (
+              <SectionError what="os proprietários" />
+            )}
+            <div className="grid gap-3 border-t border-areia pt-5">
+              <h3 className="font-semibold">Pedidos dos proprietários</h3>
+              {ownerRequests.ok ? (
+                <OwnerRequestsList
+                  requests={ownerRequests.data}
+                  empty="Nenhum pedido dos proprietários deste imóvel."
+                />
+              ) : (
+                <SectionError what="os pedidos dos proprietários" />
+              )}
+            </div>
           </Section>
         </div>
       </div>

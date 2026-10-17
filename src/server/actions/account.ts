@@ -26,7 +26,8 @@ export async function deleteMyAccount(_prev: FormState, formData: FormData): Pro
   if (session.status !== "guest") {
     return {
       status: "error",
-      message: "Contas de administrador não podem ser excluídas por aqui.",
+      message:
+        "Contas de administrador ou de proprietário não podem ser excluídas por aqui. Fale com a Alugue Houses.",
     };
   }
 

@@ -8,8 +8,8 @@ import { buildCsp, createNonce } from "@/lib/seo/csp";
 /**
  * Renova a sessão do Supabase a cada requisição, aplica a política de
  * segurança de conteúdo (CSP) com um nonce novo e faz uma verificação
- * otimista em /admin. A autorização definitiva fica no layout do painel e
- * nas políticas RLS do banco.
+ * otimista em /admin e /proprietario. A autorização definitiva fica nos
+ * layouts (painel e portal) e nas políticas RLS do banco.
  */
 export async function proxy(request: NextRequest) {
   let env;
@@ -71,10 +71,18 @@ export async function proxy(request: NextRequest) {
     pathname === "/admin" ||
     (pathname.startsWith("/admin/") && !pathname.startsWith("/admin/entrar"));
 
-  if (isAdminArea && !data?.claims?.sub) {
+  const isOwnerArea = pathname === "/proprietario" || pathname.startsWith("/proprietario/");
+
+  if ((isAdminArea || isOwnerArea) && !data?.claims?.sub) {
     const url = request.nextUrl.clone();
-    url.pathname = "/admin/entrar";
-    url.search = "";
+    if (isAdminArea) {
+      url.pathname = "/admin/entrar";
+      url.search = "";
+    } else {
+      // Login por link no e-mail; depois volta ao portal.
+      url.pathname = "/entrar";
+      url.search = `?next=${encodeURIComponent("/proprietario")}`;
+    }
     const redirect = NextResponse.redirect(url);
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
     return withCsp(redirect);

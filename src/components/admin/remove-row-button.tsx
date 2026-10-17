@@ -15,17 +15,26 @@ export function RemoveRowButton({
   fields,
   label,
   confirmTitle,
+  verb = "Remover",
+  pendingVerb = "Removendo…",
+  keepLabel,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   fields: Record<string, string>;
   /** Nome do item, para leitores de tela (ex.: "tarifa Réveillon"). */
   label: string;
   confirmTitle: string;
+  /** Texto do botão e da confirmação (ex.: "Cancelar pedido"). */
+  verb?: string;
+  pendingVerb?: string;
+  /** Botão que desiste da ação (padrão "Cancelar"). */
+  keepLabel?: string;
 }) {
   const { state, pending, formProps } = useFormAction(action);
   const confirm = useConfirmSubmit(() => ({
     title: confirmTitle,
-    confirmLabel: "Remover",
+    confirmLabel: verb,
+    cancelLabel: keepLabel,
     tone: "danger",
   }));
   return (
@@ -38,7 +47,7 @@ export function RemoveRowButton({
         <input key={name} type="hidden" name={name} value={value} />
       ))}
       <Button type="submit" variant="text" disabled={pending} className="text-erro hover:text-erro">
-        {pending ? "Removendo…" : "Remover"}
+        {pending ? pendingVerb : verb}
         <span className="sr-only"> {label}</span>
       </Button>
       {state.status === "error" && state.message ? (

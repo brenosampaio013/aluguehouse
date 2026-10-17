@@ -5,23 +5,26 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/cn";
 
-import { adminNavItems, isActive } from "./nav-items";
+import { isActive, panelAreas, type PanelArea } from "./nav-items";
 
 /** Links do menu lateral, com ícones e contadores de pendências. */
 export function AdminNav({
+  area = "admin",
   pending,
   collapsed = false,
   onNavigate,
 }: {
+  area?: PanelArea;
   pending: Record<string, number>;
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const { navLabel, items } = panelAreas[area];
   return (
-    <nav aria-label="Painel">
+    <nav aria-label={navLabel}>
       <ul className="grid gap-1">
-        {adminNavItems.map((item) => {
+        {items.map((item) => {
           const active = isActive(pathname, item);
           const count = pending[item.href] ?? 0;
           const Icon = item.icon;

@@ -133,16 +133,24 @@ export type EnrollState = FormState & {
   secret?: string;
 };
 
-async function requireAdminFirstFactor() {
+/** Áreas que exigem o segundo fator: para onde voltar depois dele. */
+const mfaAreas = {
+  admin: { home: "/admin" },
+  owner: { home: "/proprietario" },
+} as const;
+
+/** Admin ou proprietário com o primeiro fator (senha ou link) concluído. */
+async function requireMfaFirstFactor() {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
-  if (data?.claims?.app_metadata?.role !== "admin") redirect("/admin/entrar");
-  return supabase;
+  const role: unknown = data?.claims?.app_metadata?.role;
+  if (role !== "admin" && role !== "owner") redirect("/entrar");
+  return { supabase, area: mfaAreas[role] };
 }
 
-/** Admin: inicia o cadastro do aplicativo autenticador (TOTP). */
+/** Admin ou proprietário: inicia o cadastro do aplicativo autenticador (TOTP). */
 export async function startTotpEnrollment(): Promise<EnrollState> {
-  const supabase = await requireAdminFirstFactor();
+  const { supabase } = await requireMfaFirstFactor();
 
   const { data: factors } = await supabase.auth.mfa.listFactors();
   if (factors?.totp.some((factor) => factor.status === "verified")) {
@@ -181,7 +189,7 @@ const codeSchema = z.object({
     .regex(/^\d{6}$/, "Digite os 6 números mostrados no aplicativo."),
 });
 
-/** Admin: confirma o código de 6 dígitos e eleva a sessão para aal2. */
+/** Admin ou proprietário: confirma o código de 6 dígitos e eleva a sessão para aal2. */
 export async function verifyTotp(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = codeSchema.safeParse({
     factorId: formData.get("factorId"),
@@ -195,7 +203,7 @@ export async function verifyTotp(_prev: FormState, formData: FormData): Promise<
     };
   }
 
-  const supabase = await requireAdminFirstFactor();
+  const { supabase, area } = await requireMfaFirstFactor();
   const { error } = await supabase.auth.mfa.challengeAndVerify(parsed.data);
 
   if (error) {
@@ -205,5 +213,5 @@ export async function verifyTotp(_prev: FormState, formData: FormData): Promise<
     };
   }
 
-  redirect("/admin");
+  redirect(area.home);
 }

@@ -50,6 +50,13 @@ export default async function EntrarPage({ searchParams }: PageProps<"/entrar">)
               Conectado como <strong className="text-abismo">{session.email}</strong>.
             </p>
             <ul className="flex flex-wrap gap-3">
+              {session.status === "owner" || session.status === "owner_needs_mfa" ? (
+                <li>
+                  <Link href="/proprietario" className={buttonClasses("primary")}>
+                    Portal do proprietário
+                  </Link>
+                </li>
+              ) : null}
               <li>
                 <Link href="/favoritos" className={buttonClasses("secondary")}>
                   Favoritos
