@@ -3,13 +3,14 @@ import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import { addDaysISO, todayInSaoPaulo } from "@/lib/format";
+
 import { answerConfirm, loginAsAdmin, openAdminNav } from "./support/admin";
 import { adminApi, createAdminWithTotp } from "./support/users";
 
+/** Hoje + n dias no fuso de São Paulo, o mesmo "hoje" do painel e do banco. */
 function isoInDays(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return addDaysISO(todayInSaoPaulo(), days);
 }
 
 /** Imóvel e dados próprios de cada teste (os testes rodam em paralelo). */
