@@ -198,7 +198,7 @@ test.describe("página inicial", () => {
     await expect(rodape.getByRole("link", { name: "Termos de uso" })).toBeVisible();
   });
 
-  test("topo com subtítulo e chamadas para os imóveis e a Riviera", async ({ page }) => {
+  test("topo com subtítulo e chamada para os imóveis", async ({ page }) => {
     await page.goto("/");
     const topo = page.getByRole("region", { name: "Seu próximo capítulo começa aqui." });
     await expect(
@@ -210,10 +210,7 @@ test.describe("página inicial", () => {
       "href",
       "/temporada",
     );
-    await expect(topo.getByRole("link", { name: "Conheça a Riviera" })).toHaveAttribute(
-      "href",
-      "/temporada?regiao=riviera-de-sao-lourenco",
-    );
+    await expect(topo.getByRole("link", { name: "Conheça a Riviera" })).toHaveCount(0);
     // Título e chamadas cabem na primeira tela, sem rolar.
     const box = await topo.getByRole("link", { name: "Explorar imóveis" }).boundingBox();
     expect(box!.y + box!.height).toBeLessThanOrEqual(page.viewportSize()!.height);

@@ -88,12 +88,6 @@ export function HomeHero({ media }: { media: HeroMedia | null }) {
           >
             Explorar imóveis
           </Link>
-          <Link
-            href="/temporada?regiao=riviera-de-sao-lourenco"
-            className="inline-flex min-h-12 items-center justify-center rounded-full border border-marfim/70 px-6 font-semibold text-marfim transition-[background-color,transform] duration-200 hover:bg-marfim/10 active:scale-[0.98]"
-          >
-            Conheça a Riviera
-          </Link>
         </div>
       </Container>
     </section>

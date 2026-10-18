@@ -61,10 +61,10 @@ No rodapé (fundo marinho) o contorno de foco é dourado (`.sobre-escuro`).
 
 > Status: **aprovado** (foto pendente).
 
-- Título "Seu próximo capítulo começa aqui.", subtítulo e as chamadas
-  **Explorar imóveis** (`/temporada`) e **Conheça a Riviera**
-  (`/temporada?regiao=riviera-de-sao-lourenco`, a listagem real da região;
-  pode apontar para a seção da Riviera quando ela existir, na Etapa 6).
+- Título "Seu próximo capítulo começa aqui.", subtítulo e a chamada
+  **Explorar imóveis** (`/temporada`). O botão "Conheça a Riviera" foi
+  retirado a pedido; a seção da Riviera, mais abaixo, tem "Ver imóveis na
+  Riviera".
 - A busca atual foi mantida e sobe sobre a borda inferior do topo; ela será
   refeita na Etapa 4.
 - Sem animações.
