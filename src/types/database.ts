@@ -1082,6 +1082,10 @@ export type Database = {
           total_count: number;
         }[];
       };
+      set_property_amenities: {
+        Args: { p_property_id: string; p_slugs: string[] };
+        Returns: number;
+      };
     };
     Enums: {
       block_kind: "booking" | "owner" | "maintenance";

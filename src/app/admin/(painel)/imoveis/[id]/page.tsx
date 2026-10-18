@@ -3,6 +3,7 @@ import { z } from "@/lib/zod";
 import { notFound } from "next/navigation";
 
 import { AmenitiesForm } from "@/components/admin/amenities-form";
+import { FormMessage } from "@/components/ui/form-message";
 import { BlocksManager } from "@/components/admin/blocks-manager";
 import { FeesManager } from "@/components/admin/fees-manager";
 import { MediaManager } from "@/components/admin/media-manager";
@@ -77,8 +78,12 @@ function Section({
   );
 }
 
-export default async function EditarImovelPage({ params }: PageProps<"/admin/imoveis/[id]">) {
+export default async function EditarImovelPage({
+  params,
+  searchParams,
+}: PageProps<"/admin/imoveis/[id]">) {
   const { id } = await params;
+  const amenityError = (await searchParams).comodidades === "erro";
   if (!z.uuid().safeParse(id).success) notFound();
 
   const { supabase } = await requireAdmin();
@@ -178,12 +183,17 @@ export default async function EditarImovelPage({ params }: PageProps<"/admin/imo
             />
           </Section>
 
-          <Section id="comodidades" title="Comodidades">
-            <AmenitiesForm
-              propertyId={property.id}
-              amenities={data.amenities}
-              selected={[...data.selectedAmenityIds]}
-            />
+          <Section
+            id="comodidades"
+            title="Comodidades"
+            description="Marque o que o imóvel oferece. Só as marcadas aparecem na página do imóvel, com ícone e nome."
+          >
+            {amenityError ? (
+              <FormMessage tone="error">
+                O rascunho foi criado, mas as comodidades não foram salvas. Marque de novo e salve.
+              </FormMessage>
+            ) : null}
+            <AmenitiesForm propertyId={property.id} selected={data.amenitySlugs} />
           </Section>
 
           <Section

@@ -16,7 +16,10 @@ import { ResultsWithMap } from "./results-with-map";
 import { SaleFiltersForm } from "./sale-filters";
 
 export async function SaleListing({ filters }: { filters: SaleFilters }) {
-  const [result, amenities] = await Promise.all([searchSales(filters), listAmenities()]);
+  const [result, amenities] = await Promise.all([
+    searchSales(filters),
+    listAmenities(filters.comodidades),
+  ]);
   const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl } = getPublicEnv();
   const { responsible, contact } = siteConfig;
 

@@ -115,11 +115,24 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
   await expect(taxas.getByRole("cell", { name: "Limpeza", exact: true })).toBeVisible();
   await expectNoHorizontalScroll(page);
 
-  // Comodidades
-  await page.getByRole("checkbox", { name: "Wi-Fi" }).check();
+  // Comodidades: marcar, salvar, recarregar e editar (acrescentar e remover)
+  await page.getByRole("checkbox", { name: "Wi-Fi", exact: true }).check();
   await page.getByRole("checkbox", { name: "Piscina" }).check();
   await page.getByRole("button", { name: "Salvar comodidades" }).click();
-  await expect(status(page, "Comodidades salvas.")).toBeVisible();
+  await expect(status(page, "Comodidades salvas: 2 marcadas.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("checkbox", { name: "Wi-Fi", exact: true })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Piscina" })).toBeChecked();
+  await page.getByLabel("Buscar comodidade").fill("porteiro");
+  await page.getByRole("checkbox", { name: "Portaria 24 horas" }).check();
+  await page.getByLabel("Buscar comodidade").fill("");
+  await page.getByRole("checkbox", { name: "Piscina" }).uncheck();
+  await page.getByRole("button", { name: "Salvar comodidades" }).click();
+  await expect(status(page, "Comodidades salvas: 2 marcadas.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("checkbox", { name: "Piscina" })).not.toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Portaria 24 horas" })).toBeChecked();
+  await expectNoHorizontalScroll(page);
 
   // Localização privada: clicar no mapa marca o ponto e preenche os campos.
   const mapa = page.getByRole("region", {
@@ -152,6 +165,21 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
   expect(
     (await visitante.from("property_private").select("*").eq("property_id", propertyId)).data ?? [],
   ).toHaveLength(0);
+
+  // Página pública mostra só as comodidades marcadas, com ícone e nome.
+  const { data: publicado } = await visitante
+    .from("properties")
+    .select("slug")
+    .eq("id", propertyId)
+    .single();
+  const site = await page.context().newPage();
+  await site.goto(`/imoveis/${publicado!.slug}`);
+  const oferece = site.getByRole("region", { name: "O que este lugar oferece" });
+  await expect(oferece).toContainText("Wi-Fi");
+  await expect(oferece).toContainText("Portaria 24 horas");
+  await expect(oferece).not.toContainText("Piscina");
+  await expect(oferece.locator("li svg")).toHaveCount(2);
+  await site.close();
 
   // Arquivar: sai do site
   await page.getByRole("button", { name: "Arquivar" }).click();

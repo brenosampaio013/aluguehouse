@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 
+import { sortByCatalog } from "@/lib/amenities";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 
 /**
@@ -59,9 +60,9 @@ export const getPublicProperty = cache(async (slug: string) => {
       height: m.height,
     }));
 
-  const amenities = amenityRows
-    .flatMap((row) => (row.amenities ? [row.amenities] : []))
-    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  const amenities = sortByCatalog(
+    amenityRows.flatMap((row) => (row.amenities ? [row.amenities] : [])),
+  );
 
   return { ...property, images, videos, amenities };
 });

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AmenitiesSection } from "@/components/property/amenities-section";
 import { notFound } from "next/navigation";
 
 import { InquiryForm } from "@/components/contact/inquiry-form";
@@ -332,21 +333,7 @@ export default async function ImovelPage({ params, searchParams }: Props) {
               </section>
             ) : null}
 
-            {property.amenities.length > 0 ? (
-              <section aria-labelledby="comodidades" className="grid gap-4">
-                <h2 id="comodidades" className="font-serif text-h2 font-normal">
-                  Comodidades
-                </h2>
-                <ul className="grid gap-2 sm:grid-cols-2">
-                  {property.amenities.map((amenity) => (
-                    <li key={amenity.slug} className="flex items-center gap-2">
-                      <span aria-hidden="true" className="size-1.5 rounded-full bg-petroleo" />
-                      {amenity.label}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
+            <AmenitiesSection amenities={property.amenities} />
 
             {property.offers_seasonal || property.offers_monthly ? (
               <section aria-labelledby="regras" className="grid gap-4">

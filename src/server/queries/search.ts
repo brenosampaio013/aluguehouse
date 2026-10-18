@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { listingStatus } from "@/lib/properties/listing";
+import { findAmenity, sortByCatalog } from "@/lib/amenities";
 import { findDestination } from "@/lib/destinations";
 import {
   MAP_RESULTS_LIMIT,
@@ -265,9 +266,16 @@ export async function searchSales(filters: SaleFilters): Promise<SaleSearch> {
   return { items, total: data[0]?.total_count ?? 0 };
 }
 
-export async function listAmenities() {
+/**
+ * Comodidades dos filtros da busca: só as mais procuradas do catálogo
+ * (`featured` em src/lib/amenities.ts), com ícone e na ordem do catálogo, mais
+ * as que já estiverem na URL. A lista completa fica no painel e na página do imóvel.
+ */
+export async function listAmenities(selected: string[] = []) {
   const supabase = createSupabasePublicClient();
-  const { data, error } = await supabase.from("amenities").select("slug, label").order("label");
+  const { data, error } = await supabase.from("amenities").select("slug, label");
   if (error) throw error;
-  return data;
+  return sortByCatalog(
+    data.filter((a) => findAmenity(a.slug)?.featured || selected.includes(a.slug)),
+  );
 }

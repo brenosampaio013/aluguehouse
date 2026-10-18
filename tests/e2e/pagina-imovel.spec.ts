@@ -140,7 +140,9 @@ test.describe("página do imóvel", () => {
     await expect(painel).toContainText("R$ 1.000 por noite");
     await expect(painel).toContainText("R$ 18.000 por mês");
     await expect(painel).toContainText("mínimo de 2 noites");
-    await expect(page.getByRole("region", { name: "Comodidades" })).toContainText("Piscina");
+    await expect(page.getByRole("region", { name: "O que este lugar oferece" })).toContainText(
+      "Piscina",
+    );
     await expect(page.getByText("Não é permitido fumar.")).toBeVisible();
   });
 

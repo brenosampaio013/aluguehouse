@@ -68,6 +68,8 @@ O site traduz estes códigos para mensagens em português:
 | `invalid_status`     | Solicitação em estado que não permite a ação |
 | `invalid_area`       | Área do mapa inválida (`search_rentals_map`) |
 | `invalid_sort`       | Ordenação desconhecida na busca              |
+| `unknown_amenity`    | Comodidade fora do catálogo (detalhe: slug)  |
+| `too_many_amenities` | Mais de 200 comodidades numa gravação        |
 
 ## Verificação
 
