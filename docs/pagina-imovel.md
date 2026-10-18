@@ -27,7 +27,7 @@ Só imóveis publicados; rascunhos, arquivados e endereços inexistentes mostram
 
 ## Mapa
 
-- **MapLibre 6.11.2 + OpenFreeMap** (estilo "positron"): gratuito, sem
+- **MapLibre 6.11.2 + OpenFreeMap** (estilo "liberty", colorido): gratuito, sem
   chave, permite uso comercial. O estilo é configurável por
   `NEXT_PUBLIC_MAP_STYLE_URL`, para trocar por mapas próprios no futuro.
 - Mostra um **círculo de ~600 m** sobre a localização aproximada, nunca um

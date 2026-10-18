@@ -66,6 +66,8 @@ O site traduz estes códigos para mensagens em português:
 | `consent_required`   | Sem consentimento de privacidade             |
 | `forbidden`          | Ação exclusiva do admin                      |
 | `invalid_status`     | Solicitação em estado que não permite a ação |
+| `invalid_area`       | Área do mapa inválida (`search_rentals_map`) |
+| `invalid_sort`       | Ordenação desconhecida na busca              |
 
 ## Verificação
 

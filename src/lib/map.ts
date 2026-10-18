@@ -1,9 +1,11 @@
 /**
- * Estilo do mapa (MapLibre). Padrão: OpenFreeMap, gratuito e sem chave.
+ * Estilo do mapa (MapLibre). Padrão: OpenFreeMap "liberty", gratuito e sem
+ * chave, colorido como os mapas de Google e Booking (parques em verde, mar em
+ * azul, ícones de praias, restaurantes e pontos turísticos).
  * Pode ser trocado por mapas próprios (ex.: PMTiles no Cloudflare R2) pela
  * variável NEXT_PUBLIC_MAP_STYLE_URL.
  */
-export const DEFAULT_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+export const DEFAULT_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
 export function mapStyleUrl(): string {
   return process.env.NEXT_PUBLIC_MAP_STYLE_URL || DEFAULT_MAP_STYLE_URL;

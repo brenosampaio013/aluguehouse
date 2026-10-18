@@ -32,6 +32,8 @@ test.describe("listagens de aluguel", () => {
   const ids: string[] = [];
 
   test.beforeAll(async () => {
+    // O mesmo worker pode rodar o beforeAll de novo depois do afterAll.
+    ids.length = 0;
     const api = adminApi();
     const now = Date.now();
     const rows = [
@@ -138,12 +140,12 @@ test.describe("listagens de aluguel", () => {
     await expect(card(page, A)).toHaveCount(0);
   });
 
-  test("filtro de região pelo formulário", async ({ page, isMobile }) => {
+  test("filtro de destino pelo formulário", async ({ page, isMobile }) => {
     await page.goto("/temporada");
     await openFilters(page, isMobile);
-    await page.getByLabel("Região").selectOption("ilhabela");
+    await page.getByLabel("Destino").selectOption("ilhabela");
     await page.getByRole("button", { name: "Aplicar filtros" }).click();
-    await expect(page).toHaveURL(/\/temporada\?regiao=ilhabela/);
+    await expect(page).toHaveURL(/\/temporada\?destino=ilhabela/);
     await expect(card(page, B)).toBeVisible();
     await expect(card(page, A)).toHaveCount(0);
     const resumo = page.getByRole("main").getByRole("heading", { level: 2 });
@@ -153,14 +155,14 @@ test.describe("listagens de aluguel", () => {
   test("datas escondem imóveis ocupados e mostram o total", async ({ page }) => {
     await page.goto(`/temporada?chegada=${isoInDays(61)}&saida=${isoInDays(63)}&hospedes=2`);
     await expect(card(page, A)).toHaveCount(0);
-    await expect(card(page, B)).toContainText("R$ 3.000 no total · 2 noites");
+    await expect(card(page, B)).toContainText("R$ 3.000 no total com taxas · 2 noites");
     await expect(card(page, B).getByRole("link", { name: B })).toHaveAttribute(
       "href",
       new RegExp(`chegada=${isoInDays(61)}&saida=${isoInDays(63)}&hospedes=2$`),
     );
 
     await page.goto(`/temporada?chegada=${isoInDays(70)}&saida=${isoInDays(73)}`);
-    await expect(card(page, A)).toContainText("R$ 2.400 no total · 3 noites");
+    await expect(card(page, A)).toContainText("R$ 2.400 no total com taxas · 3 noites");
   });
 
   test("mínimo de noites esconde o imóvel", async ({ page }) => {
@@ -211,7 +213,7 @@ test.describe("listagens de aluguel", () => {
 
   test("sem resultados mostra como seguir", async ({ page }) => {
     await page.goto("/temporada?hospedes=50");
-    await expect(page.getByText("Nenhuma casa com esses filtros.")).toBeVisible();
+    await expect(page.getByText(/Nenhum imóvel com esses filtros\./)).toBeVisible();
   });
 
   test("filtros inválidos na URL são ignorados", async ({ page }) => {

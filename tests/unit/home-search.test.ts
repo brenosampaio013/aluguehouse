@@ -4,20 +4,33 @@ import {
   buildSearch,
   guestsSummary,
   matchDestinations,
+  pickDestination,
   stepGuests,
 } from "@/lib/search/home-search";
 
 const today = "2026-10-15";
 
 describe("destinos", () => {
-  it("mostra todos sem texto", () => {
+  it("sem texto mostra as cinco regiões", () => {
     expect(matchDestinations("")).toHaveLength(5);
+    expect(matchDestinations("").every((d) => d.kind === "region")).toBe(true);
   });
 
-  it("ignora acentos e maiúsculas e procura também pela cidade de referência", () => {
-    expect(matchDestinations("sao seb").map((r) => r.slug)).toEqual(["sao-sebastiao"]);
+  it("ignora acentos e maiúsculas e procura também cidades e bairros", () => {
     expect(matchDestinations("LOURENÇO").map((r) => r.slug)).toEqual(["riviera-de-sao-lourenco"]);
-    expect(matchDestinations("bertioga").map((r) => r.slug)).toEqual(["riviera-de-sao-lourenco"]);
+    expect(matchDestinations("bertioga").map((r) => r.slug)).toEqual([
+      "riviera-de-sao-lourenco",
+      "bertioga",
+    ]);
+    expect(matchDestinations("juquei")).toEqual([]);
+    expect(matchDestinations("juqu").map((r) => r.slug)).toEqual(["juquehy"]);
+    expect(matchDestinations("boicu").map((r) => r.slug)).toEqual(["boicucanga"]);
+  });
+
+  it("texto digitado escolhe o destino único ou o de nome idêntico", () => {
+    expect(pickDestination("Bertioga")?.slug).toBe("bertioga");
+    expect(pickDestination("barra do una")?.slug).toBe("barra-do-una");
+    expect(pickDestination("barra")).toBeUndefined();
   });
 
   it("sem correspondência devolve lista vazia", () => {
@@ -68,7 +81,7 @@ describe("montagem da busca", () => {
       buildSearch(
         {
           mode: "temporada",
-          region: "ilhabela",
+          destination: "ilhabela",
           checkIn: "2026-12-20",
           checkOut: "2026-12-27",
           guests: { adults: 2, children: 2 },
@@ -81,6 +94,17 @@ describe("montagem da busca", () => {
     });
   });
 
+  it("cidade e bairro usam o parâmetro destino; na venda, a região deles", () => {
+    expect(buildSearch({ mode: "temporada", destination: "juquehy" }, today)).toEqual({
+      ok: true,
+      href: "/temporada?destino=juquehy",
+    });
+    expect(buildSearch({ mode: "venda", destination: "juquehy" }, today)).toEqual({
+      ok: true,
+      href: "/venda?regiao=sao-sebastiao",
+    });
+  });
+
   it("sem filtros vai para a listagem da modalidade", () => {
     expect(buildSearch({ mode: "mensal" }, today)).toEqual({ ok: true, href: "/mensal" });
   });
@@ -90,7 +114,7 @@ describe("montagem da busca", () => {
       buildSearch(
         {
           mode: "venda",
-          region: "ubatuba",
+          destination: "ubatuba",
           checkIn: "2026-12-20",
           checkOut: "2026-12-27",
           guests: { adults: 2, children: 0 },

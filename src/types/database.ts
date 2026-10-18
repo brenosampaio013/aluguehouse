@@ -1009,6 +1009,52 @@ export type Database = {
           total_count: number;
         }[];
       };
+      search_rentals_map: {
+        Args: {
+          p_amenities?: string[];
+          p_bbox?: number[];
+          p_bedrooms?: number;
+          p_check_in?: string;
+          p_check_out?: string;
+          p_city?: string;
+          p_guests?: number;
+          p_limit?: number;
+          p_mode: Database["public"]["Enums"]["rental_mode"];
+          p_neighborhood?: string;
+          p_place?: string;
+          p_price_max?: number;
+          p_price_min?: number;
+          p_region?: string;
+          p_sort?: string;
+          p_type?: Database["public"]["Enums"]["property_type"];
+        };
+        Returns: {
+          approx_lat: number;
+          approx_lng: number;
+          base_price: number;
+          bedrooms: number;
+          city: string;
+          cover_alt: string;
+          cover_is_demo: boolean;
+          cover_path: string;
+          cover_width: number;
+          id: string;
+          max_guests: number;
+          neighborhood: string;
+          nights: number;
+          offers_sale: boolean;
+          property_type: Database["public"]["Enums"]["property_type"];
+          quote_total: number;
+          rating_avg: number;
+          rating_count: number;
+          region: string;
+          slug: string;
+          suites: number;
+          title: string;
+          total_count: number;
+          unit_price: number;
+        }[];
+      };
       search_sales: {
         Args: {
           p_amenities?: string[];

@@ -1,5 +1,10 @@
 import { nightsBetween, type StayLimits } from "@/lib/booking/calendar";
-import { regions, type RegionSlug } from "@/lib/regions";
+import {
+  findDestination,
+  matchSearchDestinations,
+  normalizeText,
+  type SearchDestination,
+} from "@/lib/destinations";
 
 /** Lógica da barra de busca da página inicial (sem React, testável). */
 
@@ -23,26 +28,32 @@ export const modeStayLimits: Record<Exclude<SearchMode, "venda">, StayLimits> = 
   mensal: { minNights: 30, maxNights: SEARCH_WINDOW_DAYS },
 };
 
-export type Destination = (typeof regions)[number];
+export type Destination = SearchDestination;
 
-function normalize(text: string) {
-  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+/**
+ * Destinos que combinam com o texto digitado: regiões, cidades e bairros
+ * (src/lib/destinations.ts), sem diferenciar acentos. Texto vazio mostra as
+ * regiões.
+ */
+export function matchDestinations(query: string): Destination[] {
+  return matchSearchDestinations(query);
 }
 
 /**
- * Destinos que combinam com o texto digitado (nome da região ou cidade de
- * referência, sem diferenciar acentos). Texto vazio mostra todos.
+ * Destino escolhido a partir do texto digitado, sem clicar numa sugestão:
+ * o único que combina, ou o de nome idêntico (ex.: "Bertioga" também aparece
+ * como legenda da Riviera).
  */
-export function matchDestinations(query: string): Destination[] {
-  const q = normalize(query);
-  if (!q) return [...regions];
-  return regions.filter(
-    (region) => normalize(region.name).includes(q) || normalize(region.caption).includes(q),
-  );
+export function pickDestination(query: string): Destination | undefined {
+  const matches = matchDestinations(query);
+  if (matches.length === 1) return matches[0];
+  const q = normalizeText(query);
+  const exact = matches.filter((d) => normalizeText(d.name) === q);
+  return exact.length === 1 ? exact[0] : undefined;
 }
 
-export function destinationName(slug: RegionSlug | undefined) {
-  return regions.find((region) => region.slug === slug)?.name;
+export function destinationName(slug: string | undefined) {
+  return findDestination(slug)?.name;
 }
 
 export type Guests = { adults: number; children: number };
@@ -77,7 +88,8 @@ export function guestsSummary(guests: Guests) {
 
 export type SearchInput = {
   mode: SearchMode;
-  region?: RegionSlug;
+  /** Slug do destino (região, cidade ou bairro). */
+  destination?: string;
   checkIn?: string | null;
   checkOut?: string | null;
   guests?: Guests;
@@ -90,7 +102,16 @@ export type SearchResult = { ok: true; href: string } | { ok: false; error: stri
 /** Valida e monta o endereço da listagem com os parâmetros que ela já entende. */
 export function buildSearch(input: SearchInput, today: string): SearchResult {
   const params = new URLSearchParams();
-  if (input.region) params.set("regiao", input.region);
+  const destination = findDestination(input.destination);
+  // Região usa o parâmetro de sempre (links antigos); cidade e bairro, "destino".
+  // A venda filtra só por região: cidade e bairro levam à região deles.
+  if (destination) {
+    if (destination.kind === "region" || input.mode === "venda") {
+      params.set("regiao", destination.region);
+    } else {
+      params.set("destino", destination.slug);
+    }
+  }
 
   if (input.mode === "venda") {
     if (input.saleType) params.set("tipo", input.saleType);

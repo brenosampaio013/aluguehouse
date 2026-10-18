@@ -251,13 +251,14 @@ test.describe("página do imóvel", () => {
     await stubMapTiles(page);
     await page.goto("/temporada?regiao=riviera-de-sao-lourenco");
     const mapa = page.getByRole("region", {
-      name: "Mapa com a área aproximada dos imóveis encontrados",
+      name: "Mapa com a localização aproximada dos imóveis encontrados",
     });
-    // Abaixo de 1024 px o mapa fica atrás do botão "Ver mapa".
+    // Abaixo de 1024 px lista e mapa se alternam pelo botão "Mapa".
     if (page.viewportSize()!.width < 1024) {
       await expect(mapa).toBeHidden();
-      await page.getByRole("button", { name: "Ver mapa" }).click();
+      await page.getByRole("button", { name: "Mapa", exact: true }).click();
     }
+    await mapa.scrollIntoViewIfNeeded();
     await expect(mapa).toHaveAttribute("data-map-status", "ready", { timeout: 15_000 });
   });
 });

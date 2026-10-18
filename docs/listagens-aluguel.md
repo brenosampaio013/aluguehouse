@@ -17,13 +17,16 @@ paginação de 24 em 24.
 
 | Filtro          | Parâmetro na URL        | Regra                                                                                                                                        |
 | --------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Região          | `regiao`                | Uma das 5 regiões da linha da costa                                                                                                          |
+| Destino         | `destino` ou `regiao`   | Região, cidade ou bairro do catálogo (ver `docs/busca-mapa.md`); `regiao` continua aceito                                                    |
+| Área do mapa    | `area`                  | "Pesquisar nesta área": `oeste,sul,leste,norte`; substitui o destino                                                                         |
+| Tipo de imóvel  | `tipo`                  | Casa, apartamento, cobertura ou outro                                                                                                        |
+| Preço mínimo    | `preco_min`             | Mesma base do preço máximo                                                                                                                   |
 | Chegada e saída | `chegada`, `saida`      | Esconde imóveis ocupados ou que não aceitam a estadia (mínimo de noites, por exemplo) e mostra o total estimado com tarifas sazonais e taxas |
 | Hóspedes        | `hospedes`              | Capacidade do imóvel                                                                                                                         |
 | Quartos         | `quartos`               | Quantidade mínima                                                                                                                            |
-| Preço máximo    | `preco_max`             | Diária base (temporada) ou valor mensal                                                                                                      |
+| Preço máximo    | `preco_max`             | Diária base (temporada) ou valor mensal; com datas, a média das diárias do período                                                           |
 | Comodidades     | `comodidade` (repetido) | Todas as marcadas precisam estar presentes                                                                                                   |
-| Ordenação       | `ordem`                 | `recentes`, `menor-preco`, `maior-preco`                                                                                                     |
+| Ordenação       | `ordem`                 | `recentes`, `menor-preco`, `maior-preco`, `melhor-avaliados`                                                                                 |
 
 - O formulário de filtros funciona sem JavaScript e deixa a busca na URL,
   pronta para compartilhar. A busca da página inicial usa os mesmos
@@ -60,6 +63,5 @@ Corrigido nos componentes de campo, valendo para todos os formulários.
 
 ## Fora desta etapa
 
-- **Mapa ao lado da lista**: depende da infraestrutura de mapas, prevista
-  para a Etapa 10 (página do imóvel + mapa). Será acrescentado lá.
+- **Mapa ao lado da lista**: feito na busca com mapa (`docs/busca-mapa.md`).
 - Os cartões levam a `/imoveis/...`, criada na Etapa 10.

@@ -17,6 +17,10 @@ describe("parseRentalFilters", () => {
     });
     expect(f).toEqual({
       regiao: "ilhabela",
+      destino: undefined,
+      area: undefined,
+      tipo: undefined,
+      precoMin: undefined,
       chegada: "2027-01-10",
       saida: "2027-01-15",
       hospedes: 4,
@@ -42,6 +46,10 @@ describe("parseRentalFilters", () => {
     });
     expect(f).toEqual({
       regiao: undefined,
+      destino: undefined,
+      area: undefined,
+      tipo: undefined,
+      precoMin: undefined,
       chegada: undefined,
       saida: undefined,
       hospedes: undefined,
@@ -58,6 +66,43 @@ describe("parseRentalFilters", () => {
       "piscina",
       "wi-fi",
     ]);
+  });
+});
+
+describe("destino, área, tipo e preço mínimo", () => {
+  it("destino de região vira regiao; cidade e bairro ficam em destino", () => {
+    expect(parseRentalFilters({ destino: "ilhabela" })).toMatchObject({ regiao: "ilhabela" });
+    expect(parseRentalFilters({ destino: "juquehy", regiao: "ubatuba" })).toMatchObject({
+      regiao: undefined,
+      destino: "juquehy",
+    });
+    expect(parseRentalFilters({ destino: "paris" })).toMatchObject({
+      regiao: undefined,
+      destino: undefined,
+    });
+  });
+
+  it("lê a área do mapa e recusa áreas inválidas ou grandes demais", () => {
+    expect(parseRentalFilters({ area: "-45.9,-23.9,-45.6,-23.6" }).area).toEqual([
+      -45.9, -23.9, -45.6, -23.6,
+    ]);
+    expect(parseRentalFilters({ area: "-45.6,-23.9,-45.9,-23.6" }).area).toBeUndefined();
+    expect(parseRentalFilters({ area: "-60,-30,-40,-20" }).area).toBeUndefined();
+    expect(parseRentalFilters({ area: "a,b,c,d" }).area).toBeUndefined();
+  });
+
+  it("tipo, preço mínimo e ordenação por avaliação", () => {
+    expect(
+      parseRentalFilters({ tipo: "apartamento", preco_min: "300", ordem: "melhor-avaliados" }),
+    ).toMatchObject({ tipo: "apartamento", precoMin: 300, ordem: "melhor-avaliados" });
+    expect(parseRentalFilters({ tipo: "terreno" }).tipo).toBeUndefined();
+  });
+
+  it("monta a URL com destino e área arredondada", () => {
+    const f = parseRentalFilters({ destino: "juquehy", area: "-45.123456,-23.9,-45.1,-23.8" });
+    expect(rentalHref("/temporada", f)).toBe(
+      "/temporada?destino=juquehy&area=-45.1235%2C-23.9%2C-45.1%2C-23.8",
+    );
   });
 });
 
