@@ -117,8 +117,10 @@ Testes: `supabase/tests/database/21_busca_mapa.test.sql` (25), sobre:
 
 ## Mapa
 
-- MapLibre com o estilo gratuito do OpenFreeMap, sem chave e sem serviço
-  pago. `NEXT_PUBLIC_MAP_STYLE_URL` troca o estilo, se necessário.
+- MapLibre com o estilo "liberty" do OpenFreeMap (colorido, parecido com
+  Google e Booking: parques em verde, mar em azul, ícones de praias e
+  restaurantes), gratuito, sem chave e sem serviço pago. O mapa do Google
+  exigiria chave paga. `NEXT_PUBLIC_MAP_STYLE_URL` troca o estilo, se necessário.
 - O MapLibre só é baixado quando o mapa aparece: no computador, logo; no
   celular, ao tocar em "Mapa".
 - Estados: carregando, erro (com "Tentar de novo", e a lista continua
