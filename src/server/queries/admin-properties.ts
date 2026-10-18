@@ -11,7 +11,7 @@ import { pagedRows, withCount, type Paging } from "./paged";
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export async function getPropertyForEdit(supabase: Client, id: string) {
-  const [property, privateData, media, amenities, selected, rates, fees] = await Promise.all([
+  const [property, privateData, media, selected, rates, fees] = await Promise.all([
     supabase.from("properties").select("*").eq("id", id).maybeSingle(),
     supabase.from("property_private").select("*").eq("property_id", id).maybeSingle(),
     supabase
@@ -20,8 +20,7 @@ export async function getPropertyForEdit(supabase: Client, id: string) {
       .eq("property_id", id)
       .order("position")
       .order("created_at"),
-    supabase.from("amenities").select("id, label").order("label"),
-    supabase.from("property_amenities").select("amenity_id").eq("property_id", id),
+    supabase.from("property_amenities").select("amenities(slug)").eq("property_id", id),
     supabase.from("seasonal_rates").select("*").eq("property_id", id).order("period"),
     supabase
       .from("property_fees")
@@ -33,13 +32,14 @@ export async function getPropertyForEdit(supabase: Client, id: string) {
 
   if (property.error) throw property.error;
   if (!property.data) notFound();
+  // Sem as comodidades salvas, o formulário apagaria as marcadas ao salvar.
+  if (selected.error) throw selected.error;
 
   return {
     property: property.data,
     privateData: privateData.data,
     media: media.data ?? [],
-    amenities: amenities.data ?? [],
-    selectedAmenityIds: new Set((selected.data ?? []).map((row) => row.amenity_id)),
+    amenitySlugs: selected.data.flatMap((row) => (row.amenities ? [row.amenities.slug] : [])),
     rates: rates.data ?? [],
     fees: fees.data ?? [],
   };

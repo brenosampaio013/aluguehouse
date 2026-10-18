@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AmenityIcon } from "@/components/amenities/amenity-icon";
 import { PropertyCard } from "@/components/property/property-card";
 import { Container } from "@/components/ui/container";
 import { FormMessage } from "@/components/ui/form-message";
@@ -59,7 +60,10 @@ export async function RentalListing({
   filters: RentalFilters;
 }) {
   const text = copy[mode];
-  const [result, amenities] = await Promise.all([searchRentals(mode, filters), listAmenities()]);
+  const [result, amenities] = await Promise.all([
+    searchRentals(mode, filters),
+    listAmenities(filters.comodidades),
+  ]);
   const { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl } = getPublicEnv();
 
   const destination = findDestination(filters.destino ?? filters.regiao);
@@ -185,7 +189,11 @@ export async function RentalListing({
                           : "border-junco bg-branco text-abismo hover:border-abismo",
                       )}
                     >
-                      {active ? <CheckIcon width={14} height={14} aria-hidden="true" /> : null}
+                      {active ? (
+                        <CheckIcon width={14} height={14} aria-hidden="true" />
+                      ) : (
+                        <AmenityIcon name={amenity.slug} size={16} />
+                      )}
                       {amenity.label}
                       {active ? <span className="sr-only">(ativo, remover)</span> : null}
                       <LinkPending />

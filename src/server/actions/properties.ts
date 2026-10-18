@@ -17,6 +17,7 @@ import {
   privateSchema,
   seasonalRateSchema,
 } from "@/lib/properties/schemas";
+import { isAmenitySlug } from "@/lib/amenities";
 import { publishChecklist } from "@/lib/properties/publish";
 import { VIDEO_BUCKET } from "@/lib/videos";
 import { removeFiles, storageFiles } from "@/server/storage-files";
@@ -60,6 +61,9 @@ function formObject(formData: FormData) {
 export async function createProperty(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = createPropertySchema.safeParse(formObject(formData));
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error) };
+  // Comodidades são opcionais no cadastro; também podem ser marcadas depois.
+  const amenities = amenitySlugsSchema.safeParse(formData.getAll("amenity").map(String));
+  if (!amenities.success) return { status: "error", message: "Comodidade desconhecida." };
 
   const { supabase } = await requireAdmin();
   const base = slugify(`${parsed.data.title} ${parsed.data.city}`) || "imovel";
@@ -79,6 +83,11 @@ export async function createProperty(_prev: FormState, formData: FormData): Prom
   if (!id) return { status: "error", message: "Não foi possível gerar o endereço do imóvel." };
 
   revalidatePath("/admin/imoveis");
+  if (amenities.data.length > 0) {
+    const message = await saveAmenities(supabase, id, amenities.data);
+    // O rascunho já existe: segue para a edição, onde as comodidades podem ser marcadas de novo.
+    if (message) redirect(`${propertyPath(id)}?comodidades=erro#comodidades`);
+  }
   redirect(propertyPath(id));
 }
 
@@ -221,27 +230,47 @@ export async function updatePrivate(_prev: FormState, formData: FormData): Promi
   return { status: "success", message: "Localização e anotações salvas." };
 }
 
+/** Slugs de comodidades do formulário: só do catálogo, sem repetição. */
+const amenitySlugsSchema = z
+  .array(z.string())
+  .max(200)
+  .transform((slugs) => [...new Set(slugs)])
+  .refine((slugs) => slugs.every(isAmenitySlug), "Comodidade desconhecida.");
+
+async function saveAmenities(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  propertyId: string,
+  slugs: string[],
+): Promise<string | null> {
+  const { error } = await supabase.rpc("set_property_amenities", {
+    p_property_id: propertyId,
+    p_slugs: slugs,
+  });
+  if (!error) return null;
+  if (error.code === "P0002") return NOT_FOUND;
+  if (error.message === "unknown_amenity") {
+    return "Alguma comodidade não existe mais. Atualize a página e tente de novo.";
+  }
+  return dbErrorMessage(error);
+}
+
 export async function updateAmenities(_prev: FormState, formData: FormData): Promise<FormState> {
   const id = idSchema.safeParse(formData.get("id"));
-  const amenityIds = z.array(z.uuid()).safeParse(formData.getAll("amenity"));
-  if (!id.success || !amenityIds.success) return { status: "error", message: "Dados inválidos." };
+  const slugs = amenitySlugsSchema.safeParse(formData.getAll("amenity").map(String));
+  if (!id.success || !slugs.success) return { status: "error", message: "Dados inválidos." };
 
   const { supabase } = await requireAdmin();
-  const { error: deleteError } = await supabase
-    .from("property_amenities")
-    .delete()
-    .eq("property_id", id.data);
-  if (deleteError) return { status: "error", message: dbErrorMessage(deleteError) };
-
-  if (amenityIds.data.length > 0) {
-    const { error } = await supabase
-      .from("property_amenities")
-      .insert(amenityIds.data.map((amenity_id) => ({ property_id: id.data, amenity_id })));
-    if (error) return { status: "error", message: dbErrorMessage(error) };
-  }
+  const message = await saveAmenities(supabase, id.data, slugs.data);
+  if (message) return { status: "error", message };
 
   revalidatePath(propertyPath(id.data));
-  return { status: "success", message: "Comodidades salvas." };
+  return {
+    status: "success",
+    message:
+      slugs.data.length === 0
+        ? "Comodidades salvas: nenhuma marcada."
+        : `Comodidades salvas: ${slugs.data.length} marcada${slugs.data.length === 1 ? "" : "s"}.`,
+  };
 }
 
 export async function addSeasonalRate(_prev: FormState, formData: FormData): Promise<FormState> {
