@@ -5,6 +5,7 @@ import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { answerConfirm, loginAsAdmin, openAdminNav } from "./support/admin";
+import { stubMapTiles } from "./support/map";
 import { adminApi, anonApi, createAdminWithTotp } from "./support/users";
 
 const FOTO_REAL = path.join(process.cwd(), "media/recebidas/imovel-01/sala-jantar.jpg");
@@ -39,6 +40,7 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
   const admin = await createAdminWithTotp();
   const title = `Apartamento de teste ${testInfo.project.name} ${Date.now()}`;
 
+  await stubMapTiles(page);
   await loginAsAdmin(page, admin);
   await (await openAdminNav(page)).getByRole("link", { name: "Imóveis" }).click();
   await page.getByRole("link", { name: "Novo imóvel" }).click();
@@ -119,7 +121,16 @@ test("admin cria, completa, publica e arquiva um imóvel", async ({ page }, test
   await page.getByRole("button", { name: "Salvar comodidades" }).click();
   await expect(status(page, "Comodidades salvas.")).toBeVisible();
 
-  // Localização privada
+  // Localização privada: clicar no mapa marca o ponto e preenche os campos.
+  const mapa = page.getByRole("region", {
+    name: "Mapa para marcar a localização exata do imóvel",
+  });
+  await mapa.scrollIntoViewIfNeeded();
+  await expect(mapa).toHaveAttribute("data-map-status", "ready", { timeout: 15_000 });
+  await mapa.click({ position: { x: 40, y: 40 } });
+  await expect(page.getByLabel("Latitude exata")).toHaveValue(/^-2\d,\d+$/);
+  await expect(page.getByLabel("Longitude exata")).toHaveValue(/^-4\d,\d+$/);
+  // Digitar também vale (e move o marcador).
   await page.getByLabel("Latitude exata").fill("-23,8012");
   await page.getByLabel("Longitude exata").fill("-46,0123");
   await page.getByRole("button", { name: "Salvar localização" }).click();
