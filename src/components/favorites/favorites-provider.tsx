@@ -10,6 +10,8 @@ type Toast = { tone: "success" | "error"; text: string; link?: boolean };
 
 type FavoritesContext = {
   signedIn: boolean;
+  /** Quantos imóveis a pessoa salvou (0 para visitantes). */
+  count: number;
   isSaved: (propertyId: string) => boolean;
   toggle: (propertyId: string, title: string) => void;
 };
@@ -96,7 +98,7 @@ export function FavoritesProvider({
   const isSaved = useCallback((propertyId: string) => saved.has(propertyId), [saved]);
 
   return (
-    <Context value={{ signedIn, isSaved, toggle }}>
+    <Context value={{ signedIn, count: saved.size, isSaved, toggle }}>
       {children}
       <div
         role="status"

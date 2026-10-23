@@ -47,15 +47,32 @@ No rodapé (fundo marinho) o contorno de foco é dourado (`.sobre-escuro`).
 
 ### Cabeçalho
 
-- Filete dourado no topo, fundo off-white.
-- Marca "Alugue Houses" com a linha "Riviera · Litoral Norte".
-- Temporada, Mensal e Venda com a página atual marcada (negrito, traço
-  dourado e `aria-current`).
-- Favoritos e acesso à conta: **"Entrar"** para visitantes e **"Minha
-  conta"** para quem já entrou (antes aparecia "Entrar" sempre). No celular,
-  o menu ganhou Favoritos e a conta, e a barra inferior mostra "Conta"
-  depois do login.
-- Busca, rotas e demais páginas não mudaram.
+> Refeito em outubro de 2026 a partir de uma referência visual aprovada.
+
+- **Estrutura**: marca à esquerda; **Temporada** e **Venda** centralizadas;
+  à direita, Favoritos, conta e **Fale conosco**. Fundo off-white, borda e
+  sombra bem suaves. Altura de 88 px no computador e 72 px no celular.
+- **Mensal fora do cabeçalho**: a modalidade saiu do cabeçalho e do menu do
+  celular, mas `/mensal` continua existindo, com link na listagem de
+  temporada e no rodapé.
+- **Marca**: símbolo de três ondas (mar, espuma e areia) em SVG próprio
+  (`BrandMark`), nome em Newsreader e a linha "Riviera · Litoral Norte".
+- **Página atual**: link em petróleo e semibold, com linha fina de 2 px
+  embaixo e `aria-current`. Ao passar o mouse, a linha cresce do centro.
+- **Favoritos**: coração; fica preenchido e mostra a contagem quando há
+  imóveis salvos.
+- **Conta**:
+  - visitante vê **"Entrar"**, que leva ao login;
+  - quem entrou vê **"Minha conta"**, que abre um menu com Minha conta,
+    Minhas estadias, Favoritos e Sair (as mesmas opções de `/entrar`). Esc e
+    clique fora fecham o menu.
+- **Fale conosco**: abre o WhatsApp do atendimento (`siteConfig`) com uma
+  mensagem inicial. Até 1280 px aparece só o ícone, com nome para leitor de
+  tela.
+- **Tablet**: só o coração em Favoritos e o ícone do WhatsApp.
+- **Celular**: marca e menu (☰). O menu tem Temporada, Venda, Favoritos,
+  conta, Minhas estadias (para quem entrou), "Fale conosco" e o formulário de
+  contato. A barra inferior fixa continua igual.
 
 ## Etapa 3 — Topo da página inicial
 

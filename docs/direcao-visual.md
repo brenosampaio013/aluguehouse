@@ -194,7 +194,8 @@ com texto à esquerda e números à direita, sem fotos grandes.
 
 ## 8. Navegação
 
-- Cabeçalho com as três modalidades sempre visíveis no desktop.
+- Cabeçalho com Temporada e Venda no desktop (Mensal fica no rodapé e na
+  listagem de temporada; ver `docs/redesign.md`).
 - No celular, barra inferior com **Explorar**, **Favoritos** e **Entrar**.
 - WhatsApp no cabeçalho, no rodapé e no painel de reserva do imóvel. Sem
   botão flutuante cobrindo conteúdo.

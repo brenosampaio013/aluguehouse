@@ -4,7 +4,7 @@
 
 ## Estrutura
 
-1. **Cabeçalho**: modalidades sempre visíveis no desktop; no celular, menu
+1. **Cabeçalho**: Temporada e Venda no desktop (ver `docs/redesign.md`); no celular, menu
    (fecha com Esc e devolve o foco) e barra inferior fixa com Explorar,
    Favoritos e Entrar.
 2. **Topo**: título, frase de apoio e busca. Seletor Temporada / Mensal /

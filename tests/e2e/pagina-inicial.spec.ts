@@ -266,7 +266,9 @@ test.describe("página inicial", () => {
 
     const menu = page.getByRole("button", { name: "Abrir menu" });
     await menu.click();
-    await expect(page.getByRole("link", { name: "Mensal" }).first()).toBeVisible();
+    const principal = page.getByRole("navigation", { name: "Menu principal" });
+    await expect(principal.getByRole("link", { name: "Venda" })).toBeVisible();
+    await expect(principal.getByRole("link", { name: "Mensal" })).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Abrir menu" })).toBeFocused();
   });
@@ -275,9 +277,10 @@ test.describe("página inicial", () => {
     test.skip(isMobile, "Só no desktop e tablet.");
     await page.goto("/");
     const header = page.getByRole("banner");
-    for (const label of ["Temporada", "Mensal", "Venda", "Favoritos", "Entrar"]) {
+    for (const label of ["Temporada", "Venda", "Favoritos", "Entrar"]) {
       await expect(header.getByRole("link", { name: label })).toBeVisible();
     }
+    await expect(header.getByRole("link", { name: "Mensal" })).toHaveCount(0);
   });
 
   test("sem violações WCAG 2.1 AA com destaques e busca aberta", async ({ page, isMobile }) => {
