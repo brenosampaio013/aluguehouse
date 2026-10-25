@@ -43,20 +43,21 @@
   // como no site quando não há preço, mostram "Consultar". Nenhum preço é
   // exibido.
   const MAP = {
+    // assets/mapa/riviera.png: recorte de assets/mapa/captura-original.png
+    // (Google Maps, enviada pelo cliente), x 100–1146, ampliado para 1920 × 1080.
     width: 1920,
     height: 1080,
-    attribution: "",
-    selected: { x: 880, y: 560, label: "Consultar" },
+    attribution: "Map data ©2026 Google",
+    selected: { x: 520, y: 962, label: "Consultar" }, // Imóvel 01, área urbana da Riviera
     pins: [
-      { x: 640, y: 470 },
-      { x: 1040, y: 430 },
-      { x: 1180, y: 610 },
-      { x: 760, y: 690 },
-      { x: 520, y: 640 },
-      { x: 1320, y: 470 },
-      { x: 990, y: 760 },
+      { x: 330, y: 1030 },
+      { x: 1235, y: 742 },
+      { x: 1355, y: 705 },
+      { x: 1690, y: 668 },
+      { x: 1750, y: 632 },
     ],
   };
+
 
   // Pontos de sincronização para a trilha e os impactos sonoros (segundos).
   const CUES = [

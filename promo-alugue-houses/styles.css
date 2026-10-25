@@ -1184,13 +1184,13 @@ img.missing {
 .s5-grade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(20deg, rgba(6, 25, 29, 0.82) 0%, rgba(6, 25, 29, 0.4) 26%, transparent 46%);
+  background: linear-gradient(160deg, rgba(6, 25, 29, 0.85) 0%, rgba(6, 25, 29, 0.45) 24%, transparent 44%);
   pointer-events: none;
 }
 .s5-title {
   position: absolute;
   left: 120px;
-  bottom: 110px;
+  top: 150px;
   width: 760px;
   font-size: 76px;
   text-shadow: 0 4px 30px rgba(0, 0, 0, 0.35);
