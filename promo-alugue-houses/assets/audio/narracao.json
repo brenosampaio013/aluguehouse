@@ -1,0 +1,12 @@
+{
+  "observacao": "Roteiro da narração da versão publicada (24,5 s). 'inicio' e 'fim' são segundos do vídeo; cada fala precisa caber na sua janela. Só cita funções que o site tem.",
+  "falas": [
+    { "inicio": 0.4, "fim": 3.6, "cena": "iPhone com a busca", "texto": "Alugue Houses. Temporada, aluguel mensal e venda no litoral de São Paulo." },
+    { "inicio": 4.0, "fim": 7.4, "cena": "cards dos imóveis", "texto": "Busque por destino, datas e hóspedes, e conheça cada imóvel em detalhes." },
+    { "inicio": 8.0, "fim": 11.0, "cena": "mapa e toque no imóvel", "texto": "No mapa, toque na casa que combina com você." },
+    { "inicio": 11.4, "fim": 14.4, "cena": "foto em tela cheia e volta ao celular", "texto": "Veja as fotos e solicite sua reserva pela plataforma." },
+    { "inicio": 15.0, "fim": 18.2, "cena": "montagem de fotos", "texto": "Momentos únicos. Experiências inesquecíveis." },
+    { "inicio": 18.8, "fim": 21.4, "cena": "três celulares", "texto": "Com atendimento direto da nossa equipe." },
+    { "inicio": 22.0, "fim": 24.3, "cena": "logo final", "texto": "Alugue Houses. Seu próximo destino." }
+  ]
+}

@@ -563,16 +563,25 @@
     range.max = String(LENGTH);
     const out = $("output", controls);
     const toggle = $('[data-act="toggle"]', controls);
-    const audio = new Audio("assets/audio/trilha.mp3");
-    let hasAudio = false;
-    audio.addEventListener("canplaythrough", () => (hasAudio = true), { once: true });
-    audio.addEventListener("error", () => (hasAudio = false));
-    audio.preload = "auto";
+    // narração e trilha opcionais, tocadas junto da timeline
+    const tracks = [
+      ["assets/audio/narracao.wav", 1],
+      ["assets/audio/trilha.mp3", 0.4],
+    ].map(([src, volume]) => {
+      const audio = new Audio(src);
+      const track = { audio, ok: false };
+      audio.volume = volume;
+      audio.preload = "auto";
+      audio.addEventListener("canplaythrough", () => (track.ok = true), { once: true });
+      return track;
+    });
 
     const syncAudio = () => {
-      if (!hasAudio) return;
-      audio.currentTime = tl.time();
-      tl.paused() ? audio.pause() : audio.play().catch(() => {});
+      for (const { audio, ok } of tracks) {
+        if (!ok) continue;
+        audio.currentTime = tl.time();
+        tl.paused() ? audio.pause() : audio.play().catch(() => {});
+      }
     };
     gsap.ticker.add(() => {
       range.value = tl.time().toFixed(2);

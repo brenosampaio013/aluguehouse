@@ -118,18 +118,43 @@ para a tela de detalhes no iPhone.
 - O site ainda não tem domínio próprio (`docs/publicacao.md`), então o
   encerramento não mostra endereço. Quando houver, acrescente-o em `#s8`.
 
-## Trilha e sincronia
+## Narração, trilha e sincronia
 
-Sem áudio, o filme funciona normalmente. Para incluir uma trilha (licenciada
-ou original), salve-a como `assets/audio/trilha.mp3` ou `trilha.wav`. A
-prévia toca a trilha junto da timeline e o exportador a coloca no MP4, com
-fade-out no último 1,5 s.
+**Narração.** O roteiro está em `assets/audio/narracao.json`: sete falas
+curtas, cada uma com início e fim sincronizados com a cena, citando só o que
+o site faz (temporada, mensal e venda; busca por destino, datas e hóspedes;
+mapa; solicitação de reserva; atendimento direto).
 
-Pontos de sincronia para impactos sonoros: `CUES` em `script.js` (o
-exportador também os grava em `saida/pontos-de-sincronia.json`). Os
-principais: 1,25 s logo · 8,0 s iPhone · 11,4 s zoom na tela · 12,8 s cards ·
-18,5 s clique no mapa · 20,0 s montagem · 24,2 s celulares · 27,5 s logo final ·
-28,9 s brilho.
+| Tempo | Fala |
+| --- | --- |
+| 0,4–3,6 s | Alugue Houses. Temporada, aluguel mensal e venda no litoral de São Paulo. |
+| 4,0–7,4 s | Busque por destino, datas e hóspedes, e conheça cada imóvel em detalhes. |
+| 8,0–11,0 s | No mapa, toque na casa que combina com você. |
+| 11,4–14,4 s | Veja as fotos e solicite sua reserva pela plataforma. |
+| 15,0–18,2 s | Momentos únicos. Experiências inesquecíveis. |
+| 18,8–21,4 s | Com atendimento direto da nossa equipe. |
+| 22,0–24,3 s | Alugue Houses. Seu próximo destino. |
+
+Duas formas de gerar o áudio:
+
+1. **Voz neural do Google** (Text-to-Speech, pt-BR):
+   `GOOGLE_TTS_API_KEY=... node tools/narracao.mjs` cria
+   `assets/audio/narracao.wav`, com cada fala no seu tempo. A voz padrão é
+   `pt-BR-Chirp3-HD-Charon` (masculina); `TTS_VOZ=pt-BR-Chirp3-HD-Aoede`
+   troca para feminina.
+2. **Locução gravada** (estúdio, ElevenLabs etc.): grave lendo a tabela acima
+   e salve um arquivo único de 24,5 s, já sincronizado, como
+   `assets/audio/narracao.wav` ou `.mp3`.
+
+**Trilha (opcional).** `assets/audio/trilha.mp3` ou `.wav`, licenciada ou
+original. Com narração, a trilha abaixa sozinha enquanto a voz fala.
+
+**Colocar no vídeo.** `node tools/export.mjs --so-audio` refaz só o áudio do
+MP4 já exportado, em segundos. O export completo também inclui o áudio.
+A prévia no navegador toca narração e trilha junto da timeline.
+
+Pontos de sincronia para impactos sonoros: `CUES` em `script.js`
+(também em `saida/pontos-de-sincronia.json` depois de exportar).
 
 ## Roteiro técnico
 
