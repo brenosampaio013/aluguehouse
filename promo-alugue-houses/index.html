@@ -84,67 +84,33 @@
           </div>
         </section>
 
-        <!-- CENA 5 — Simplicidade para reservar (00:16–00:20) -->
+        <!-- CENA 5 — Mapa: escolher uma casa (00:16–00:22) -->
         <section class="scene" id="s5">
-          <div class="map">
-            <svg viewBox="0 0 1920 1080" class="map-svg" aria-hidden="true">
-              <defs>
-                <linearGradient id="landG" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#175058" />
-                  <stop offset="1" stop-color="#0F3B42" />
-                </linearGradient>
-                <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                  <path d="M60 0H0V60" fill="none" stroke="#D9C7A3" stroke-opacity=".05" />
-                </pattern>
-              </defs>
-              <rect width="1920" height="1080" fill="url(#grid)" />
-              <!-- continente: costa de Bertioga a Ubatuba, simplificada -->
-              <path class="land" fill="url(#landG)" d="M560 1080 L640 1000 C700 975 760 985 820 960 C880 930 900 900 960 880 C1010 865 1040 830 1080 800 C1110 778 1150 790 1180 760 C1210 728 1200 690 1240 660 C1290 625 1330 640 1370 600 C1400 570 1390 530 1430 500 C1470 470 1520 480 1560 445 C1600 410 1590 360 1640 330 C1690 300 1740 310 1780 270 C1820 230 1840 180 1920 150 L1920 0 L960 0 L560 0 Z" />
-              <path class="coast" fill="none" stroke="#D9C7A3" stroke-width="2.5" stroke-opacity=".75" d="M640 1000 C700 975 760 985 820 960 C880 930 900 900 960 880 C1010 865 1040 830 1080 800 C1110 778 1150 790 1180 760 C1210 728 1200 690 1240 660 C1290 625 1330 640 1370 600 C1400 570 1390 530 1430 500 C1470 470 1520 480 1560 445 C1600 410 1590 360 1640 330 C1690 300 1740 310 1780 270 C1820 230 1840 180 1920 150" />
-              <!-- Ilhabela -->
-              <path class="land island" fill="url(#landG)" stroke="#D9C7A3" stroke-opacity=".6" stroke-width="2" d="M1300 760 C1330 720 1390 715 1420 740 C1450 765 1440 820 1410 850 C1380 880 1330 880 1305 850 C1285 825 1285 785 1300 760 Z" />
-              <path d="M600 1040 C900 980 1300 760 1920 200" fill="none" stroke="#D9C7A3" stroke-opacity=".12" stroke-width="1.5" stroke-dasharray="6 10" />
-            </svg>
-            <div class="map-label" style="left: 780px; top: 1000px">Riviera de São Lourenço</div>
-            <div class="map-label" style="left: 1110px; top: 830px">São Sebastião</div>
-            <div class="map-label" style="left: 1430px; top: 830px">Ilhabela</div>
-            <div class="map-label" style="left: 1580px; top: 540px">Caraguatatuba</div>
-            <div class="map-label" style="left: 1760px; top: 330px">Ubatuba</div>
-            <div class="marker active-target" style="left: 838px; top: 925px"><span></span></div>
-            <div class="marker" style="left: 920px; top: 880px"><span></span></div>
-            <div class="marker" style="left: 760px; top: 960px"><span></span></div>
-            <div class="marker" style="left: 1150px; top: 760px"><span></span></div>
-            <div class="marker" style="left: 1360px; top: 790px"><span></span></div>
-            <div class="marker" style="left: 1400px; top: 560px"><span></span></div>
-            <div class="marker" style="left: 1590px; top: 420px"><span></span></div>
-            <div class="marker" style="left: 1790px; top: 250px"><span></span></div>
-            <div class="detail-card">
-              <div class="dc-img"><img data-slot="imovel-01-sala" alt="Sala de jantar do Imóvel 01" /></div>
-              <div class="dc-body">
-                <p class="dc-region">Riviera de São Lourenço · Bertioga</p>
+          <div class="s5-cam">
+            <div class="map-photo"><img data-slot="mapa-riviera" alt="Mapa da Riviera de São Lourenço, em Bertioga" /></div>
+            <div class="pins"></div>
+            <div class="touch"><span class="touch-ring"></span><span class="touch-dot"></span></div>
+            <article class="map-card" aria-label="Resumo: Imóvel 01">
+              <div class="mc-img"><img data-slot="imovel-01-sala" alt="Sala de jantar do Imóvel 01" /></div>
+              <div class="mc-body">
+                <p class="mc-place">Riviera de São Lourenço · Bertioga</p>
                 <h3>Imóvel 01</h3>
-                <p class="dc-meta">2 quartos · até 6 hóspedes</p>
-                <div class="dc-cta">Solicitar reserva</div>
+                <p class="mc-facts">Apartamento · 2 quartos · até 6 hóspedes</p>
+                <div class="mc-foot"><span class="mc-price">Preço sob consulta</span><span class="mc-cta">Ver imóvel</span></div>
               </div>
-            </div>
-            <div class="cursor"><svg viewBox="0 0 24 24"><path d="M4 2l16 9.5-7 1.6L9.6 20z" fill="#fff" stroke="#06191D" stroke-width="1.4" stroke-linejoin="round" /></svg><span class="ripple"></span></div>
+            </article>
           </div>
-          <div class="s5-fade"></div>
+          <div class="map-top">
+            <div class="map-pill"><i class="ico search"></i><div><strong>Riviera de São Lourenço</strong><small>Temporada · 6 hóspedes</small></div><span class="map-filter">Filtros</span></div>
+          </div>
+          <p class="map-attrib"></p>
+          <div class="s5-grade"></div>
           <h2 class="headline s5-title">Sua próxima estadia, <em>sem complicação.</em></h2>
-          <div class="search-panel">
-            <div class="sp-tabs"><span class="on">Temporada</span><span>Mensal</span><span>Venda</span></div>
-            <div class="sp-field f1"><label>Destino</label><strong><i class="ico pin"></i>Riviera de São Lourenço</strong></div>
-            <div class="sp-row">
-              <div class="sp-field f2"><label>Chegada</label><strong>Escolha a data</strong></div>
-              <div class="sp-field f3"><label>Saída</label><strong>Escolha a data</strong></div>
-            </div>
-            <div class="sp-field f4"><label>Hóspedes</label><strong>6 hóspedes</strong></div>
-            <div class="sp-chips">
-              <span class="chip">Piscina</span>
-              <span class="chip">Vista para o mar</span>
-              <span class="chip">Pé na areia</span>
-            </div>
-            <div class="sp-button"><i class="ico search"></i>Buscar</div>
+          <div class="phone-slot" id="phoneD" data-screen="tpl-detail"></div>
+          <div class="fs-photo">
+            <img data-slot="imovel-01-sala-hd" alt="Sala de jantar do Imóvel 01" />
+            <div class="fs-grade"></div>
+            <p class="fs-caption"><span>Imóvel 01</span>Riviera de São Lourenço · Bertioga</p>
           </div>
         </section>
 
@@ -194,7 +160,7 @@
     <div id="controls" hidden>
       <button type="button" data-act="replay" aria-label="Reproduzir de novo">↺</button>
       <button type="button" data-act="toggle" aria-label="Pausar ou continuar">❚❚</button>
-      <input type="range" min="0" max="21.7" step="0.01" value="0" aria-label="Posição" />
+      <input type="range" min="0" max="24.5" step="0.01" value="0" aria-label="Posição" />
       <output>00.00</output>
     </div>
 

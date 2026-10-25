@@ -980,232 +980,259 @@ img.missing {
   font-weight: 600;
 }
 
-/* ---------- cena 5 ---------- */
+/* ---------- cena 5: mapa ---------- */
 
-.map {
+.s5-cam {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+}
+.map-photo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #e8e6df;
+}
+.map-photo img {
+  background: #dfe7e4;
+}
+.pins {
   position: absolute;
   inset: 0;
 }
-.map-svg {
+/* Mesmo desenho dos marcadores do site (src/components/map/price-map.tsx):
+   pílula branca com o preço, ou "Consultar" quando não há preço; a
+   selecionada fica em abismo com texto branco. Aqui em escala de vídeo. */
+.pin {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
 }
-.map-label {
-  position: absolute;
-  transform: translate(-50%, 0);
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 28px;
-  color: rgba(217, 199, 163, 0.92);
-  white-space: nowrap;
-}
-.marker {
-  position: absolute;
-  width: 0;
-  height: 0;
-}
-.marker span {
-  position: absolute;
-  left: -13px;
-  top: -13px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--areia);
-  border: 5px solid var(--petroleo);
-  box-shadow: 0 0 0 2px rgba(217, 199, 163, 0.5), 0 8px 20px rgba(0, 0, 0, 0.5);
-}
-.marker.active-target span {
+.pin b {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(13, 59, 69, 0.15);
   background: #fff;
+  color: var(--ui-ink);
+  font: 700 19px/1 var(--sans);
+  white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(20, 43, 58, 0.3);
 }
-.marker::before {
+.pin.selected b {
+  background: var(--ui-ink);
+  border-color: var(--ui-ink);
+  color: #fff;
+}
+.pin::before {
   content: "";
   position: absolute;
-  left: -30px;
-  top: -30px;
-  width: 60px;
-  height: 60px;
+  left: 50%;
+  top: 50%;
+  width: 150px;
+  height: 150px;
+  margin: -75px 0 0 -75px;
   border-radius: 50%;
-  border: 2px solid rgba(217, 199, 163, 0.5);
+  background: radial-gradient(circle, rgba(19, 96, 110, 0.35), transparent 65%);
+  opacity: var(--glow, 0);
+  transform: scale(var(--glow, 0));
+}
+.touch {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 6;
+}
+.touch-dot {
+  position: absolute;
+  left: -32px;
+  top: -32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.touch-ring {
+  position: absolute;
+  left: -32px;
+  top: -32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid #fff;
   opacity: 0;
 }
-.marker.pulse::before {
-  opacity: 1;
-}
-.detail-card {
+.map-card {
   position: absolute;
-  left: 880px;
-  top: 470px;
-  width: 400px;
-  border-radius: 22px;
+  left: 0;
+  top: 0;
+  width: 620px;
+  border-radius: 24px;
   overflow: hidden;
   background: #fff;
   color: var(--ui-ink);
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
-  transform-origin: 0% 100%;
+  box-shadow: 0 40px 90px -24px rgba(6, 25, 29, 0.6), 0 12px 30px -10px rgba(6, 25, 29, 0.35);
+  z-index: 5;
 }
-.dc-img {
-  height: 210px;
+.mc-img {
+  height: 360px;
+  overflow: hidden;
 }
-.dc-body {
-  padding: 18px 22px 22px;
+.mc-body {
+  padding: 20px 26px 24px;
 }
-.dc-region {
-  font-size: 13.5px;
+.mc-place {
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ui-petrol);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-rock);
 }
-.dc-body h3 {
+.mc-body h3 {
+  margin-top: 4px;
   font-family: var(--serif);
   font-weight: 400;
-  font-size: 32px;
-  margin-top: 2px;
+  font-size: 38px;
+  line-height: 1.1;
 }
-.dc-meta {
-  font-size: 15px;
+.mc-facts {
+  margin-top: 6px;
+  font-size: 18px;
   color: var(--ui-rock);
-  margin-top: 4px;
 }
-.dc-cta {
-  margin-top: 16px;
-  height: 48px;
-  display: grid;
-  place-items: center;
+.mc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+.mc-price {
+  font-size: 18px;
+  font-weight: 600;
+}
+.mc-cta {
+  padding: 13px 22px;
   border-radius: 12px;
   background: var(--ui-petrol);
   color: #fff;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 17px;
 }
-.cursor {
+.map-top {
   position: absolute;
   left: 0;
-  top: 0;
-  width: 34px;
-  height: 34px;
-  z-index: 5;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+  right: 0;
+  top: 44px;
+  display: flex;
+  justify-content: center;
 }
-.cursor svg {
-  width: 34px;
-  height: 34px;
+.map-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 640px;
+  padding: 12px 12px 12px 24px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ui-ink);
+  box-shadow: 0 10px 30px rgba(6, 25, 29, 0.25);
 }
-.ripple {
+.map-pill .ico {
+  width: 24px;
+  height: 24px;
+}
+.map-pill > div {
+  flex: 1;
+}
+.map-pill strong {
+  display: block;
+  font-size: 19px;
+}
+.map-pill small {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  color: var(--ui-rock);
+}
+.map-filter {
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 1.5px solid #d9cdb8;
+  font-weight: 700;
+  font-size: 16px;
+}
+.map-attrib {
   position: absolute;
-  left: -20px;
-  top: -20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  opacity: 0;
+  right: 14px;
+  bottom: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+  font-size: 13px;
 }
-.s5-fade {
+.map-attrib:empty {
+  display: none;
+}
+.s5-grade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(6, 25, 29, 0.92) 0%, rgba(6, 25, 29, 0.6) 34%, transparent 52%);
+  background: linear-gradient(20deg, rgba(6, 25, 29, 0.82) 0%, rgba(6, 25, 29, 0.4) 26%, transparent 46%);
   pointer-events: none;
 }
 .s5-title {
   position: absolute;
   left: 120px;
-  top: 90px;
-  width: 900px;
+  bottom: 110px;
+  width: 760px;
   font-size: 76px;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.35);
 }
-.search-panel {
+#phoneD {
+  left: 755px;
+  top: 110px;
+}
+.fs-photo {
   position: absolute;
-  left: 120px;
-  top: 330px;
-  width: 600px;
-  padding: 22px;
-  border-radius: 28px;
-  background: #fff;
-  color: var(--ui-ink);
-  box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.8);
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  z-index: 8;
 }
-.sp-tabs {
-  display: flex;
-  gap: 6px;
-  padding: 5px;
-  border-radius: 999px;
-  background: var(--ui-sand);
-  margin-bottom: 16px;
+.fs-photo img {
+  transform-origin: 50% 55%;
 }
-.sp-tabs span {
-  flex: 1;
-  text-align: center;
-  padding: 10px 0;
-  border-radius: 999px;
-  font-size: 16px;
+.fs-grade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(6, 25, 29, 0.7) 0%, transparent 34%);
+}
+.fs-caption {
+  position: absolute;
+  left: 140px;
+  bottom: 120px;
+  font-size: 22px;
   font-weight: 600;
-  color: var(--ui-rock);
-}
-.sp-tabs .on {
-  background: #fff;
-  color: var(--ui-ink);
-  box-shadow: 0 2px 10px rgba(13, 59, 69, 0.14);
-}
-.sp-field {
-  padding: 14px 18px;
-  border: 1.5px solid #e6dccb;
-  border-radius: 16px;
-  margin-bottom: 12px;
-}
-.sp-field label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ui-rock);
+  color: var(--areia);
 }
-.sp-field strong {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  font-size: 20px;
-  font-weight: 700;
-}
-.sp-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.sp-chips {
-  display: flex;
-  gap: 10px;
-  margin: 4px 0 16px;
-}
-.chip {
-  padding: 10px 16px;
-  border-radius: 999px;
-  border: 1.5px solid #d9cdb8;
-  font-size: 16px;
-  font-weight: 600;
-}
-.chip.on {
-  background: var(--ui-mist);
-  border-color: var(--ui-petrol);
-  color: var(--ui-petrol);
-}
-.sp-button {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border-radius: 16px;
-  background: var(--ui-petrol);
+.fs-caption span {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--serif);
+  font-size: 84px;
+  font-weight: 380;
+  letter-spacing: -0.015em;
+  text-transform: none;
   color: #fff;
-  font-size: 19px;
-  font-weight: 700;
-}
-.sp-button .ico {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='11' cy='11' r='6.5' fill='none' stroke='white' stroke-width='2.2'/><path d='M16 16l4.5 4.5' stroke='white' stroke-width='2.2'/></svg>");
 }
 
 /* ---------- cena 6 ---------- */

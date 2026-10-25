@@ -1,7 +1,7 @@
-# Alugue Houses — filme promocional (21,7 s, 1920 × 1080)
+# Alugue Houses — filme promocional (24,5 s, 1920 × 1080)
 
 Apresentação audiovisual em HTML/CSS/JS com uma timeline GSAP. A versão
-publicada tem 21,7 s e começa no iPhone (cena 3). A abertura com a logo e a
+publicada tem 24,5 s e começa no iPhone (cena 3). A abertura com a logo e a
 foto da área gourmet em tela cheia (cenas 1 e 2) saiu a pedido do cliente,
 mas continua no código: `?completo=1` mostra os 30 s originais.
 
@@ -35,7 +35,7 @@ parada para a exportação.
 Requisitos: Node 22, Playwright com Chromium e FFmpeg.
 
 ```bash
-node tools/export.mjs                 # saida/alugue-houses.mp4 (H.264, 30 fps, 651 quadros)
+node tools/export.mjs                 # saida/alugue-houses.mp4 (H.264, 30 fps, 735 quadros)
 node tools/export.mjs --completo      # saida/alugue-houses-30s.mp4 (com as cenas 1 e 2)
 node tools/export.mjs --contact       # saida/previa/folha-de-contato.jpg (18 quadros)
 node tools/export.mjs --stills=5,10   # quadros avulsos em saida/previa/
@@ -77,6 +77,29 @@ quadro tracejado, e o exportador se recusa a gerar o MP4.
   os cards não citam região para ela.
 - Com fotos em maior resolução, ou de outros imóveis (fachada, vista para
   o mar), basta substituir os arquivos ou acrescentar posições em `PHOTOS`.
+
+## Mapa (cena 5)
+
+A cena mostra uma pessoa usando o mapa no celular. Os imóveis aparecem como
+marcadores; um toque no Imóvel 01 deixa o marcador em destaque e abre o
+card com a foto real. A câmera aproxima, a foto vai para tela cheia e volta
+para a tela de detalhes no iPhone.
+
+- **Fundo:** captura de tela do mapa da Riviera de São Lourenço, salva como
+  `assets/mapa/riviera.png` (mínimo 1920 × 1080). Ela precisa manter a
+  atribuição do provedor visível; se a atribuição for cortada, preencha
+  `MAP.attribution` em `script.js` (ex.: "© OpenStreetMap · OpenFreeMap" ou
+  "Map data ©2026 Google").
+- **Marcadores:** mesmo desenho dos marcadores do site
+  (`src/components/map/price-map.tsx`): pílula branca e, quando selecionada,
+  azul-abismo. Sem preços: todos mostram "Consultar", como o site faz quando o
+  imóvel não tem preço.
+- **Dados:** o único imóvel cadastrado é o Imóvel 01 (`scripts/demo-seed.mjs`).
+  Os demais marcadores são **demonstrativos**, sem imóvel por trás; isso está
+  indicado em `MAP` no `script.js`. As posições são pixels da captura; depois
+  de trocar a imagem, ajuste `MAP.selected` e `MAP.pins`.
+- `fotos/imovel-01/sala-jantar-hd.jpg` é a foto da sala de jantar ampliada ×2
+  (EDSR) para a tela cheia.
 
 ## Conteúdo e fidelidade ao produto
 

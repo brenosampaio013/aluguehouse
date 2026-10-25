@@ -6,7 +6,9 @@
 (() => {
   "use strict";
 
-  const DURATION = 30;
+  // A cena do mapa ganhou SHIFT segundos; as cenas 6 a 8 são deslocadas em build().
+  const SHIFT = 2.8;
+  const DURATION = 30 + SHIFT;
   const FPS = 30;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has("render");
@@ -24,11 +26,36 @@
     "area-gourmet-integrada": "assets/fotos/campanha/area-gourmet-integrada.jpg",
     "sala-jantar-jardim": "assets/fotos/campanha/sala-jantar-jardim.jpg",
     "sala-estar-jantar": "assets/fotos/campanha/sala-estar-jantar.jpg",
+    // Captura do mapa da Riviera de São Lourenço (veja MAP abaixo).
+    "mapa-riviera": "assets/mapa/riviera.png",
+    "imovel-01-sala-hd": "assets/fotos/imovel-01/sala-jantar-hd.jpg",
     // Fotos reais do Imóvel 01 (media/recebidas/imovel-01, uso autorizado).
     "imovel-01-sala": "assets/fotos/imovel-01/sala-jantar.jpg",
     "imovel-01-cozinha": "assets/fotos/imovel-01/cozinha.jpg",
     "imovel-01-quarto": "assets/fotos/imovel-01/quarto-beliche.jpg",
     "imovel-01-banheiro": "assets/fotos/imovel-01/banheiro.jpg",
+  };
+
+  // Cena 5 (mapa). O fundo é uma captura de tela do mapa, e as coordenadas
+  // abaixo estão em pixels dessa imagem. O único imóvel cadastrado no projeto
+  // é o Imóvel 01 (scripts/demo-seed.mjs): é ele que a pessoa seleciona. Os
+  // outros marcadores são DEMONSTRATIVOS (não há imóvel por trás deles) e,
+  // como no site quando não há preço, mostram "Consultar". Nenhum preço é
+  // exibido.
+  const MAP = {
+    width: 1920,
+    height: 1080,
+    attribution: "",
+    selected: { x: 880, y: 560, label: "Consultar" },
+    pins: [
+      { x: 640, y: 470 },
+      { x: 1040, y: 430 },
+      { x: 1180, y: 610 },
+      { x: 760, y: 690 },
+      { x: 520, y: 640 },
+      { x: 1320, y: 470 },
+      { x: 990, y: 760 },
+    ],
   };
 
   // Pontos de sincronização para a trilha e os impactos sonoros (segundos).
@@ -40,12 +67,18 @@
     { t: 8.0, id: "celular", note: "whoosh: iPhone entra girando" },
     { t: 11.4, id: "zoom-tela", note: "whoosh grave: câmera entra na tela" },
     { t: 12.8, id: "cards", note: "três toques leves: cards saltam" },
-    { t: 18.5, id: "clique", note: "clique discreto no mapa" },
+    { t: 16.7, id: "marcadores", note: "toques leves: imóveis aparecem no mapa" },
+    { t: 18.45, id: "toque", note: "toque no marcador do Imóvel 01" },
+    { t: 18.6, id: "card", note: "card do imóvel abre" },
+    { t: 20.3, id: "tela-cheia", note: "whoosh: foto do imóvel em tela cheia" },
+    { t: 21.6, id: "volta-celular", note: "foto volta para a tela do celular" },
     { t: 20.0, id: "montagem", note: "batida: início da montagem" },
     { t: 24.2, id: "celulares", note: "impacto: três celulares" },
     { t: 27.5, id: "logo-final", note: "acorde final" },
     { t: 28.9, id: "brilho", note: "brilho percorre a logo" },
   ];
+
+  for (const cue of CUES) if (cue.t >= 19.85) cue.t = Math.round((cue.t + SHIFT) * 100) / 100;
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -177,6 +210,70 @@
     tl.set(sel, { autoAlpha: 0 }, at);
   }
 
+  // ---------- mapa da cena 5 ----------
+  function mapGeometry() {
+    const img = $("#s5 .map-photo img");
+    const iw = img.naturalWidth || MAP.width;
+    const ih = img.naturalHeight || MAP.height;
+    // a captura cobre o palco como object-fit: cover
+    const k = Math.max(1920 / iw, 1080 / ih);
+    const ox = (1920 - iw * k) / 2;
+    const oy = (1080 - ih * k) / 2;
+    const toStage = (p) => ({ x: ox + p.x * k, y: oy + p.y * k });
+
+    const layer = $("#s5 .pins");
+    layer.innerHTML = "";
+    const make = (p, label) => {
+      const el = document.createElement("div");
+      el.className = "pin";
+      el.innerHTML = `<b>${label}</b>`;
+      layer.appendChild(el);
+      gsap.set(el, { x: p.x, y: p.y, xPercent: -50, yPercent: -50 });
+      return el;
+    };
+    const sel = toStage(MAP.selected);
+    const others = MAP.pins.map((p) => ({ ...toStage(p), el: null }));
+    for (const o of others) o.el = make(o, "Consultar");
+    const selPin = make(sel, MAP.selected.label);
+    selPin.style.zIndex = 3;
+    $("#s5 .map-attrib").textContent = MAP.attribution;
+
+    // card ao lado do marcador, sem cobrir o mapa inteiro
+    const cw = 620;
+    const ch = 560;
+    const right = sel.x + 70 + cw <= 1920 - 70;
+    const left = right ? sel.x + 70 : sel.x - 70 - cw;
+    const top = Math.min(Math.max(sel.y - 300, 150), 1080 - ch - 40);
+    gsap.set("#s5 .map-card", { x: left });
+    $("#s5 .map-card").style.top = `${top}px`;
+    const cardOrigin = `${right ? "0%" : "100%"} ${Math.round(sel.y - top)}px`;
+
+    const push = 1.14;
+    const ih2 = 360;
+    const cx = left + cw / 2;
+    const cy = top + ih2 / 2;
+    const hw = (cw * push) / 2;
+    const hh = (ih2 * push) / 2;
+    const r = Math.round(24 * push);
+    const clipPushed = `inset(${cy - hh}px ${1920 - cx - hw}px ${1080 - cy - hh}px ${cx - hw}px round ${r}px ${r}px 0px 0px)`;
+    // área da foto na tela de detalhes do #phoneD (palco: 755,110 + moldura 22)
+    const heroClip = "inset(132px 777px 618px 777px round 56px 56px 0px 0px)";
+
+    const pinsInOrder = [selPin, ...others.map((o) => o.el)].sort(
+      (a, b) => gsap.getProperty(a, "x") - gsap.getProperty(b, "x"),
+    );
+    return {
+      sel,
+      selPin,
+      otherPins: others.map((o) => o.el),
+      pinsInOrder,
+      cardOrigin,
+      push,
+      img: { cx, cy, clipPushed },
+      heroClip,
+    };
+  }
+
   // ---------- timeline mestre ----------
   function build() {
     const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
@@ -273,47 +370,6 @@
     wordsOut(tl, w4, 15.45);
     hide(tl, "#s4", 16.25);
 
-    // CENA 5 — 00:16–00:20
-    show(tl, "#s5", 16.0, 0.5);
-    tl.fromTo("#s5 .map", { scale: 1.12 }, { scale: 1, duration: 4, ease: "power1.out" }, 16.0);
-    const coast = $("#s5 .coast");
-    const len = coast.getTotalLength();
-    tl.fromTo(coast, { strokeDasharray: len, strokeDashoffset: len }, { strokeDashoffset: 0, duration: 1.4, ease: "power2.inOut" }, 16.1);
-    tl.fromTo("#s5 .land", { opacity: 0 }, { opacity: 1, duration: 1, ease: "power2.out" }, 16.1);
-    tl.fromTo("#s5 .map-label", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.08 }, 16.8);
-    tl.fromTo("#s5 .marker", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, stagger: 0.06, ease: "back.out(2.4)" }, 17.0);
-    wordsIn(tl, $(".s5-title"), 16.3, { stagger: 0.07 });
-    tl.fromTo(".search-panel", { opacity: 0, x: -70, rotationY: 14, transformPerspective: 1400 }, { opacity: 1, x: 0, rotationY: 0, duration: 1.1, ease: "expo.out" }, 16.4);
-    tl.fromTo(
-      [".sp-tabs", ".sp-field.f1", ".sp-row", ".sp-field.f4", ".sp-chips", ".sp-button"],
-      { opacity: 0, y: 22 },
-      { opacity: 1, y: 0, duration: 0.55, stagger: 0.14 },
-      16.7,
-    );
-    $$(".chip")
-      .slice(0, 2)
-      .forEach((chip, i) => {
-        tl.to(chip, { backgroundColor: "#DCEBEC", borderColor: "#13606E", color: "#13606E", duration: 0.25, ease: "power1.out" }, 17.55 + i * 0.22);
-        tl.fromTo(chip, { scale: 1 }, { scale: 1.08, duration: 0.12, yoyo: true, repeat: 1, ease: "power1.out" }, 17.55 + i * 0.22);
-      });
-    const target = $("#s5 .marker.active-target");
-    const tx = parseFloat(target.style.left);
-    const ty = parseFloat(target.style.top);
-    tl.fromTo("#s5 .cursor", { x: 1300, y: 1010, opacity: 0 }, { opacity: 1, duration: 0.25 }, 17.7);
-    tl.to("#s5 .cursor", { x: tx - 6, y: ty - 4, duration: 0.75, ease: "power2.inOut" }, 17.75);
-    tl.to("#s5 .cursor", { scale: 0.82, duration: 0.1, yoyo: true, repeat: 1, ease: "power1.inOut" }, 18.5);
-    tl.fromTo("#s5 .ripple", { scale: 0.2, opacity: 1 }, { scale: 2.2, opacity: 0, duration: 0.6, ease: "power2.out" }, 18.52);
-    tl.to(target, { scale: 1.35, duration: 0.3, ease: "back.out(3)" }, 18.52);
-    tl.fromTo(
-      "#s5 .detail-card",
-      { opacity: 0, scale: 0.6, y: 40 },
-      { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: "back.out(1.4)" },
-      18.65,
-    );
-    tl.to("#s5 .cursor", { x: "+=160", y: "+=60", opacity: 0, duration: 0.5, ease: "power2.in" }, 19.0);
-    tl.to("#s5", { autoAlpha: 0, scale: 1.04, filter: "blur(14px)", duration: 0.6, ease: "power2.in" }, 19.55);
-    tl.to(".a1, .a2", { opacity: 0, duration: 0.6 }, 19.6);
-
     // CENA 6 — 00:20–00:24
     show(tl, "#s6", 19.9, 0.4);
     tl.to(P, { alpha: 0.4, duration: 0.6 }, 19.9);
@@ -395,10 +451,64 @@
     tl.to(P, { alpha: 0.25, duration: 0.8, ease: "sine.inOut" }, 29.2);
     tl.to(".a1, .a2", { opacity: 0.3, duration: 0.8 }, 29.2);
 
+    // Cenas 6 a 8 começam SHIFT segundos depois: o mapa ganhou tempo.
+    for (const child of tl.getChildren(false, true, true)) {
+      if (child.startTime() >= 19.85) child.startTime(child.startTime() + SHIFT);
+    }
+
+    // CENA 5 — 00:16–00:22 · mapa: explorar, tocar num imóvel, abrir o card,
+    // ver a casa em tela cheia e voltar ao celular
+    const g = mapGeometry();
+    show(tl, "#s5", 16.0, 0.5);
+    tl.fromTo("#s5 .s5-cam", { scale: 1.1 }, { scale: 1, duration: 3.6, ease: "power2.out" }, 16.0);
+    tl.fromTo("#s5 .map-top", { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.7 }, 16.3);
+    tl.fromTo("#s5 .s5-grade", { opacity: 0 }, { opacity: 1, duration: 0.8 }, 16.2);
+    const w5 = wordsIn(tl, $(".s5-title"), 16.5, { stagger: 0.07 });
+    tl.fromTo(g.pinsInOrder, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, stagger: 0.09, ease: "back.out(2.2)" }, 16.7);
+
+    tl.fromTo("#s5 .touch", { x: g.sel.x + 320, y: g.sel.y + 280, opacity: 0 }, { opacity: 1, duration: 0.25 }, 17.7);
+    tl.to("#s5 .touch", { x: g.sel.x, y: g.sel.y + 6, duration: 0.7, ease: "power2.inOut" }, 17.75);
+    tl.to("#s5 .touch-dot", { scale: 0.78, duration: 0.1, yoyo: true, repeat: 1, ease: "power1.inOut" }, 18.45);
+    tl.fromTo("#s5 .touch-ring", { scale: 1, opacity: 0.9 }, { scale: 2.8, opacity: 0, duration: 0.6, ease: "power2.out" }, 18.47);
+    tl.to("#s5 .touch", { opacity: 0, duration: 0.35 }, 18.85);
+    tl.to(g.selPin.firstChild, { backgroundColor: "#0D3B45", borderColor: "#0D3B45", color: "#FFFFFF", duration: 0.2 }, 18.5);
+    tl.to(g.selPin, { scale: 1.18, "--glow": 1, duration: 0.5, ease: "back.out(2.5)" }, 18.5);
+    tl.to(g.otherPins, { opacity: 0.82, duration: 0.4 }, 18.55);
+
+    tl.fromTo(
+      "#s5 .map-card",
+      { opacity: 0, scale: 0.8, y: 24, transformOrigin: g.cardOrigin },
+      { opacity: 1, scale: 1, y: 0, duration: 0.65, ease: "back.out(1.3)" },
+      18.6,
+    );
+    tl.fromTo("#s5 .mc-img img", { scale: 1.12 }, { scale: 1, duration: 1.6, ease: "power2.out" }, 18.6);
+    tl.fromTo("#s5 .mc-body > *", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.06 }, 18.85);
+
+    wordsOut(tl, w5, 19.4);
+    tl.to(["#s5 .map-top", "#s5 .s5-grade", "#s5 .map-attrib"], { opacity: 0, duration: 0.4 }, 19.7);
+    tl.to("#s5 .s5-cam", { scale: g.push, transformOrigin: `${g.img.cx}px ${g.img.cy}px`, duration: 0.6, ease: "power2.inOut" }, 19.75);
+    tl.fromTo("#s5 .fs-photo", { clipPath: g.img.clipPushed, opacity: 0 }, { opacity: 1, duration: 0.2 }, 20.25);
+    tl.to("#s5 .fs-photo", { clipPath: "inset(0px 0px 0px 0px round 0px)", duration: 0.75, ease: "power3.inOut" }, 20.35);
+    tl.to("#s5 .s5-cam", { filter: "blur(10px)", duration: 0.6 }, 20.35);
+    tl.fromTo("#s5 .fs-photo img", { scale: 1.16 }, { scale: 1.03, duration: 1.9, ease: "none" }, 20.25);
+    tl.to(P, { alpha: 0.12, duration: 0.5 }, 20.2);
+    tl.to(P, { alpha: 0.7, duration: 0.5 }, 21.7);
+    tl.fromTo("#s5 .fs-grade", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 20.7);
+    tl.fromTo("#s5 .fs-caption", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 }, 20.85);
+    tl.to("#s5 .fs-caption, #s5 .fs-grade", { opacity: 0, duration: 0.35 }, 21.45);
+
+    tl.to("#s5 .s5-cam", { opacity: 0, duration: 0.01 }, 21.2);
+    tl.to("#s5 .fs-photo", { clipPath: g.heroClip, duration: 0.75, ease: "power3.inOut" }, 21.6);
+    tl.fromTo("#phoneD", { opacity: 0, scale: 1.12, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "power3.out" }, 21.65);
+    tl.to("#s5 .fs-photo", { opacity: 0, duration: 0.25 }, 22.25);
+    tl.fromTo("#phoneD .phone-glare", { backgroundPosition: "100% 0" }, { backgroundPosition: "0% 0", duration: 1.2, ease: "power2.inOut" }, 21.9);
+    hide(tl, "#s5", 23.1);
+
     // flutuação contínua dos celulares (função do tempo, sem tweens soltos)
     for (const [sel, amp, speed, phase, rot] of [
       ["#phoneA .phone", 9, 1.4, 0, 0.6],
       ["#phoneB .phone", 6, 1.6, 1, 0.4],
+      ["#phoneD .phone", 6, 1.5, 0.8, 0.4],
       ["#phoneC .phone", 10, 1.3, 0.3, 0.5],
       ["#phoneL .phone", 8, 1.5, 2.1, 0.5],
       ["#phoneR .phone", 8, 1.45, 4.0, 0.5],
