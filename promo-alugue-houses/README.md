@@ -143,8 +143,12 @@ e `velocidade`), rode `node tools/montar-narracao.mjs` e depois
 `node tools/export.mjs --so-audio`. Alternativa sem locução gravada:
 `GOOGLE_TTS_API_KEY=... node tools/narracao.mjs` (voz neural do Google).
 
-**Trilha (opcional).** `assets/audio/trilha.mp3` ou `.wav`, licenciada ou
-original. Com narração, a trilha abaixa sozinha enquanto a voz fala.
+**Trilha.** `assets/audio/trilha.wav` é uma composição original sintetizada
+por `python3 tools/compor-trilha.py` (numpy + scipy), sem amostras nem
+músicas de terceiros. Ré maior, 70,6 BPM, com piano em arpejo, pad quente,
+baixo suave, pulso discreto na montagem e acorde final junto da logo. No
+vídeo ela entra a 30% e abaixa sozinha enquanto a narração fala. Para usar
+outra trilha licenciada, basta substituir o arquivo (`trilha.mp3` ou `.wav`).
 
 **Colocar no vídeo.** `node tools/export.mjs --so-audio` refaz só o áudio do
 MP4 já exportado, em segundos. O export completo também inclui o áudio.

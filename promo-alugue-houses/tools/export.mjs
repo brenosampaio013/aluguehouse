@@ -86,7 +86,7 @@ function audioPlan(duration, firstInput) {
   const end = `atrim=0:${duration},afade=t=out:st=${duration - 1.2}:d=1.2`;
   const graph =
     v && m
-      ? `${v}apad,asplit=2[voz][chave];${m}volume=0.5,apad[mus];[mus][chave]sidechaincompress=threshold=0.03:ratio=10:attack=15:release=450[duck];[duck][voz]amix=inputs=2:normalize=0,${end}[a]`
+      ? `${v}apad,asplit=2[voz][chave];${m}volume=0.3,apad[mus];[mus][chave]sidechaincompress=threshold=0.03:ratio=10:attack=15:release=450[duck];[duck][voz]amix=inputs=2:normalize=0,${end}[a]`
       : `${v ?? m}apad,${end}[a]`;
   return {
     inputs,
