@@ -81,8 +81,9 @@ quadro tracejado, e o exportador se recusa a gerar o MP4.
 ## Mapa (cena 5)
 
 A cena mostra uma pessoa usando o mapa no celular. Os imóveis aparecem como
-marcadores; um toque no Imóvel 01 deixa o marcador em destaque e abre o
-card com a foto real. A câmera aproxima, a foto vai para tela cheia e volta
+marcadores com o valor da diária. O cursor do mouse desliza pelo mapa, pousa
+no marcador do Imóvel 01 e clica: o marcador fica em destaque e abre o card
+com a foto real. A câmera aproxima, a foto vai para tela cheia e volta
 para a tela de detalhes no iPhone.
 
 - **Fundo:** captura de tela do mapa da Riviera de São Lourenço, salva como
@@ -92,8 +93,11 @@ para a tela de detalhes no iPhone.
   "Map data ©2026 Google").
 - **Marcadores:** mesmo desenho dos marcadores do site
   (`src/components/map/price-map.tsx`): pílula branca e, quando selecionada,
-  azul-abismo. Sem preços: todos mostram "Consultar", como o site faz quando o
-  imóvel não tem preço.
+  azul-abismo, com o valor no formato do site (`formatPrice`: "R$ 1.100").
+- **Valores:** R$ 990 (Imóvel 01, também no card, "por noite"), R$ 750,
+  R$ 1.100, R$ 850, R$ 1.250 e R$ 680. São **ilustrativos**, pedidos pelo
+  cliente para o vídeo; não vêm do cadastro nem são tarifas reais. Ficam em
+  `MAP.selected.price` e `MAP.pins[].price` no `script.js`.
 - **Dados:** o único imóvel cadastrado é o Imóvel 01 (`scripts/demo-seed.mjs`).
   Os demais marcadores são **demonstrativos**, sem imóvel por trás; isso está
   indicado em `MAP` no `script.js`. As posições são pixels da captura; depois
@@ -111,7 +115,8 @@ para a tela de detalhes no iPhone.
   pagamento on-line.
 - "Alto padrão" não é um filtro do site, por isso foi trocado por
   "Pé na areia".
-- Sem preços, avaliações, depoimentos, disponibilidade ou métricas. Os cards
+- Sem avaliações, depoimentos, disponibilidade ou métricas. Os únicos preços
+  são os valores ilustrativos do mapa (veja acima); os cards da busca
   mostram comodidades em vez de valores.
 - Imóvel 01: quartos e hóspedes vêm do cadastro de demonstração
   (`scripts/demo-seed.mjs`).

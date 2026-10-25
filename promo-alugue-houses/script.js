@@ -42,22 +42,23 @@
   // Cena 5 (mapa). O fundo é uma captura de tela do mapa, e as coordenadas
   // abaixo estão em pixels dessa imagem. O único imóvel cadastrado no projeto
   // é o Imóvel 01 (scripts/demo-seed.mjs): é ele que a pessoa seleciona. Os
-  // outros marcadores são DEMONSTRATIVOS (não há imóvel por trás deles) e,
-  // como no site quando não há preço, mostram "Consultar". Nenhum preço é
-  // exibido.
+  // outros marcadores são DEMONSTRATIVOS (não há imóvel por trás deles).
+  // Os valores por noite nos marcadores e no card são ILUSTRATIVOS, pedidos
+  // pelo cliente para o vídeo (R$ 990, R$ 1.100, R$ 750 e similares): não
+  // vêm do cadastro nem são tarifas reais.
   const MAP = {
     // assets/mapa/riviera.png: recorte de assets/mapa/captura-original.png
     // (Google Maps, enviada pelo cliente), x 100–1146, ampliado para 1920 × 1080.
     width: 1920,
     height: 1080,
     attribution: "Map data ©2026 Google",
-    selected: { x: 520, y: 962, label: "Consultar" }, // Imóvel 01, área urbana da Riviera
+    selected: { x: 520, y: 962, price: 990 }, // Imóvel 01, área urbana da Riviera
     pins: [
-      { x: 330, y: 1030 },
-      { x: 1235, y: 742 },
-      { x: 1355, y: 705 },
-      { x: 1690, y: 668 },
-      { x: 1750, y: 632 },
+      { x: 330, y: 1030, price: 750 },
+      { x: 1235, y: 742, price: 1100 },
+      { x: 1355, y: 705, price: 850 },
+      { x: 1690, y: 668, price: 1250 },
+      { x: 1750, y: 632, price: 680 },
     ],
   };
 
@@ -236,9 +237,12 @@
       return el;
     };
     const sel = toStage(MAP.selected);
+    // mesmo formato do site (src/lib/format.ts → formatPrice): "R$ 1.100"
+    const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
     const others = MAP.pins.map((p) => ({ ...toStage(p), el: null }));
-    for (const o of others) o.el = make(o, "Consultar");
-    const selPin = make(sel, MAP.selected.label);
+    MAP.pins.forEach((p, i) => (others[i].el = make(others[i], brl.format(p.price))));
+    const selPin = make(sel, brl.format(MAP.selected.price));
+    $("#s5 .mc-price").innerHTML = `${brl.format(MAP.selected.price)} <small>por noite</small>`;
     selPin.style.zIndex = 3;
     $("#s5 .map-attrib").textContent = MAP.attribution;
 
@@ -470,11 +474,15 @@
     const w5 = wordsIn(tl, $(".s5-title"), 16.5, { stagger: 0.07 });
     tl.fromTo(g.pinsInOrder, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, stagger: 0.09, ease: "back.out(2.2)" }, 16.7);
 
-    tl.fromTo("#s5 .touch", { x: g.sel.x + 320, y: g.sel.y + 280, opacity: 0 }, { opacity: 1, duration: 0.25 }, 17.7);
-    tl.to("#s5 .touch", { x: g.sel.x, y: g.sel.y + 6, duration: 0.7, ease: "power2.inOut" }, 17.75);
-    tl.to("#s5 .touch-dot", { scale: 0.78, duration: 0.1, yoyo: true, repeat: 1, ease: "power1.inOut" }, 18.45);
-    tl.fromTo("#s5 .touch-ring", { scale: 1, opacity: 0.9 }, { scale: 2.8, opacity: 0, duration: 0.6, ease: "power2.out" }, 18.47);
-    tl.to("#s5 .touch", { opacity: 0, duration: 0.35 }, 18.85);
+    // cursor do mouse: entra pela direita, desliza em curva até o marcador do
+    // Imóvel 01, pousa (hover), clica e seleciona
+    tl.fromTo("#s5 .mouse", { x: g.sel.x + 560, y: g.sel.y - 330, opacity: 0 }, { opacity: 1, duration: 0.3 }, 17.3);
+    tl.to("#s5 .mouse", { x: g.sel.x + 44, duration: 0.95, ease: "power2.inOut" }, 17.35);
+    tl.to("#s5 .mouse", { y: g.sel.y + 6, duration: 0.95, ease: "power1.in" }, 17.35);
+    tl.to(g.selPin, { scale: 1.07, duration: 0.2, ease: "power2.out" }, 18.2);
+    tl.to("#s5 .mouse-arrow", { scale: 0.86, duration: 0.09, yoyo: true, repeat: 1, ease: "power1.inOut", transformOrigin: "0px 0px" }, 18.42);
+    tl.fromTo("#s5 .mouse-ring", { scale: 0.4, opacity: 0.95 }, { scale: 2.6, opacity: 0, duration: 0.6, ease: "power2.out" }, 18.47);
+    tl.to("#s5 .mouse", { x: "-=20", y: "+=60", opacity: 0, duration: 0.4, ease: "power1.in" }, 18.8);
     tl.to(g.selPin.firstChild, { backgroundColor: "#0D3B45", borderColor: "#0D3B45", color: "#FFFFFF", duration: 0.2 }, 18.5);
     tl.to(g.selPin, { scale: 1.18, "--glow": 1, duration: 0.5, ease: "back.out(2.5)" }, 18.5);
     tl.to(g.otherPins, { opacity: 0.82, duration: 0.4 }, 18.55);

@@ -1040,7 +1040,8 @@ img.missing {
   opacity: var(--glow, 0);
   transform: scale(var(--glow, 0));
 }
-.touch {
+/* cursor do mouse; a ponta da seta fica na origem (0,0) do .mouse */
+.mouse {
   position: absolute;
   left: 0;
   top: 0;
@@ -1048,25 +1049,25 @@ img.missing {
   height: 0;
   z-index: 6;
 }
-.touch-dot {
+.mouse-arrow {
   position: absolute;
-  left: -32px;
-  top: -32px;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
-  border: 2px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  left: -3px;
+  top: -3px;
+  width: 44px;
+  height: 63px;
+  overflow: visible;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
 }
-.touch-ring {
+.mouse-ring {
   position: absolute;
-  left: -32px;
-  top: -32px;
-  width: 64px;
-  height: 64px;
+  left: -36px;
+  top: -36px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   border: 3px solid #fff;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 1px rgba(13, 59, 69, 0.25);
   opacity: 0;
 }
 .map-card {
@@ -1114,8 +1115,13 @@ img.missing {
   margin-top: 18px;
 }
 .mc-price {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 800;
+}
+.mc-price small {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ui-rock);
 }
 .mc-cta {
   padding: 13px 22px;
