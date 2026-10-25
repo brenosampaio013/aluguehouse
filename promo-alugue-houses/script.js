@@ -15,7 +15,10 @@
   // O filme publicado começa no iPhone (8,3 s da timeline). As cenas 1 e 2
   // continuam no código; ?completo=1 mostra e exporta os 30 s originais.
   const START = params.has("completo") ? 0 : 8.3;
-  const LENGTH = Math.round((DURATION - START) * 100) / 100;
+  // A narração (ElevenLabs) pede mais tempo: o filme publicado roda a timeline
+  // 25% mais devagar. ?completo=1 mostra a timeline original, sem esticar.
+  const STRETCH = params.has("completo") ? 1 : 1.25;
+  const LENGTH = Math.round((DURATION - START) * STRETCH * 10) / 10;
 
   // Fotografias por posição no filme. Para trocar uma foto, substitua o
   // arquivo mantendo o nome (veja README → "Fotografias").
@@ -532,7 +535,7 @@
     gsap.registerPlugin(SplitText, CustomEase);
     const tl = build();
     // `film` percorre só o trecho publicado da timeline mestre.
-    const film = tl.tweenFromTo(START, DURATION, { paused: true, ease: "none" });
+    const film = tl.tweenFromTo(START, DURATION, { paused: true, ease: "none", duration: (DURATION - START) * STRETCH });
     film.seek(0);
     tick(tl.time());
     return { tl, film };
@@ -541,7 +544,7 @@
   window.PROMO = {
     duration: LENGTH,
     fps: FPS,
-    cues: CUES.filter((c) => c.t >= START).map((c) => ({ ...c, t: Math.round((c.t - START) * 100) / 100 })),
+    cues: CUES.filter((c) => c.t >= START).map((c) => ({ ...c, t: Math.round((c.t - START) * STRETCH * 100) / 100 })),
     photos: PHOTOS,
     ready: ready.then(() => true),
     missingPhotos: () => $$("img.missing").map((i) => PHOTOS[i.dataset.slot]).filter((v, i, a) => a.indexOf(v) === i),

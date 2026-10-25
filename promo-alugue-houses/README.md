@@ -1,7 +1,7 @@
-# Alugue Houses — filme promocional (24,5 s, 1920 × 1080)
+# Alugue Houses — filme promocional (30,6 s, 1920 × 1080)
 
 Apresentação audiovisual em HTML/CSS/JS com uma timeline GSAP. A versão
-publicada tem 24,5 s e começa no iPhone (cena 3). A abertura com a logo e a
+publicada tem 30,6 s e começa no iPhone (cena 3). A abertura com a logo e a
 foto da área gourmet em tela cheia (cenas 1 e 2) saiu a pedido do cliente,
 mas continua no código: `?completo=1` mostra os 30 s originais.
 
@@ -35,7 +35,7 @@ parada para a exportação.
 Requisitos: Node 22, Playwright com Chromium e FFmpeg.
 
 ```bash
-node tools/export.mjs                 # saida/alugue-houses.mp4 (H.264, 30 fps, 735 quadros)
+node tools/export.mjs                 # saida/alugue-houses.mp4 (H.264 + AAC, 30 fps, 918 quadros)
 node tools/export.mjs --completo      # saida/alugue-houses-30s.mp4 (com as cenas 1 e 2)
 node tools/export.mjs --contact       # saida/previa/folha-de-contato.jpg (18 quadros)
 node tools/export.mjs --stills=5,10   # quadros avulsos em saida/previa/
@@ -120,31 +120,28 @@ para a tela de detalhes no iPhone.
 
 ## Narração, trilha e sincronia
 
-**Narração.** O roteiro está em `assets/audio/narracao.json`: sete falas
-curtas, cada uma com início e fim sincronizados com a cena, citando só o que
-o site faz (temporada, mensal e venda; busca por destino, datas e hóspedes;
-mapa; solicitação de reserva; atendimento direto).
+**Narração.** Locução gravada no ElevenLabs (voz Nassif), uma fala por
+arquivo em `assets/audio/falas/` (sem os silêncios das pontas). Os tempos
+estão em `assets/audio/narracao.json`, e `node tools/montar-narracao.mjs`
+gera `assets/audio/narracao.wav` com cada fala no lugar, normalizada a
+-16 LUFS. Para caber a locução, o filme publicado roda a timeline 25% mais
+devagar (`STRETCH` em `script.js`), com 30,6 s no total. As falas 1 e 2 estão 5%
+mais rápidas.
 
 | Tempo | Fala |
 | --- | --- |
-| 0,4–3,6 s | Alugue Houses. Temporada, aluguel mensal e venda no litoral de São Paulo. |
-| 4,0–7,4 s | Busque por destino, datas e hóspedes, e conheça cada imóvel em detalhes. |
-| 8,0–11,0 s | No mapa, toque na casa que combina com você. |
-| 11,4–14,4 s | Veja as fotos e solicite sua reserva pela plataforma. |
-| 15,0–18,2 s | Momentos únicos. Experiências inesquecíveis. |
-| 18,8–21,4 s | Com atendimento direto da nossa equipe. |
-| 22,0–24,3 s | Alugue Houses. Seu próximo destino. |
+| 0,3–5,3 s | Alugue Houses. Temporada, aluguel mensal e venda no litoral de São Paulo. |
+| 5,5–10,6 s | Busque por destino, datas e hóspedes, e conheça cada imóvel em detalhes. |
+| 10,9–13,7 s | No mapa, toque na casa que combina com você. |
+| 14,2–17,6 s | Veja as fotos e solicite sua reserva pela plataforma. |
+| 18,8–22,6 s | Momentos únicos. Experiências inesquecíveis. |
+| 23,5–25,7 s | Com atendimento direto da nossa equipe. |
+| 27,4–30,2 s | Alugue Houses. Seu próximo destino. |
 
-Duas formas de gerar o áudio:
-
-1. **Voz neural do Google** (Text-to-Speech, pt-BR):
-   `GOOGLE_TTS_API_KEY=... node tools/narracao.mjs` cria
-   `assets/audio/narracao.wav`, com cada fala no seu tempo. A voz padrão é
-   `pt-BR-Chirp3-HD-Charon` (masculina); `TTS_VOZ=pt-BR-Chirp3-HD-Aoede`
-   troca para feminina.
-2. **Locução gravada** (estúdio, ElevenLabs etc.): grave lendo a tabela acima
-   e salve um arquivo único de 24,5 s, já sincronizado, como
-   `assets/audio/narracao.wav` ou `.mp3`.
+Para trocar uma fala, substitua o arquivo em `falas/` (ou ajuste `inicio`
+e `velocidade`), rode `node tools/montar-narracao.mjs` e depois
+`node tools/export.mjs --so-audio`. Alternativa sem locução gravada:
+`GOOGLE_TTS_API_KEY=... node tools/narracao.mjs` (voz neural do Google).
 
 **Trilha (opcional).** `assets/audio/trilha.mp3` ou `.wav`, licenciada ou
 original. Com narração, a trilha abaixa sozinha enquanto a voz fala.

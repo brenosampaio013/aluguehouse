@@ -50,7 +50,7 @@ const parts = [];
 for (const [i, fala] of falas.entries()) {
   let file = await synth(fala.texto, i);
   const len = seconds(file);
-  const room = fala.fim - fala.inicio;
+  const room = (falas[i + 1]?.inicio ?? 30.6) - 0.2 - fala.inicio;
   if (len > room) {
     // acelera sem mudar o tom, no máximo 15%; além disso, o roteiro precisa encurtar
     const tempo = Math.min(len / room, 1.15);
