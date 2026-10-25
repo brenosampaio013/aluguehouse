@@ -44,63 +44,34 @@ fotos da campanha, o exportador recusa gerar o MP4 final.
 
 ## Fotografias
 
-O filme usa **só fotografias** nas cenas de imóveis. Ilustrações vetoriais
-não são usadas no lugar das fotos. Cada posição tem um nome de arquivo fixo,
-definido em `PHOTOS` no `script.js`. Para trocar uma foto, basta colocar
-outra com o mesmo nome. Uma foto que falta aparece na prévia como um quadro
-tracejado com o texto "foto pendente: nome-do-arquivo".
+O filme usa **só fotografias reais** nas cenas de imóveis, sem ilustrações.
+Cada posição tem um nome de arquivo fixo, definido em `PHOTOS` no
+`script.js`. Para trocar uma foto, basta colocar outra com o mesmo nome em
+`assets/fotos/campanha/`. Uma foto que falta aparece na prévia como um
+quadro tracejado, e o exportador se recusa a gerar o MP4.
 
-### Fotos reais já incluídas
-
-`assets/fotos/imovel-01/`: cópias de `media/recebidas/imovel-01/` (Imóvel 01,
-fotos reais com uso autorizado pelo proprietário). Aparecem na tela de
-detalhes do celular e no card do mapa (cena 5).
-
-### Fotos da campanha (pendentes)
-
-Coloque em `assets/fotos/campanha/` (JPG, mínimo 1920 px de largura,
-idealmente 2400 px ou mais, paisagem 16:9 ou 3:2):
-
-| Arquivo | Cena | O que mostrar |
+| Arquivo | Origem | Onde aparece |
 | --- | --- | --- |
-| `mansao-piscina-infinita.jpg` | 2 (tela cheia) | Mansão contemporânea, piscina de borda infinita, vista para o mar. A fachada perto do centro, porque a câmera aproxima dela |
-| `casa-vista-mar.jpg` | 3, 4, 7 | Casa contemporânea com piscina e vista para o mar |
-| `mansao-area-gourmet.jpg` | 4, 7 | Mansão de alto padrão com área gourmet |
-| `casa-praia-vegetacao.jpg` | 4, 7 | Casa de praia cercada por vegetação tropical |
-| `piscina-entardecer.jpg` | 6 | Piscina iluminada ao entardecer |
-| `sala-contemporanea.jpg` | 6 | Sala com arquitetura contemporânea, luz natural |
-| `varanda-vista-mar.jpg` | 6 | Varanda com vista para o oceano |
-| `area-gourmet.jpg` | 6 | Área gourmet preparada para receber a família |
-| `fachada-jardim-tropical.jpg` | 6 | Fachada sofisticada com jardim tropical |
+| `campanha/area-gourmet-piscina.jpg` | Cliente (`cliente/area-gourmet-piscina.webp`) | Cena 2 (tela cheia), card central da cena 4, destaque e galeria nos celulares |
+| `campanha/piscina-jardim.jpg` | Recorte da foto acima (piscina, espreguiçadeiras e jardim) | Cena 6 |
+| `campanha/sala-estar-jantar.jpg` | Cliente (`cliente/sala-estar-jantar.png`) | Cena 6 |
+| `campanha/area-gourmet-integrada.jpg` | Cliente (`cliente/area-gourmet-integrada.webp`) | Cena 6 |
+| `campanha/sala-jantar-jardim.jpg` | Cliente (`cliente/sala-jantar-jardim.png`) | Card da esquerda na cena 4 e última tomada da cena 6 |
+| `imovel-01/*.jpg` | `media/recebidas/imovel-01/` (uso autorizado pelo proprietário) | Card da direita na cena 4, card do mapa na cena 5, tela de detalhes e galeria nos celulares |
 
-As 9 posições são fotos diferentes: nenhuma imagem se repete entre cenas
-distintas. As fotos dos cards aparecem também dentro das telas do celular,
-como num aplicativo de verdade.
-
-Fontes aceitas, em ordem de preferência:
-
-1. Fotos dos imóveis da própria Alugue Houses, com autorização do proprietário.
-2. Bancos com licença comercial gratuita: [Unsplash](https://unsplash.com/license)
-   e [Pexels](https://www.pexels.com/license/). Use fotos que retratem casas
-   genéricas, sem marcas ou pessoas identificáveis.
-3. Imagens fotorrealistas geradas para a campanha.
-
-Registre cada foto na tabela abaixo (autor, link, licença). Como o filme
-apresenta imóveis que não são necessariamente do catálogo, o quadro final
-traz a nota "Imagens e informações ilustrativas".
-
-| Arquivo | Autor | Origem | Licença |
-| --- | --- | --- | --- |
-| `imovel-01/*.jpg` | Proprietário do Imóvel 01 | `media/recebidas/imovel-01/` | Uso autorizado pelo proprietário |
-| `campanha/mansao-area-gourmet.jpg` | Cliente Alugue Houses | `cliente/area-gourmet-piscina.webp` (enviada pelo cliente) | Fornecida pelo cliente para a campanha |
-| `campanha/area-gourmet.jpg` | Cliente Alugue Houses | `cliente/area-gourmet-integrada.webp` (enviada pelo cliente) | Fornecida pelo cliente para a campanha |
-| `campanha/sala-contemporanea.jpg` | Cliente Alugue Houses | `cliente/sala-jantar-jardim.png` (enviada pelo cliente) | Fornecida pelo cliente para a campanha |
-| *(demais fotos da campanha)* | — | — | — |
-
-`assets/fotos/cliente/` guarda os originais enviados. As versões em
-`campanha/` foram ampliadas para 2400 px (Lanczos com nitidez leve), sem
-outro tratamento. `sala-estar-jantar.png` fica de reserva. A foto da
-lavanderia enviada junto não entrou no filme.
+- As fotos do cliente vieram com 720 a 1200 px de largura. As versões em
+  `campanha/` foram ampliadas com super-resolução EDSR (OpenCV
+  `dnn_superres`, modelos de [Saafke/EDSR_Tensorflow](https://github.com/Saafke/EDSR_Tensorflow),
+  licença Apache 2.0): ×2 nas de 1200 px e ×3 nas de 720 px. Cores e
+  enquadramento não foram alterados, exceto o recorte da piscina.
+- `cliente/` guarda os originais. A foto da lavanderia enviada junto não
+  entrou no filme.
+- As quatro fotos do cliente parecem ser do mesmo imóvel. Por isso a cena 4
+  mostra dois imóveis: a casa com área gourmet e piscina (dois cards de
+  ambientes) e o Imóvel 01. A localização da casa não foi informada, então
+  os cards não citam região para ela.
+- Com fotos em maior resolução, ou de outros imóveis (fachada, vista para
+  o mar), basta substituir os arquivos ou acrescentar posições em `PHOTOS`.
 
 ## Conteúdo e fidelidade ao produto
 

@@ -14,15 +14,12 @@
   // Fotografias por posição no filme. Para trocar uma foto, substitua o
   // arquivo mantendo o nome (veja README → "Fotografias").
   const PHOTOS = {
-    "mansao-piscina-infinita": "assets/fotos/campanha/mansao-piscina-infinita.jpg",
-    "casa-vista-mar": "assets/fotos/campanha/casa-vista-mar.jpg",
-    "mansao-area-gourmet": "assets/fotos/campanha/mansao-area-gourmet.jpg",
-    "casa-praia-vegetacao": "assets/fotos/campanha/casa-praia-vegetacao.jpg",
-    "piscina-entardecer": "assets/fotos/campanha/piscina-entardecer.jpg",
-    "sala-contemporanea": "assets/fotos/campanha/sala-contemporanea.jpg",
-    "varanda-vista-mar": "assets/fotos/campanha/varanda-vista-mar.jpg",
-    "area-gourmet": "assets/fotos/campanha/area-gourmet.jpg",
-    "fachada-jardim-tropical": "assets/fotos/campanha/fachada-jardim-tropical.jpg",
+    // Fotos enviadas pelo cliente (originais em assets/fotos/cliente/).
+    "area-gourmet-piscina": "assets/fotos/campanha/area-gourmet-piscina.jpg",
+    "piscina-jardim": "assets/fotos/campanha/piscina-jardim.jpg",
+    "area-gourmet-integrada": "assets/fotos/campanha/area-gourmet-integrada.jpg",
+    "sala-jantar-jardim": "assets/fotos/campanha/sala-jantar-jardim.jpg",
+    "sala-estar-jantar": "assets/fotos/campanha/sala-estar-jantar.jpg",
     // Fotos reais do Imóvel 01 (media/recebidas/imovel-01, uso autorizado).
     "imovel-01-sala": "assets/fotos/imovel-01/sala-jantar.jpg",
     "imovel-01-cozinha": "assets/fotos/imovel-01/cozinha.jpg",
@@ -317,7 +314,7 @@
     show(tl, "#s6", 19.9, 0.4);
     tl.to(P, { alpha: 0.4, duration: 0.6 }, 19.9);
     const shots = $$("#s6 .shot");
-    const starts = [19.95, 20.75, 21.55, 22.35, 23.15];
+    const starts = [19.95, 20.95, 21.95, 22.95];
     shots.forEach((shot, i) => {
       const at = starts[i];
       const dir = i % 2 ? -1 : 1;
@@ -337,7 +334,7 @@
           at,
         );
       }
-      tl.fromTo(img, { scale: 1.16, xPercent: dir * -1.5 }, { scale: 1.04, xPercent: dir * 1.5, duration: 1.4, ease: "none" }, at);
+      tl.fromTo(img, { scale: 1.16, xPercent: dir * -1.5 }, { scale: 1.04, xPercent: dir * 1.5, duration: 1.6, ease: "none" }, at);
       if (i < shots.length - 1) {
         tl.to(shot, { x: -dir * 70, filter: "blur(10px)", duration: 0.5, ease: "power2.in" }, starts[i + 1] - 0.05);
       }
