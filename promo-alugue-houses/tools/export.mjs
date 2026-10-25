@@ -3,7 +3,8 @@
 // GSAP em cada instante e o FFmpeg monta o MP4 H.264 1920 × 1080 a 30 fps.
 //
 // Uso:
-//   node tools/export.mjs                     → saida/alugue-houses-30s.mp4
+//   node tools/export.mjs                     → saida/alugue-houses.mp4 (versão publicada)
+//   node tools/export.mjs --completo          → saida/alugue-houses-30s.mp4 (com as cenas 1 e 2)
 //   node tools/export.mjs --stills=1,6,10     → saida/previa/quadro-XX.XX.jpg
 //   node tools/export.mjs --contact           → saida/previa/folha-de-contato.jpg
 //   node tools/export.mjs --allow-missing     → exporta mesmo com fotos pendentes
@@ -53,7 +54,7 @@ const server = createServer(async (req, res) => {
   createReadStream(file).pipe(res);
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const base = `http://127.0.0.1:${server.address().port}/index.html?render=1`;
+const base = `http://127.0.0.1:${server.address().port}/index.html?render=1${args.completo ? "&completo=1" : ""}`;
 
 const browser = await chromium.launch({ args: ["--force-color-profile=srgb", "--hide-scrollbars"] });
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
@@ -100,7 +101,7 @@ try {
   if (args.stills) {
     await stills(String(args.stills).split(",").map(Number));
   } else if (args.contact) {
-    const times = [1.2, 2.9, 5.6, 6.8, 9.8, 10.9, 13.6, 15.1, 17.4, 19.2, 20.6, 21.3, 22.1, 22.9, 23.5, 25.8, 26.8, 29.2];
+    const times = Array.from({ length: 18 }, (_, i) => Math.round((0.15 + (i * (duration - 0.6)) / 17) * 100) / 100);
     const files = await stills(times);
     const cols = 3;
     const filter = files.map((_, i) => `[${i}:v]scale=640:360[v${i}]`).join(";");
@@ -121,7 +122,7 @@ try {
     }
     const total = Math.round(duration * fps);
     const audio = ["trilha.mp3", "trilha.wav"].map((f) => path.join(root, "assets/audio", f)).find(existsSync);
-    const out = path.join(outDir, args.out ?? "alugue-houses-30s.mp4");
+    const out = path.join(outDir, args.out ?? (args.completo ? "alugue-houses-30s.mp4" : "alugue-houses.mp4"));
     const started = Date.now();
     await run(
       "ffmpeg",

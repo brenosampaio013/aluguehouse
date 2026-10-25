@@ -10,6 +10,10 @@
   const FPS = 30;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has("render");
+  // O filme publicado começa no iPhone (8,3 s da timeline). As cenas 1 e 2
+  // continuam no código; ?completo=1 mostra e exporta os 30 s originais.
+  const START = params.has("completo") ? 0 : 8.3;
+  const LENGTH = Math.round((DURATION - START) * 100) / 100;
 
   // Fotografias por posição no filme. Para trocar uma foto, substitua o
   // arquivo mantendo o nome (veja README → "Fotografias").
@@ -402,6 +406,10 @@
       floats.push({ el: $(sel), amp, speed, phase, rot });
     }
 
+    if (START > 0) {
+      tl.fromTo("#blackout", { opacity: 1 }, { opacity: 0, duration: 0.7, ease: "power2.out", immediateRender: false }, START);
+    }
+
     tl.eventCallback("onUpdate", () => tick(tl.time()));
     return tl;
   }
@@ -412,21 +420,23 @@
   const ready = Promise.all([document.fonts.ready, loadPhotos()]).then(() => {
     gsap.registerPlugin(SplitText, CustomEase);
     const tl = build();
-    tl.seek(0);
-    tick(0);
-    return { tl };
+    // `film` percorre só o trecho publicado da timeline mestre.
+    const film = tl.tweenFromTo(START, DURATION, { paused: true, ease: "none" });
+    film.seek(0);
+    tick(tl.time());
+    return { tl, film };
   });
 
   window.PROMO = {
-    duration: DURATION,
+    duration: LENGTH,
     fps: FPS,
-    cues: CUES,
+    cues: CUES.filter((c) => c.t >= START).map((c) => ({ ...c, t: Math.round((c.t - START) * 100) / 100 })),
     photos: PHOTOS,
     ready: ready.then(() => true),
     missingPhotos: () => $$("img.missing").map((i) => PHOTOS[i.dataset.slot]).filter((v, i, a) => a.indexOf(v) === i),
     async seek(t) {
-      const { tl } = await ready;
-      tl.seek(Math.min(t, DURATION), false);
+      const { tl, film } = await ready;
+      film.seek(Math.min(t, LENGTH), false);
       tick(tl.time());
       await new Promise((r) => requestAnimationFrame(() => r()));
     },
@@ -435,10 +445,11 @@
   if (RENDER) return;
 
   // ---------- prévia: reprodução automática, controles discretos e trilha opcional ----------
-  ready.then(({ tl }) => {
+  ready.then(({ film: tl }) => {
     const controls = $("#controls");
     controls.hidden = false;
     const range = $("input", controls);
+    range.max = String(LENGTH);
     const out = $("output", controls);
     const toggle = $('[data-act="toggle"]', controls);
     const audio = new Audio("assets/audio/trilha.mp3");

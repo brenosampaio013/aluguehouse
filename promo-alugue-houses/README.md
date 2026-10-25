@@ -1,7 +1,11 @@
-# Alugue Houses — filme promocional (30 s, 1920 × 1080)
+# Alugue Houses — filme promocional (21,7 s, 1920 × 1080)
 
-Apresentação audiovisual em HTML/CSS/JS com uma timeline GSAP de exatamente
-30 segundos e 8 cenas. É independente do site: nada fora desta pasta foi
+Apresentação audiovisual em HTML/CSS/JS com uma timeline GSAP. A versão
+publicada tem 21,7 s e começa no iPhone (cena 3). A abertura com a logo e a
+foto da área gourmet em tela cheia (cenas 1 e 2) saiu a pedido do cliente,
+mas continua no código: `?completo=1` mostra os 30 s originais.
+
+É independente do site: nada fora desta pasta foi
 alterado.
 
 | Arquivo | Conteúdo |
@@ -31,7 +35,8 @@ parada para a exportação.
 Requisitos: Node 22, Playwright com Chromium e FFmpeg.
 
 ```bash
-node tools/export.mjs                 # saida/alugue-houses-30s.mp4 (H.264, 30 fps, 900 quadros)
+node tools/export.mjs                 # saida/alugue-houses.mp4 (H.264, 30 fps, 651 quadros)
+node tools/export.mjs --completo      # saida/alugue-houses-30s.mp4 (com as cenas 1 e 2)
 node tools/export.mjs --contact       # saida/previa/folha-de-contato.jpg (18 quadros)
 node tools/export.mjs --stills=5,10   # quadros avulsos em saida/previa/
 node tools/export.mjs --allow-missing # versão de teste mesmo com fotos pendentes
@@ -39,7 +44,7 @@ node tools/export.mjs --allow-missing # versão de teste mesmo com fotos pendent
 
 A exportação não grava a tela em tempo real: para cada quadro ela posiciona a
 timeline em `i / 30` segundos e captura a imagem. Por isso o resultado tem
-exatamente 30 s e não perde quadros, mesmo numa máquina lenta. Sem todas as
+a duração exata e não perde quadros, mesmo numa máquina lenta. Sem todas as
 fotos da campanha, o exportador recusa gerar o MP4 final.
 
 ## Fotografias
