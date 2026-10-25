@@ -174,9 +174,10 @@ body {
 /* ---------- cena 1 e 8: marca ---------- */
 
 .cam {
+  /* plano único: a ordem do DOM decide o que fica na frente (a logo nunca
+     some atrás do halo enquanto vem do fundo) */
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
 }
 
 .volume {

@@ -189,7 +189,7 @@
     tl.fromTo("#s1 .halo", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 1.9, ease: "power2.out" }, 0.95);
     tl.fromTo(
       "#s1 .logo-holder",
-      { opacity: 0, scale: 0.82, z: -320, rotationX: 16, filter: "blur(14px)" },
+      { opacity: 0, scale: 0.82, z: -320, rotationX: 16, filter: "blur(14px)", transformPerspective: 1200 },
       { opacity: 1, scale: 1, z: 0, rotationX: 0, filter: "blur(0px)", duration: 1.7, ease: "expo.out" },
       1.25,
     );
