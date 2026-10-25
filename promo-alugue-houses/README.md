@@ -92,7 +92,15 @@ traz a nota "Imagens e informações ilustrativas".
 | Arquivo | Autor | Origem | Licença |
 | --- | --- | --- | --- |
 | `imovel-01/*.jpg` | Proprietário do Imóvel 01 | `media/recebidas/imovel-01/` | Uso autorizado pelo proprietário |
-| *(fotos da campanha)* | — | — | — |
+| `campanha/mansao-area-gourmet.jpg` | Cliente Alugue Houses | `cliente/area-gourmet-piscina.webp` (enviada pelo cliente) | Fornecida pelo cliente para a campanha |
+| `campanha/area-gourmet.jpg` | Cliente Alugue Houses | `cliente/area-gourmet-integrada.webp` (enviada pelo cliente) | Fornecida pelo cliente para a campanha |
+| `campanha/sala-contemporanea.jpg` | Cliente Alugue Houses | `cliente/sala-jantar-jardim.png` (enviada pelo cliente) | Fornecida pelo cliente para a campanha |
+| *(demais fotos da campanha)* | — | — | — |
+
+`assets/fotos/cliente/` guarda os originais enviados. As versões em
+`campanha/` foram ampliadas para 2400 px (Lanczos com nitidez leve), sem
+outro tratamento. `sala-estar-jantar.png` fica de reserva. A foto da
+lavanderia enviada junto não entrou no filme.
 
 ## Conteúdo e fidelidade ao produto
 
